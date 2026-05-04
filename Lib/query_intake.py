@@ -1,0 +1,308 @@
+"""Safe structured intake for user queries.
+
+The original query is always the source of truth. The cleaned query and
+model-extracted fields are helper context only.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+from typing import Any
+
+from Lib.AI_request import send_to_AI
+from Lib.json_utils import safe_json_loads, to_string_list
+
+
+_RISK_LEVELS = {"low", "medium", "high"}
+_COMPLEXITY_LEVELS = {"simple", "moderate", "complex"}
+_AUTHORITATIVE_RULE = (
+    "Original query is authoritative. Cleaned/formalized query is helper text only. "
+    "Do not ignore constraints from original_query."
+)
+
+
+def _mechanical_clean(text: str) -> str:
+    """Normalize noisy text without changing meaning and without model calls."""
+    if not text:
+        return ""
+
+    cleaned = str(text)
+    quote_map = {
+        "«": '"',
+        "»": '"',
+        "“": '"',
+        "”": '"',
+        "„": '"',
+        "‟": '"',
+        "’": "'",
+        "‘": "'",
+        "`": "'",
+    }
+    for source, target in quote_map.items():
+        cleaned = cleaned.replace(source, target)
+
+    cleaned = re.sub(r"[–—−]", "-", cleaned)
+    cleaned = re.sub(r"(.)\1{2,}", r"\1\1", cleaned)
+    cleaned = re.sub(r"[!]{2,}", "!", cleaned)
+    cleaned = re.sub(r"[?]{2,}", "?", cleaned)
+    cleaned = re.sub(r"[.]{3,}", "...", cleaned)
+    cleaned = re.sub(r"[,]{2,}", ",", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    cleaned = re.sub(r"\s+([,.!?])", r"\1", cleaned)
+
+    def _dedupe_words(match: re.Match) -> str:
+        word = match.group(1)
+        return f"{word} {word}"
+
+    cleaned = re.sub(r"\b(\w+)(?:\s+\1\b){2,}", _dedupe_words, cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"-{2,}", "-", cleaned)
+    return cleaned.strip()
+
+
+def _split_sentences(text: str) -> list[str]:
+    parts = re.split(r"(?<=[.!?])\s+|\n+|[;|]+", text)
+    out: list[str] = []
+    for part in parts:
+        item = part.strip(" -\t\r\n")
+        if item:
+            out.append(item)
+        if len(out) >= 12:
+            break
+    return out
+
+
+def _items_by_markers(text: str, markers: tuple[str, ...], max_items: int) -> list[str]:
+    items: list[str] = []
+    for sentence in _split_sentences(text):
+        lower = sentence.lower()
+        if any(marker in lower for marker in markers):
+            items.append(sentence)
+        if len(items) >= max_items:
+            break
+    return items
+
+
+def _derive_complexity(original_query: str) -> str:
+    text = original_query.lower()
+    words = original_query.split()
+    complex_markers = (
+        "стратег",
+        "архитект",
+        "междисцип",
+        "multi",
+        "stakeholder",
+        "complex",
+        "риски",
+        "огранич",
+        "критер",
+        "план",
+        "evaluation",
+        "architecture",
+    )
+    if len(words) <= 12 and not any(marker in text for marker in complex_markers):
+        return "simple"
+    if len(words) > 80 or any(marker in text for marker in complex_markers):
+        return "complex"
+    return "moderate"
+
+
+def _derive_risk_level(original_query: str) -> str:
+    text = original_query.lower()
+    if not text.strip():
+        return "low"
+    high_markers = (
+        "medical",
+        "medicine",
+        "health",
+        "legal",
+        "law",
+        "finance",
+        "security",
+        "safety",
+        "медиц",
+        "здоров",
+        "право",
+        "закон",
+        "финанс",
+        "безопас",
+    )
+    if any(marker in text for marker in high_markers):
+        return "high"
+    return "medium"
+
+
+def _truncate_task_goal(value: str, limit: int = 700) -> str:
+    text = str(value or "").strip()
+    if len(text) <= limit:
+        return text
+    return text[: limit - 3].rstrip() + "..."
+
+
+def _rule_based_intake(original_query: str, cleaned_query: str, warning: str | None = None) -> dict:
+    """Build conservative fallback/rules intake without model dependency."""
+    source = "fallback" if warning else "rules"
+    complexity = _derive_complexity(original_query)
+    risk_level = _derive_risk_level(original_query)
+    text_for_rules = cleaned_query or original_query
+
+    constraints = _items_by_markers(
+        text_for_rules,
+        (
+            "нельзя",
+            "огранич",
+            "долж",
+            "важно",
+            "без ",
+            "бюджет",
+            "срок",
+            "constraint",
+            "limited",
+            "must",
+            "cannot",
+            "can't",
+            "should",
+            "need",
+            "deadline",
+            "budget",
+        ),
+        max_items=8,
+    )
+    success_criteria = _items_by_markers(
+        text_for_rules,
+        ("критер", "успех", "результ", "метрик", "оцен", "success", "metric", "result", "criteria"),
+        max_items=6,
+    )
+    context = _items_by_markers(
+        text_for_rules,
+        ("контекст", "сейчас", "у нас", "проект", "команда", "current", "context", "project", "team"),
+        max_items=6,
+    )
+
+    warnings = []
+    if warning:
+        warnings.append(warning)
+
+    return {
+        "original_query": original_query,
+        "cleaned_query": cleaned_query or original_query,
+        "task_goal": _truncate_task_goal(cleaned_query or original_query),
+        "context": context,
+        "constraints": constraints,
+        "success_criteria": success_criteria,
+        "unknowns": [],
+        "user_preferences": [],
+        "risk_level": risk_level,
+        "complexity": complexity,
+        "should_use_cmm": complexity in {"moderate", "complex"},
+        "parse_warnings": warnings,
+        "source": source,
+    }
+
+
+def _normalize_enum(value: Any, allowed: set[str], default: str) -> str:
+    if isinstance(value, str):
+        candidate = value.strip().lower()
+        if candidate in allowed:
+            return candidate
+    return default
+
+
+def _normalize_bool(value: Any, default: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        candidate = value.strip().lower()
+        if candidate in {"true", "yes", "1", "да"}:
+            return True
+        if candidate in {"false", "no", "0", "нет"}:
+            return False
+    return default
+
+
+def _normalize_intake_payload(payload: dict | None, original_query: str, cleaned_query: str) -> dict | None:
+    if not isinstance(payload, dict):
+        return None
+
+    rules = _rule_based_intake(original_query, cleaned_query)
+    task_goal = payload.get("task_goal")
+    if not isinstance(task_goal, str) or not task_goal.strip():
+        task_goal = rules["task_goal"]
+
+    complexity = _normalize_enum(payload.get("complexity"), _COMPLEXITY_LEVELS, rules["complexity"])
+    risk_level = _normalize_enum(payload.get("risk_level"), _RISK_LEVELS, rules["risk_level"])
+
+    return {
+        "original_query": original_query,
+        "cleaned_query": cleaned_query or original_query,
+        "task_goal": _truncate_task_goal(task_goal),
+        "context": to_string_list(payload.get("context"), max_items=8),
+        "constraints": to_string_list(payload.get("constraints"), max_items=10),
+        "success_criteria": to_string_list(payload.get("success_criteria"), max_items=8),
+        "unknowns": to_string_list(payload.get("unknowns"), max_items=8),
+        "user_preferences": to_string_list(payload.get("user_preferences"), max_items=8),
+        "risk_level": risk_level,
+        "complexity": complexity,
+        "should_use_cmm": _normalize_bool(payload.get("should_use_cmm"), complexity in {"moderate", "complex"}),
+        "parse_warnings": [],
+        "source": "model",
+    }
+
+
+def _model_intake(original_query: str, cleaned_query: str, *, model: str, max_ai_tokens: int) -> dict | None:
+    system_prompt = (
+        "You are a safe query intake extractor for a Collective Meta-Moderation pipeline.\n"
+        f"{_AUTHORITATIVE_RULE}\n"
+        "Do not rewrite the full query. Extract structure only. Do not remove constraints.\n"
+        "Return strict JSON only, without markdown or commentary.\n"
+        "Schema:\n"
+        "{\n"
+        '  "task_goal": "string",\n'
+        '  "context": ["string"],\n'
+        '  "constraints": ["string"],\n'
+        '  "success_criteria": ["string"],\n'
+        '  "unknowns": ["string"],\n'
+        '  "user_preferences": ["string"],\n'
+        '  "risk_level": "low|medium|high",\n'
+        '  "complexity": "simple|moderate|complex",\n'
+        '  "should_use_cmm": true\n'
+        "}"
+    )
+    state = {
+        "original_query": original_query,
+        "cleaned_query_helper": cleaned_query,
+        "instruction": _AUTHORITATIVE_RULE,
+    }
+    raw = send_to_AI(
+        user_prompt="Extract safe query intake structure:\n" + json.dumps(state, ensure_ascii=False),
+        system_prompt=system_prompt,
+        temp=0.2,
+        tokens=max_ai_tokens,
+        model=model,
+    )
+    if not isinstance(raw, str) or not raw.strip() or raw.strip().lower().startswith("error:"):
+        return None
+    return safe_json_loads(raw)
+
+
+def build_query_intake(
+    original_query: str,
+    *,
+    model: str = "deepseek-chat",
+    max_ai_tokens: int = 650,
+) -> dict:
+    """Return safe structured query intake with original_query preserved."""
+    original = "" if original_query is None else str(original_query)
+    cleaned = _mechanical_clean(original) or original
+
+    if not original.strip():
+        return _rule_based_intake(original, cleaned)
+
+    try:
+        payload = _model_intake(original, cleaned, model=model, max_ai_tokens=max_ai_tokens)
+        normalized = _normalize_intake_payload(payload, original, cleaned)
+        if normalized is not None:
+            return normalized
+        return _rule_based_intake(original, cleaned, warning="model_intake_invalid_json")
+    except Exception as exc:
+        return _rule_based_intake(original, cleaned, warning=f"model_intake_failed: {exc}")
