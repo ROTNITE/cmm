@@ -58,7 +58,7 @@ Collective Meta-Moderation — экспериментальный програм
 }
 ```
 
-`trace_report` содержит исходный и формализованный запрос, роли экспертов, экспертные раунды, deliberation rounds/revisions, balance reports, conflict reports, meta moderation decisions, plan, critique, moderation reports, revision count, confidence, warnings, state history, final state, transition count, iteration count и errors.
+`trace_report` содержит исходный и формализованный запрос, роли экспертов, экспертные раунды, dynamic role reports / roles used, deliberation rounds/revisions, balance reports, conflict reports, meta moderation decisions, plan, critique, moderation reports, revision count, confidence, warnings, state history, final state, transition count, iteration count и errors.
 
 `original_query` является источником истины. `formalized_query` заполняется из `cleaned_query` и используется только как вспомогательный текст; downstream-агенты также получают структурированный `query_intake`.
 
@@ -68,6 +68,7 @@ Collective Meta-Moderation — экспериментальный програм
 - `Lib/orchestrator.py`: публичная обертка `run_cmm`.
 - `Lib/state_machine.py`: bounded state-machine orchestration, история переходов и сбор trace/result.
 - `Lib/query_intake.py`: безопасный входной слой, который сохраняет `original_query` и извлекает `cleaned_query`, контекст, ограничения, критерии успеха, неизвестные и предпочтения.
+- `Lib/role_generator.py`: безопасная template-based генерация дополнительных ролей из whitelist без model-generated system prompts.
 - `Lib/expert_*`: роли, выбор ролей, экспертные вклады и панель.
 - `Lib/expert_rounds.py`: выбор целевых ролей для второго экспертного раунда, запуск follow-up экспертов и объединение expert bundles.
 - `Lib/balance_analyzer.py`: анализ баланса.
@@ -103,14 +104,15 @@ Real judged evaluation является отдельным opt-in режимом
 
 ## Ограничения
 
-- Второй экспертный раунд есть, но он ограничен: он последовательный, использует существующие базовые роли и является targeted follow-up, а не свободной дискуссией.
+- Второй экспертный раунд есть, но он ограничен: он последовательный, использует существующие базовые роли и whitelist dynamic role templates, и является targeted follow-up, а не свободной дискуссией.
 - Structured deliberation round есть, но он ограничен одной schema-driven итерацией и не является полноценной свободной debate/state-machine системой.
+- Dynamic roles ограничены заранее заданными шаблонами; модель может предложить только разрешенный key/tag, но не произвольный `system_prompt`.
 - State machine является bounded MVP-оркестратором, а не бесконечным автономным процессом.
 - `REPLAN` не перезапускает весь экспертный pipeline; он пересоздаёт только план по последнему контексту и feedback критика.
 - Query intake защищает исходный запрос от перезаписи, но сам по себе не доказывает повышение качества downstream-ответов.
 - Нет fully free-form прямой дискуссии экспертов друг с другом.
 - Нет параллельного запуска агентов.
-- Нет произвольной генерации новых ролей.
+- Нет произвольной генерации новых ролей; dynamic roles capped, whitelist-based и предназначены для missing expertise, blind spots, trade-offs, `ADD_EXPERT` / `DEEPEN`.
 - Анализ баланса пока основан преимущественно на тегах перспектив.
 - Semantic conflict analysis помогает выявлять trade-offs и риски преждевременного консенсуса, а structured deliberation round помогает экспертам ответить на позиции друг друга, но это всё ещё ограниченный MVP-механизм.
 - Нет UI.

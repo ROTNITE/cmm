@@ -27,6 +27,7 @@ INTAKE
 - `Lib/orchestrator.py` exposes the stable public `run_cmm(...)` entrypoint.
 - `Lib/state_machine.py` owns the bounded CMM state machine, transition history, and trace/result assembly.
 - `Lib/query_intake.py` preserves `original_query` as the authoritative source and extracts helper fields such as `cleaned_query`, context, constraints, success criteria, unknowns, and user preferences.
+- `Lib/role_generator.py` maps model/rule suggestions to whitelist-limited dynamic role templates.
 - `Lib/expert_selector.py`, `Lib/expert_roles.py`, `Lib/expert_agent.py`, and `Lib/expert_panel.py` implement expert selection and contribution collection.
 - `Lib/expert_rounds.py` selects safe follow-up roles, runs targeted second expert rounds, and merges expert bundles.
 - `Lib/balance_analyzer.py` identifies missing base perspectives and dominant perspectives.
@@ -63,9 +64,11 @@ INTAKE
 
 This is intentional: expert work must influence downstream stages to matter.
 
-When `meta_moderator` returns `DEEPEN` or `ADD_EXPERT`, the state machine can select targeted base roles, run one sequential second expert round, merge both bundles, re-run balance analysis, and rebuild the final deliberation brief before planning.
+When `meta_moderator` returns `DEEPEN` or `ADD_EXPERT`, the state machine can select targeted base roles and safe dynamic templates, run one sequential second expert round, merge both bundles, re-run balance analysis, and rebuild the final deliberation brief before planning.
 
 Before planning, the state machine can also run one structured deliberation round when conflict or meta-moderation state shows disagreements, unresolved trade-offs, blind spots, or premature consensus. This pass is not another gap-filling expert round: each selected expert sees its own first contribution, compact positions from other roles, and the conflict report, then returns agreements, disagreements, missed points, revised recommendations, new risks, and group questions. The revisions are merged into expert context and conflict analysis is recomputed.
+
+Dynamic roles are generated only through a fixed template catalog. The model may suggest allowed role keys or perspective tags, but code rejects arbitrary keys, arbitrary tags, unsafe text, duplicates, over-limit suggestions, and any attempt to provide `system_prompt`.
 
 `REPLAN` is a bounded planner-only transition. It uses the latest query intake, deliberation brief, conflict report, previous plan, and critique feedback. It does not restart query intake or expert rounds in this MVP.
 
@@ -76,6 +79,7 @@ The trace report is a structured audit object, not just debug logs. It includes:
 - query fields
 - query intake
 - roles and expert rounds
+- dynamic role reports and dynamic roles used
 - deliberation brief
 - balance reports
 - conflict reports
@@ -98,13 +102,13 @@ The MVP favors explicit fallback structures over crashes:
 
 ## Known Gaps
 
-- The second expert round is implemented as a sequential targeted pass over existing safe base roles.
+- The second expert round is implemented as a sequential targeted pass over existing safe base roles plus whitelisted dynamic role templates.
 - Experts can now respond to other roles in one structured deliberation round, but there is no fully free-form debate state machine.
-- The state machine is bounded and MVP-level; it does not implement async, dynamic roles, or unbounded autonomous control.
+- The state machine is bounded and MVP-level; it does not implement async or unbounded autonomous control.
 - Balance analysis is still mostly tag/count based.
 - Semantic conflict analysis is support for detecting trade-offs and consensus risks; deliberation is bounded and schema-driven.
 - Query intake preserves source truth but does not guarantee downstream semantic completeness.
 - Mock evaluation is heuristic and deterministic by default. Real judged evaluation provides limited first evidence, not proof of universal superiority.
 - No async/parallel orchestration is implemented.
-- No arbitrary dynamic role generation is implemented.
+- No arbitrary dynamic role generation is implemented; dynamic roles are capped and template-based.
 - No UI is included.

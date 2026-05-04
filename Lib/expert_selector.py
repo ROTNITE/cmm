@@ -119,7 +119,25 @@ def _detect_domain_need(query: str) -> tuple[bool, str | None]:
     return False, None
 
 
-def determine_expert_roles(query: str, max_roles: int = 5) -> list[ExpertRole]:
+def _unique_roles(roles: list[ExpertRole]) -> list[ExpertRole]:
+    seen: set[str] = set()
+    out: list[ExpertRole] = []
+    for role in roles:
+        if not isinstance(role, ExpertRole):
+            continue
+        if role.key in seen:
+            continue
+        seen.add(role.key)
+        out.append(role)
+    return out
+
+
+def determine_expert_roles(
+    query: str,
+    max_roles: int = 5,
+    context: dict | None = None,
+    dynamic_roles: list[ExpertRole] | None = None,
+) -> list[ExpertRole]:
     """Возвращает итоговый набор экспертных ролей.
 
     Логика:
@@ -146,4 +164,9 @@ def determine_expert_roles(query: str, max_roles: int = 5) -> list[ExpertRole]:
     if need_domain_expert and domain and len(roles) < max_roles:
         roles.append(_build_domain_expert(domain))
 
-    return roles
+    for role in dynamic_roles or []:
+        if len(roles) >= max_roles:
+            break
+        roles.append(role)
+
+    return _unique_roles(roles)[:max_roles]

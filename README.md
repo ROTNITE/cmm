@@ -77,6 +77,7 @@ Key modules:
 - `Lib/orchestrator.py`: public `run_cmm(...)` wrapper.
 - `Lib/state_machine.py`: bounded CMM state machine, transition history, trace/result assembly.
 - `Lib/query_intake.py`: preserves the original query as authoritative and extracts helper structure such as constraints, context, success criteria, unknowns, and preferences.
+- `Lib/role_generator.py`: suggests safe template-based dynamic roles from a whitelist; models cannot create role prompts.
 - `Lib/expert_panel.py`: runs selected expert roles and collects contributions.
 - `Lib/expert_rounds.py`: selects safe follow-up roles, runs targeted second rounds, and merges bundles.
 - `Lib/balance_analyzer.py`: checks missing and dominant perspectives.
@@ -91,6 +92,8 @@ Key modules:
 The `original_query` is authoritative. `cleaned_query` / `formalized_query` is helper text only, and query intake extracts structure instead of rewriting away meaning. The `expert_bundle` is not decorative: it feeds the deliberation brief, plan context, answer generation, moderation, and trace report.
 
 Balance analysis remains mostly tag/count based. Semantic conflict analysis adds support for detecting meaning-level disagreements, trade-offs, blind spots, and premature consensus. The structured deliberation round then lets selected experts respond to other roles' positions and revise recommendations, but it is still not a fully free-form debate system.
+
+Dynamic roles are whitelist-limited templates. The model may suggest an allowed role key such as `legal_reviewer` or `measurement_expert`, but code normalizes it to a predefined `ExpertRole`; arbitrary tags and model-generated `system_prompt` values are rejected. Dynamic roles are capped and used to address missing expertise, blind spots, trade-offs, and `ADD_EXPERT` / `DEEPEN` decisions.
 
 `REPLAN` is intentionally bounded: it regenerates the plan from the latest query intake, deliberation brief, conflict report, previous plan, and critique feedback. It does not restart the full expert pipeline.
 
@@ -114,6 +117,7 @@ Balance analysis remains mostly tag/count based. Semantic conflict analysis adds
 - `original_query` and `formalized_query`
 - `query_intake`
 - `roles_used` and `expert_rounds`
+- `dynamic_role_reports` and `dynamic_roles_used`
 - `deliberation_brief`
 - `balance_reports`
 - `conflict_reports`
@@ -144,7 +148,7 @@ The project uses JSON-first contracts where downstream code depends on structure
 
 When conflict or meta-moderation state indicates meaningful disagreement, unresolved trade-offs, blind spots, or premature consensus, the MVP can run one structured deliberation round using existing base roles. Experts see their own first contribution, compact positions from other roles, and the conflict report, then return agreements, disagreements, missed points, revised recommendations, new risks, and group questions.
 
-If the decision is still `DEEPEN` or `ADD_EXPERT`, the MVP may also run the existing sequential targeted second expert round using existing base roles only. The system merges downstream expert context, re-runs balance/conflict analysis, rebuilds `deliberation_brief`, and records expert rounds, deliberation rounds, balance reports, and conflict reports in `trace_report`.
+If the decision is still `DEEPEN` or `ADD_EXPERT`, the MVP may also run the existing sequential targeted second expert round using existing base roles and safe dynamic templates. The system merges downstream expert context, re-runs balance/conflict analysis, rebuilds `deliberation_brief`, and records expert rounds, deliberation rounds, dynamic role reports, balance reports, and conflict reports in `trace_report`.
 
 ## Evaluation Harness
 
@@ -187,10 +191,10 @@ The test suite is designed to run without a real API key, network access, or ext
 - Semantic conflict analysis supports trade-off and consensus-risk detection, but it does not fully solve groupthink by itself.
 - The state machine is bounded and MVP-level; it is not an unbounded autonomous process controller.
 - The structured deliberation round lets selected experts respond to other roles and revise recommendations, but it is bounded and schema-driven.
-- The second expert round is implemented, but it is sequential and limited to existing safe roles.
+- The second expert round is implemented, but it is sequential and limited to existing safe base roles plus whitelisted dynamic templates.
 - There is no fully free-form expert debate state machine.
 - There is no async/parallel execution.
-- There is no arbitrary dynamic role generation yet.
+- There is no arbitrary dynamic role generation; dynamic roles are whitelist-based and capped.
 - Evaluation scoring is deterministic and useful for regression, but not a substitute for human evaluation.
 - Real model behavior depends on external API availability and model output quality.
 - The current CLI is minimal and intended for local experimentation.

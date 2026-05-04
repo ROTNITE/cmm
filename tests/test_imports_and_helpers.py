@@ -19,6 +19,7 @@ class ImportAndHelperTests(unittest.TestCase):
             "Lib.json_utils",
             "Lib.orchestrator",
             "Lib.state_machine",
+            "Lib.role_generator",
             "Lib.meta_moderator",
             "Lib.agent_improver",
             "Lib.agent_moderator",

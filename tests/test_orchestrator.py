@@ -96,6 +96,10 @@ def _sample_moderated_result():
     }
 
 
+def _sample_dynamic_role_report():
+    return {"roles": [], "role_views": [], "rejected_suggestions": [], "warnings": [], "source": "test"}
+
+
 def _sample_meta_decision(decision="SYNTHESIZE"):
     return {
         "decision": decision,
@@ -228,6 +232,7 @@ class OrchestratorTests(unittest.TestCase):
         return patch.multiple(
             "Lib.state_machine",
             build_query_intake=DEFAULT,
+            generate_dynamic_roles=DEFAULT,
             analyze_conflicts=DEFAULT,
             run_expert_panel=DEFAULT,
             analyze_balance=DEFAULT,
@@ -246,6 +251,7 @@ class OrchestratorTests(unittest.TestCase):
 
         with self._patch_happy_path() as mocks:
             mocks["build_query_intake"].return_value = _sample_query_intake()
+            mocks["generate_dynamic_roles"].return_value = _sample_dynamic_role_report()
             mocks["run_expert_panel"].return_value = _sample_expert_bundle()
             mocks["analyze_balance"].return_value = _sample_balance_report()
             mocks["run_meta_moderator"].return_value = _sample_meta_decision()
@@ -287,7 +293,7 @@ class OrchestratorTests(unittest.TestCase):
             call_order.append("query_intake")
             return _sample_query_intake()
 
-        def experts(query, context=None):
+        def experts(query, context=None, max_roles=5, dynamic_roles=None):
             call_order.append("expert_panel")
             return _sample_expert_bundle()
 
@@ -308,6 +314,8 @@ class OrchestratorTests(unittest.TestCase):
             return _sample_plan()
 
         with patch("Lib.state_machine.build_query_intake", side_effect=intake), patch(
+            "Lib.state_machine.generate_dynamic_roles", return_value=_sample_dynamic_role_report()
+        ), patch(
             "Lib.state_machine.run_expert_panel", side_effect=experts
         ), patch("Lib.state_machine.analyze_balance", side_effect=balance), patch(
             "Lib.state_machine.analyze_conflicts", side_effect=conflict
@@ -455,7 +463,7 @@ class OrchestratorTests(unittest.TestCase):
 
         captured = {}
 
-        def capture_experts(query, context=None):
+        def capture_experts(query, context=None, max_roles=5, dynamic_roles=None):
             captured["query"] = query
             captured["context"] = context
             return _sample_expert_bundle()

@@ -20,6 +20,7 @@ from Lib.expert_rounds import merge_expert_bundles, run_targeted_expert_round, s
 from Lib.meta_moderator import run_meta_moderator
 from Lib.plan_development import develop_plan
 from Lib.query_intake import build_query_intake
+from Lib.role_generator import generate_dynamic_roles
 
 
 INTAKE = "INTAKE"
@@ -226,6 +227,72 @@ def _flatten_deliberation_revisions(deliberation_rounds: list | None) -> list[di
     return out
 
 
+def _sanitize_dynamic_role_report(report: dict) -> dict:
+    if not isinstance(report, dict):
+        return {
+            "role_views": [],
+            "rejected_suggestions": [],
+            "warnings": ["invalid_dynamic_role_report"],
+            "source": "fallback",
+            "round": "",
+        }
+    return {
+        "role_views": _safe_list(report.get("role_views")),
+        "rejected_suggestions": _safe_list(report.get("rejected_suggestions")),
+        "warnings": _safe_list(report.get("warnings")),
+        "source": report.get("source") or "fallback",
+        "round": report.get("round") or "",
+    }
+
+
+def _flatten_dynamic_roles_used(dynamic_role_reports: list | None) -> list[dict]:
+    out: list[dict] = []
+    seen: set[tuple[str, str]] = set()
+    for report in _safe_list(dynamic_role_reports):
+        if not isinstance(report, dict):
+            continue
+        round_name = str(report.get("round") or "")
+        for view in _safe_list(report.get("role_views")):
+            if not isinstance(view, dict):
+                continue
+            key = str(view.get("key") or "").strip()
+            if not key:
+                continue
+            marker = (round_name, key)
+            if marker in seen:
+                continue
+            seen.add(marker)
+            out.append(
+                {
+                    "key": key,
+                    "name": view.get("name") or "",
+                    "perspective_tag": view.get("perspective_tag") or "",
+                    "why_needed": view.get("why_needed") or "",
+                    "round": round_name,
+                }
+            )
+    return out
+
+
+def _record_dynamic_role_report(state: dict, report: dict, round_name: str) -> list:
+    safe_report = dict(report) if isinstance(report, dict) else {
+        "roles": [],
+        "role_views": [],
+        "warnings": ["invalid_dynamic_role_report"],
+        "source": "fallback",
+    }
+    safe_report["roles"] = list(_safe_list(safe_report.get("roles")))
+    safe_report["role_views"] = list(_safe_list(safe_report.get("role_views")))
+    safe_report["rejected_suggestions"] = list(_safe_list(safe_report.get("rejected_suggestions")))
+    safe_report["warnings"] = list(_safe_list(safe_report.get("warnings")))
+    safe_report["round"] = round_name
+    state.setdefault("dynamic_role_reports", []).append(safe_report)
+    for warning in _safe_list(safe_report.get("warnings")):
+        if isinstance(warning, str):
+            state.setdefault("warnings", []).append(f"dynamic_roles_{round_name}: {warning}")
+    return _safe_list(safe_report.get("roles"))
+
+
 def _extract_final_confidence(moderation_reports: list) -> float | None:
     if not moderation_reports:
         return None
@@ -302,6 +369,8 @@ def init_cmm_state(
         "intake_context": {},
         "expert_bundle": _empty_expert_bundle(),
         "expert_rounds": [],
+        "dynamic_roles": [],
+        "dynamic_role_reports": [],
         "balance_report": {},
         "balance_reports": [],
         "conflict_report": {},
@@ -357,8 +426,30 @@ def handle_intake(state: dict) -> tuple[str, str]:
 
 
 def handle_panel_round_1(state: dict) -> tuple[str, str]:
+    initial_dynamic_roles: list = []
     try:
-        expert_bundle = run_expert_panel(state["original_query"], context=state.get("intake_context", {}))
+        dynamic_report = generate_dynamic_roles(
+            query_intake=state.get("query_intake", {}),
+            existing_roles=[],
+            max_roles=2,
+            model=state["model"],
+        )
+        initial_dynamic_roles = _record_dynamic_role_report(state, dynamic_report, "initial")
+        state["dynamic_roles"] = _safe_list(state.get("dynamic_roles")) + initial_dynamic_roles
+    except Exception as exc:
+        state["warnings"].append(f"dynamic_roles_initial_failed; continuing_with_base_roles: {exc}")
+
+    panel_context = dict(state.get("intake_context", {}))
+    if state.get("dynamic_role_reports"):
+        panel_context["dynamic_role_views"] = state["dynamic_role_reports"][-1].get("role_views", [])
+
+    try:
+        expert_bundle = run_expert_panel(
+            state["original_query"],
+            context=panel_context,
+            max_roles=max(5, 5 + len(initial_dynamic_roles)),
+            dynamic_roles=initial_dynamic_roles,
+        )
         if not isinstance(expert_bundle, dict):
             state["warnings"].append("expert_panel_invalid; using empty expert bundle")
             expert_bundle = _empty_expert_bundle()
@@ -525,10 +616,31 @@ def handle_panel_round_extra(state: dict) -> tuple[str, str]:
     if state.get("extra_panel_done"):
         return REBALANCE, "extra panel already completed"
     try:
+        extra_dynamic_roles: list = []
+        try:
+            existing_roles = _safe_list(state.get("expert_bundle", {}).get("roles")) + _safe_list(
+                state.get("dynamic_roles")
+            )
+            dynamic_report = generate_dynamic_roles(
+                query_intake=state.get("query_intake", {}),
+                meta_decision=state.get("meta_decision", {}),
+                conflict_report=state.get("conflict_report", {}),
+                balance_report=state.get("balance_report", {}),
+                existing_roles=existing_roles,
+                max_roles=2,
+                model=state["model"],
+            )
+            extra_dynamic_roles = _record_dynamic_role_report(state, dynamic_report, "extra")
+            state["dynamic_roles"] = _safe_list(state.get("dynamic_roles")) + extra_dynamic_roles
+        except Exception as exc:
+            state["warnings"].append(f"dynamic_roles_extra_failed; continuing_with_targeted_roles: {exc}")
+
         targeted_roles = select_targeted_roles(
             meta_decision=state.get("meta_decision", {}),
             balance_report=state.get("balance_report", {}),
             deliberation_brief=state.get("deliberation_brief", {}),
+            dynamic_roles=extra_dynamic_roles,
+            conflict_report=state.get("conflict_report", {}),
         )
         second_round_context = {
             "round": 2,
@@ -540,6 +652,9 @@ def handle_panel_round_extra(state: dict) -> tuple[str, str]:
             "intake_context": state.get("intake_context", {}),
             "first_deliberation_brief": state.get("deliberation_brief", {}),
             "meta_decision": state.get("meta_decision", {}),
+            "dynamic_role_views": state["dynamic_role_reports"][-1].get("role_views", [])
+            if state.get("dynamic_role_reports")
+            else [],
             "instruction": _AUTHORITATIVE_QUERY_INSTRUCTION,
             "follow_up_instruction": (
                 "Address gaps, conflicts, risks, and unanswered questions identified by "
@@ -689,6 +804,7 @@ def _build_trace_report(state: dict) -> dict:
     meta_decisions = _safe_list(state.get("meta_decisions"))
     conflict_reports = _safe_list(state.get("conflict_reports"))
     deliberation_rounds = _safe_list(state.get("deliberation_rounds"))
+    dynamic_role_reports = _safe_list(state.get("dynamic_role_reports"))
     expert_bundle = _safe_dict(state.get("expert_bundle"))
     return {
         "original_query": state.get("original_query", ""),
@@ -701,6 +817,8 @@ def _build_trace_report(state: dict) -> dict:
         "conflict_reports": conflict_reports,
         "deliberation_rounds": deliberation_rounds,
         "deliberation_revisions": _flatten_deliberation_revisions(deliberation_rounds),
+        "dynamic_role_reports": [_sanitize_dynamic_role_report(report) for report in dynamic_role_reports],
+        "dynamic_roles_used": _flatten_dynamic_roles_used(dynamic_role_reports),
         "unresolved_tradeoffs": _flatten_conflict_field(conflict_reports, "unresolved_tradeoffs"),
         "premature_consensus_risks": _flatten_conflict_field(conflict_reports, "premature_consensus_risks"),
         "blind_spots": _flatten_conflict_field(conflict_reports, "blind_spots"),

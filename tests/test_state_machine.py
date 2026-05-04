@@ -117,6 +117,10 @@ def _moderated():
     }
 
 
+def _dynamic_report():
+    return {"roles": [], "role_views": [], "rejected_suggestions": [], "warnings": [], "source": "test"}
+
+
 def _deliberation_bundle():
     return {
         "type": "deliberation_round",
@@ -174,6 +178,7 @@ class StateMachineTests(unittest.TestCase):
         return patch.multiple(
             "Lib.state_machine",
             build_query_intake=DEFAULT,
+            generate_dynamic_roles=DEFAULT,
             run_expert_panel=DEFAULT,
             analyze_balance=DEFAULT,
             analyze_conflicts=DEFAULT,
@@ -189,6 +194,7 @@ class StateMachineTests(unittest.TestCase):
 
     def _configure_success(self, mocks):
         mocks["build_query_intake"].return_value = _query_intake()
+        mocks["generate_dynamic_roles"].return_value = _dynamic_report()
         mocks["run_expert_panel"].return_value = _expert_bundle()
         mocks["analyze_balance"].return_value = _balance()
         mocks["analyze_conflicts"].return_value = _conflict()

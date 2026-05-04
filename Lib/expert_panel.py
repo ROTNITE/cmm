@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 from Lib.expert_agent import run_expert
+from Lib.expert_roles import BASE_EXPERT_ROLES, ExpertRole
 from Lib.expert_selector import determine_expert_roles
 
 
@@ -38,6 +39,7 @@ def run_expert_panel(
     query: str,
     context: dict | None = None,
     max_roles: int = 5,
+    dynamic_roles: list[ExpertRole] | None = None,
 ) -> dict:
     """Запускает экспертную панель и возвращает роли, вклады и синтез.
 
@@ -46,7 +48,14 @@ def run_expert_panel(
     - contributions: индивидуальные вклады экспертов
     - synthesis: объединённые recommendations/risks/questions + counts по перспективам
     """
-    roles = determine_expert_roles(query, max_roles=max_roles)
+    roles = determine_expert_roles(query, max_roles=max_roles, context=context, dynamic_roles=dynamic_roles)
+    dynamic_role_views = {}
+    if isinstance(context, dict) and isinstance(context.get("dynamic_role_views"), list):
+        for view in context.get("dynamic_role_views", []):
+            if isinstance(view, dict) and isinstance(view.get("key"), str):
+                dynamic_role_views[view["key"]] = view
+    dynamic_role_keys = {role.key for role in dynamic_roles or []}
+    base_role_keys = {role.key for role in BASE_EXPERT_ROLES}
 
     contributions: list[dict] = []
 
@@ -86,14 +95,22 @@ def run_expert_panel(
         if isinstance(questions, list):
             all_questions_raw.extend(questions)
 
-    role_views = [
-        {
+    role_views = []
+    for role in roles:
+        source_view = dynamic_role_views.get(role.key, {})
+        is_dynamic = role.key in dynamic_role_keys or role.key not in base_role_keys
+        view = {
             "key": role.key,
             "name": role.name,
             "perspective_tag": role.perspective_tag,
         }
-        for role in roles
-    ]
+        if is_dynamic:
+            view["dynamic"] = True
+            if isinstance(source_view.get("why_needed"), str):
+                view["why_needed"] = source_view.get("why_needed", "")
+        else:
+            view["dynamic"] = False
+        role_views.append(view)
 
     synthesis = {
         "recommendations": _unique_keep_order(all_recommendations_raw),

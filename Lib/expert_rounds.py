@@ -41,11 +41,33 @@ def _role_by_key(key: str) -> ExpertRole | None:
     return None
 
 
-def _roles_by_perspective(tag: str) -> list[ExpertRole]:
-    return [role for role in BASE_EXPERT_ROLES if role.perspective_tag == tag]
+def _roles_by_perspective(tag: str, dynamic_roles: list[ExpertRole] | None = None) -> list[ExpertRole]:
+    roles = list(BASE_EXPERT_ROLES) + list(dynamic_roles or [])
+    return [role for role in roles if role.perspective_tag == tag]
 
 
-def select_targeted_roles(meta_decision: dict, balance_report: dict, deliberation_brief: dict) -> list[ExpertRole]:
+def _dynamic_roles_from_context_text(dynamic_roles: list[ExpertRole] | None, *contexts: dict | None) -> list[ExpertRole]:
+    if not dynamic_roles:
+        return []
+    parts: list[str] = []
+    for context in contexts:
+        if isinstance(context, dict):
+            parts.append(str(context).lower())
+    text = " ".join(parts)
+    selected: list[ExpertRole] = []
+    for role in dynamic_roles:
+        if role.key.lower() in text or role.perspective_tag.lower() in text or role.name.lower() in text:
+            selected.append(role)
+    return selected
+
+
+def select_targeted_roles(
+    meta_decision: dict,
+    balance_report: dict,
+    deliberation_brief: dict,
+    dynamic_roles: list[ExpertRole] | None = None,
+    conflict_report: dict | None = None,
+) -> list[ExpertRole]:
     """Select safe existing base roles for a second expert round."""
     selected: list[ExpertRole] = []
 
@@ -56,7 +78,12 @@ def select_targeted_roles(meta_decision: dict, balance_report: dict, deliberatio
         missing.extend(_string_items(meta_decision.get("missing_perspectives")))
 
     for perspective in missing:
-        selected.extend(_roles_by_perspective(perspective))
+        selected.extend(_roles_by_perspective(perspective, dynamic_roles=dynamic_roles))
+        for role in dynamic_roles or []:
+            if perspective == role.key:
+                selected.append(role)
+
+    selected.extend(_dynamic_roles_from_context_text(dynamic_roles, meta_decision, deliberation_brief, conflict_report))
 
     if isinstance(meta_decision, dict) and _string_items(meta_decision.get("risks_to_address")):
         risk_manager = _role_by_key("risk_manager")
@@ -76,6 +103,18 @@ def select_targeted_roles(meta_decision: dict, balance_report: dict, deliberatio
     selected = _unique_roles(selected)
     if selected:
         return selected
+
+    if dynamic_roles and any(
+        _string_items(value)
+        for value in (
+            meta_decision.get("missing_perspectives") if isinstance(meta_decision, dict) else [],
+            meta_decision.get("conflicts_to_resolve") if isinstance(meta_decision, dict) else [],
+            meta_decision.get("risks_to_address") if isinstance(meta_decision, dict) else [],
+            conflict_report.get("blind_spots") if isinstance(conflict_report, dict) else [],
+            conflict_report.get("unresolved_tradeoffs") if isinstance(conflict_report, dict) else [],
+        )
+    ):
+        return _unique_roles(list(dynamic_roles))
 
     fallback = [_role_by_key("risk_manager"), _role_by_key("strategist")]
     return [role for role in fallback if role is not None]
@@ -128,14 +167,25 @@ def run_targeted_expert_round(
     model: str = "deepseek-chat",
 ) -> dict:
     """Run selected experts sequentially and return an expert bundle."""
-    role_views = [
-        {
+    dynamic_role_views = {}
+    if isinstance(context, dict) and isinstance(context.get("dynamic_role_views"), list):
+        for view in context.get("dynamic_role_views", []):
+            if isinstance(view, dict) and isinstance(view.get("key"), str):
+                dynamic_role_views[view["key"]] = view
+
+    role_views = []
+    for role in roles:
+        source_view = dynamic_role_views.get(role.key, {})
+        view = {
             "key": role.key,
             "name": role.name,
             "perspective_tag": role.perspective_tag,
         }
-        for role in roles
-    ]
+        if role.key in dynamic_role_views:
+            view["dynamic"] = True
+            if isinstance(source_view.get("why_needed"), str):
+                view["why_needed"] = source_view.get("why_needed", "")
+        role_views.append(view)
     contributions: list[dict] = []
 
     for role in roles:
