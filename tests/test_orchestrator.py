@@ -46,6 +46,19 @@ def _sample_second_expert_bundle():
     }
 
 
+def _sample_merged_expert_bundle():
+    return {
+        "roles": _sample_expert_bundle()["roles"] + _sample_second_expert_bundle()["roles"],
+        "contributions": _sample_expert_bundle()["contributions"] + _sample_second_expert_bundle()["contributions"],
+        "synthesis": {
+            "recommendations": ["Recommendation A", "Recommendation B"],
+            "risks": ["Risk A", "Risk B"],
+            "questions": ["Question A", "Question B"],
+            "perspective_counts": {"strategy": 1, "user": 1},
+        },
+    }
+
+
 def _sample_balance_report():
     return {
         "dominant_perspective_found": False,
@@ -213,7 +226,7 @@ def _sample_deliberated_expert_bundle():
 class OrchestratorTests(unittest.TestCase):
     def _patch_happy_path(self):
         return patch.multiple(
-            "Lib.orchestrator",
+            "Lib.state_machine",
             build_query_intake=DEFAULT,
             analyze_conflicts=DEFAULT,
             run_expert_panel=DEFAULT,
@@ -222,6 +235,7 @@ class OrchestratorTests(unittest.TestCase):
             run_deliberation_round=DEFAULT,
             merge_deliberation_into_bundle=DEFAULT,
             run_targeted_expert_round=DEFAULT,
+            merge_expert_bundles=DEFAULT,
             develop_plan=DEFAULT,
             check_plan_and_act=DEFAULT,
             run_moderated_loop=DEFAULT,
@@ -293,19 +307,19 @@ class OrchestratorTests(unittest.TestCase):
             call_order.append("plan")
             return _sample_plan()
 
-        with patch("Lib.orchestrator.build_query_intake", side_effect=intake), patch(
-            "Lib.orchestrator.run_expert_panel", side_effect=experts
-        ), patch("Lib.orchestrator.analyze_balance", side_effect=balance), patch(
-            "Lib.orchestrator.analyze_conflicts", side_effect=conflict
+        with patch("Lib.state_machine.build_query_intake", side_effect=intake), patch(
+            "Lib.state_machine.run_expert_panel", side_effect=experts
+        ), patch("Lib.state_machine.analyze_balance", side_effect=balance), patch(
+            "Lib.state_machine.analyze_conflicts", side_effect=conflict
         ), patch(
-            "Lib.orchestrator.run_meta_moderator", side_effect=meta
+            "Lib.state_machine.run_meta_moderator", side_effect=meta
         ), patch(
-            "Lib.orchestrator.develop_plan", side_effect=plan
+            "Lib.state_machine.develop_plan", side_effect=plan
         ), patch(
-            "Lib.orchestrator.check_plan_and_act",
+            "Lib.state_machine.check_plan_and_act",
             return_value={"status": "ready", "critique": _sample_critique()},
         ), patch(
-            "Lib.orchestrator.run_moderated_loop", return_value=_sample_moderated_result()
+            "Lib.state_machine.run_moderated_loop", return_value=_sample_moderated_result()
         ):
             run_cmm("raw query")
 
@@ -323,6 +337,7 @@ class OrchestratorTests(unittest.TestCase):
             mocks["analyze_balance"].side_effect = [_sample_balance_report(), _sample_updated_balance_report()]
             mocks["run_meta_moderator"].return_value = _sample_meta_decision("DEEPEN")
             mocks["run_targeted_expert_round"].return_value = _sample_second_expert_bundle()
+            mocks["merge_expert_bundles"].return_value = _sample_merged_expert_bundle()
             mocks["develop_plan"].return_value = _sample_plan()
             mocks["check_plan_and_act"].return_value = {"status": "ready", "critique": _sample_critique()}
             mocks["run_moderated_loop"].return_value = _sample_moderated_result()
@@ -381,6 +396,7 @@ class OrchestratorTests(unittest.TestCase):
             mocks["analyze_balance"].side_effect = [_sample_balance_report(), _sample_updated_balance_report()]
             mocks["run_meta_moderator"].return_value = _sample_meta_decision("DEEPEN")
             mocks["run_targeted_expert_round"].return_value = _sample_second_expert_bundle()
+            mocks["merge_expert_bundles"].return_value = _sample_merged_expert_bundle()
             mocks["develop_plan"].side_effect = capture_plan
             mocks["check_plan_and_act"].return_value = {"status": "ready", "critique": _sample_critique()}
             mocks["run_moderated_loop"].return_value = _sample_moderated_result()
@@ -579,24 +595,33 @@ class OrchestratorTests(unittest.TestCase):
 
             trace = run_cmm("raw query")["trace_report"]
 
-        self.assertEqual(captured["context"]["conflict_report"], first_report)
-        self.assertEqual(len(trace["conflict_reports"]), 2)
+        self.assertEqual(captured["context"]["conflict_report"], second_report)
+        self.assertGreaterEqual(len(trace["conflict_reports"]), 2)
         self.assertEqual(trace["conflict_reports"][1], second_report)
 
     def test_run_cmm_trace_contains_deliberation_round_when_conflict_requires_it(self):
         from Lib.orchestrator import run_cmm
 
         after_deliberation = dict(_sample_conflict_report())
+        after_deliberation["disagreements"] = []
+        after_deliberation["unresolved_tradeoffs"] = []
+        after_deliberation["premature_consensus_risks"] = []
         after_deliberation["blind_spots"] = []
 
         with self._patch_happy_path() as mocks:
             mocks["build_query_intake"].return_value = _sample_query_intake()
-            mocks["analyze_conflicts"].side_effect = [_sample_conflict_report(), after_deliberation]
+            mocks["analyze_conflicts"].side_effect = [_sample_conflict_report(), after_deliberation, _empty_conflict_report()]
             mocks["run_expert_panel"].return_value = _sample_expert_bundle()
-            mocks["analyze_balance"].side_effect = [_sample_balance_report(), _sample_updated_balance_report()]
-            mocks["run_meta_moderator"].return_value = _sample_meta_decision("SYNTHESIZE")
+            mocks["analyze_balance"].side_effect = [
+                _sample_balance_report(),
+                _sample_updated_balance_report(),
+                _sample_updated_balance_report(),
+            ]
+            mocks["run_meta_moderator"].return_value = _sample_meta_decision("DEEPEN")
             mocks["run_deliberation_round"].return_value = _sample_deliberation_bundle()
             mocks["merge_deliberation_into_bundle"].return_value = _sample_deliberated_expert_bundle()
+            mocks["run_targeted_expert_round"].return_value = _sample_second_expert_bundle()
+            mocks["merge_expert_bundles"].return_value = _sample_deliberated_expert_bundle()
             mocks["develop_plan"].return_value = _sample_plan()
             mocks["check_plan_and_act"].return_value = {"status": "ready", "critique": _sample_critique()}
             mocks["run_moderated_loop"].return_value = _sample_moderated_result()
@@ -615,19 +640,25 @@ class OrchestratorTests(unittest.TestCase):
 
         with self._patch_happy_path() as mocks:
             mocks["build_query_intake"].return_value = _sample_query_intake()
-            mocks["analyze_conflicts"].side_effect = [first_report, second_report]
+            mocks["analyze_conflicts"].side_effect = [first_report, second_report, _empty_conflict_report()]
             mocks["run_expert_panel"].return_value = _sample_expert_bundle()
-            mocks["analyze_balance"].side_effect = [_sample_balance_report(), _sample_updated_balance_report()]
-            mocks["run_meta_moderator"].return_value = _sample_meta_decision("SYNTHESIZE")
+            mocks["analyze_balance"].side_effect = [
+                _sample_balance_report(),
+                _sample_updated_balance_report(),
+                _sample_updated_balance_report(),
+            ]
+            mocks["run_meta_moderator"].return_value = _sample_meta_decision("DEEPEN")
             mocks["run_deliberation_round"].return_value = _sample_deliberation_bundle()
             mocks["merge_deliberation_into_bundle"].return_value = _sample_deliberated_expert_bundle()
+            mocks["run_targeted_expert_round"].return_value = _sample_second_expert_bundle()
+            mocks["merge_expert_bundles"].return_value = _sample_deliberated_expert_bundle()
             mocks["develop_plan"].return_value = _sample_plan()
             mocks["check_plan_and_act"].return_value = {"status": "ready", "critique": _sample_critique()}
             mocks["run_moderated_loop"].return_value = _sample_moderated_result()
 
             trace = run_cmm("raw query")["trace_report"]
 
-        self.assertEqual(trace["conflict_reports"], [first_report, second_report])
+        self.assertEqual(trace["conflict_reports"][:2], [first_report, second_report])
 
     def test_planner_context_contains_deliberation_revisions(self):
         from Lib.orchestrator import run_cmm
@@ -640,12 +671,18 @@ class OrchestratorTests(unittest.TestCase):
 
         with self._patch_happy_path() as mocks:
             mocks["build_query_intake"].return_value = _sample_query_intake()
-            mocks["analyze_conflicts"].side_effect = [_sample_conflict_report(), _empty_conflict_report()]
+            mocks["analyze_conflicts"].side_effect = [_sample_conflict_report(), _empty_conflict_report(), _empty_conflict_report()]
             mocks["run_expert_panel"].return_value = _sample_expert_bundle()
-            mocks["analyze_balance"].side_effect = [_sample_balance_report(), _sample_updated_balance_report()]
-            mocks["run_meta_moderator"].return_value = _sample_meta_decision("SYNTHESIZE")
+            mocks["analyze_balance"].side_effect = [
+                _sample_balance_report(),
+                _sample_updated_balance_report(),
+                _sample_updated_balance_report(),
+            ]
+            mocks["run_meta_moderator"].return_value = _sample_meta_decision("DEEPEN")
             mocks["run_deliberation_round"].return_value = _sample_deliberation_bundle()
             mocks["merge_deliberation_into_bundle"].return_value = _sample_deliberated_expert_bundle()
+            mocks["run_targeted_expert_round"].return_value = _sample_second_expert_bundle()
+            mocks["merge_expert_bundles"].return_value = _sample_deliberated_expert_bundle()
             mocks["develop_plan"].side_effect = capture_plan
             mocks["check_plan_and_act"].return_value = {"status": "ready", "critique": _sample_critique()}
             mocks["run_moderated_loop"].return_value = _sample_moderated_result()

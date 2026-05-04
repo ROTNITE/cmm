@@ -11,7 +11,7 @@ Collective Meta-Moderation — экспериментальный програм
 ## Технические характеристики
 
 - Язык: Python.
-- Основной API: `Lib.orchestrator.run_cmm(query, max_iters=2, model="deepseek-chat")`.
+- Основной API: `Lib.orchestrator.run_cmm(query, max_iters=2, model="deepseek-chat")`; внутри он делегирует выполнение bounded CMM state machine.
 - CLI запуска CMM: `python main.py`.
 - CLI оценки: `python -m cmm.eval --dataset cmm_dataset_v1.csv --mode mock`.
 - CLI real-evaluation: `python -m cmm.eval --dataset cmm_dataset_v1.csv --mode real --judge-mode none|llm`.
@@ -21,29 +21,21 @@ Collective Meta-Moderation — экспериментальный програм
 
 ## Описание алгоритма
 
-Фактический MVP-пайплайн:
+Фактический MVP-пайплайн теперь управляется явной state machine:
 
-1. Сохранить `original_query`.
-2. Выполнить `query_intake`: сохранить исходный запрос как authoritative source, построить `cleaned_query` как helper text и извлечь контекст, ограничения, критерии успеха, неизвестные и пользовательские предпочтения.
-3. Выбрать и запустить экспертную панель.
-4. Собрать `expert_bundle`.
-5. Выполнить анализ баланса перспектив.
-6. Построить `deliberation_brief`.
-7. Выполнить semantic conflict / consensus analysis: выявить согласия, разногласия, trade-offs, blind spots и риски преждевременного консенсуса.
-8. Выполнить `meta_moderator` для оценки качества процесса.
-9. Если conflict/meta-состояние требует обсуждения, запустить один structured deliberation round: выбранные эксперты видят позиции других ролей, фиксируют согласия/возражения, упущения, revised recommendations, новые риски и вопросы группы.
-10. Объединить deliberation-derived contributions с исходным `expert_bundle`.
-11. Повторно выполнить анализ баланса, перестроить `deliberation_brief` и повторно выполнить semantic conflict / consensus analysis.
-12. Если `meta_moderator` возвращает `DEEPEN` или `ADD_EXPERT` и targeted follow-up всё ещё полезен, выбрать целевые базовые роли для второго экспертного раунда.
-13. Запустить последовательный targeted second expert round.
-14. Объединить вклады экспертных раундов.
-15. Повторно выполнить анализ баланса перспектив.
-16. Перестроить итоговый `deliberation_brief`.
-17. Повторно выполнить semantic conflict / consensus analysis по объединённому expert bundle.
-18. Сгенерировать план на основе формализованного запроса и итогового экспертного brief.
-19. Проверить план критиком.
-20. Сгенерировать ответ и выполнить moderation/revision loop.
-21. Вернуть `final_answer`, `trace_report` и raw-данные.
+1. `INTAKE`: сохранить `original_query` и выполнить `query_intake`.
+2. `PANEL_ROUND_1`: выбрать и запустить экспертную панель.
+3. `BALANCE`: выполнить анализ баланса и построить `deliberation_brief`.
+4. `CONFLICT_ANALYSIS`: выявить согласия, разногласия, trade-offs, blind spots и риски преждевременного консенсуса.
+5. `META_DECISION`: принять process-level решение.
+6. `DELIBERATION_ROUND`: при необходимости запустить один structured deliberation round.
+7. `PANEL_ROUND_EXTRA`: при необходимости запустить один targeted second expert round.
+8. `REBALANCE`: обновить balance, brief и conflict in-place без нового meta loop.
+9. `PLAN`: сгенерировать план.
+10. `PLAN_CRITIQUE`: проверить план критиком.
+11. `REPLAN`: при `needs_revision` / `rejected` пересоздать только план на основе последнего контекста и critique feedback.
+12. `ANSWER` / `ANSWER_MODERATION`: использовать существующий `run_moderated_loop` как black-box компонент.
+13. `FINALIZE` или `FAILED`: вернуть `final_answer`, `trace_report` и raw-данные.
 
 ## Входные и выходные данные
 
@@ -66,14 +58,15 @@ Collective Meta-Moderation — экспериментальный програм
 }
 ```
 
-`trace_report` содержит исходный и формализованный запрос, роли экспертов, экспертные раунды, deliberation rounds/revisions, balance reports, conflict reports, meta moderation decisions, plan, critique, moderation reports, revision count, confidence и warnings.
+`trace_report` содержит исходный и формализованный запрос, роли экспертов, экспертные раунды, deliberation rounds/revisions, balance reports, conflict reports, meta moderation decisions, plan, critique, moderation reports, revision count, confidence, warnings, state history, final state, transition count, iteration count и errors.
 
 `original_query` является источником истины. `formalized_query` заполняется из `cleaned_query` и используется только как вспомогательный текст; downstream-агенты также получают структурированный `query_intake`.
 
 ## Состав программных средств
 
 - `main.py`: CLI-обертка.
-- `Lib/orchestrator.py`: центральный пайплайн.
+- `Lib/orchestrator.py`: публичная обертка `run_cmm`.
+- `Lib/state_machine.py`: bounded state-machine orchestration, история переходов и сбор trace/result.
 - `Lib/query_intake.py`: безопасный входной слой, который сохраняет `original_query` и извлекает `cleaned_query`, контекст, ограничения, критерии успеха, неизвестные и предпочтения.
 - `Lib/expert_*`: роли, выбор ролей, экспертные вклады и панель.
 - `Lib/expert_rounds.py`: выбор целевых ролей для второго экспертного раунда, запуск follow-up экспертов и объединение expert bundles.
@@ -112,6 +105,8 @@ Real judged evaluation является отдельным opt-in режимом
 
 - Второй экспертный раунд есть, но он ограничен: он последовательный, использует существующие базовые роли и является targeted follow-up, а не свободной дискуссией.
 - Structured deliberation round есть, но он ограничен одной schema-driven итерацией и не является полноценной свободной debate/state-machine системой.
+- State machine является bounded MVP-оркестратором, а не бесконечным автономным процессом.
+- `REPLAN` не перезапускает весь экспертный pipeline; он пересоздаёт только план по последнему контексту и feedback критика.
 - Query intake защищает исходный запрос от перезаписи, но сам по себе не доказывает повышение качества downstream-ответов.
 - Нет fully free-form прямой дискуссии экспертов друг с другом.
 - Нет параллельного запуска агентов.

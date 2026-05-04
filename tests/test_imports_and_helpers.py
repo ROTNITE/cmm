@@ -18,6 +18,7 @@ class ImportAndHelperTests(unittest.TestCase):
             "Lib.deliberation_round",
             "Lib.json_utils",
             "Lib.orchestrator",
+            "Lib.state_machine",
             "Lib.meta_moderator",
             "Lib.agent_improver",
             "Lib.agent_moderator",

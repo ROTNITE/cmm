@@ -50,34 +50,32 @@ print(result["final_answer"])
 print(result["trace_report"])
 ```
 
-`run_cmm(query, *, max_iters=2, model="deepseek-chat")` is the central MVP entrypoint.
+`run_cmm(query, *, max_iters=2, model="deepseek-chat")` is the central MVP entrypoint. Internally it delegates to a bounded CMM state machine.
 
 ## Architecture Overview
 
-Current pipeline:
+Current state-machine path:
 
 ```text
 original_query
--> query_intake
--> expert panel
--> balance analysis
--> deliberation brief
--> semantic conflict / consensus analysis
--> meta_moderator
--> structured deliberation round when conflict/meta state requires it
--> targeted second expert round when DEEPEN/ADD_EXPERT
--> merge expert bundles
--> re-run balance analysis
--> rebuild deliberation_brief
--> plan generation
--> plan critique
--> answer generation + moderation loop
--> final_answer + trace_report
+-> INTAKE
+-> PANEL_ROUND_1
+-> BALANCE
+-> CONFLICT_ANALYSIS
+-> META_DECISION
+-> DELIBERATION_ROUND or PANEL_ROUND_EXTRA when needed
+-> REBALANCE
+-> PLAN
+-> PLAN_CRITIQUE
+-> REPLAN when critique requires it
+-> ANSWER / ANSWER_MODERATION
+-> FINALIZE or FAILED
 ```
 
 Key modules:
 
-- `Lib/orchestrator.py`: central `run_cmm(...)` pipeline.
+- `Lib/orchestrator.py`: public `run_cmm(...)` wrapper.
+- `Lib/state_machine.py`: bounded CMM state machine, transition history, trace/result assembly.
 - `Lib/query_intake.py`: preserves the original query as authoritative and extracts helper structure such as constraints, context, success criteria, unknowns, and preferences.
 - `Lib/expert_panel.py`: runs selected expert roles and collects contributions.
 - `Lib/expert_rounds.py`: selects safe follow-up roles, runs targeted second rounds, and merges bundles.
@@ -93,6 +91,8 @@ Key modules:
 The `original_query` is authoritative. `cleaned_query` / `formalized_query` is helper text only, and query intake extracts structure instead of rewriting away meaning. The `expert_bundle` is not decorative: it feeds the deliberation brief, plan context, answer generation, moderation, and trace report.
 
 Balance analysis remains mostly tag/count based. Semantic conflict analysis adds support for detecting meaning-level disagreements, trade-offs, blind spots, and premature consensus. The structured deliberation round then lets selected experts respond to other roles' positions and revise recommendations, but it is still not a fully free-form debate system.
+
+`REPLAN` is intentionally bounded: it regenerates the plan from the latest query intake, deliberation brief, conflict report, previous plan, and critique feedback. It does not restart the full expert pipeline.
 
 ## Trace Report
 
@@ -125,6 +125,8 @@ Balance analysis remains mostly tag/count based. Semantic conflict analysis adds
 - `revision_count`
 - `final_confidence`
 - `warnings`
+- `state_history`, `final_state`, `transition_count`, `iteration_count`
+- `plans`, `plan_critiques`, and `errors`
 
 ## JSON Contracts
 
@@ -183,6 +185,7 @@ The test suite is designed to run without a real API key, network access, or ext
 - CMM is an MVP, not proof that multi-agent output is always better.
 - Query intake protects the original query but does not prove that downstream answers are always better.
 - Semantic conflict analysis supports trade-off and consensus-risk detection, but it does not fully solve groupthink by itself.
+- The state machine is bounded and MVP-level; it is not an unbounded autonomous process controller.
 - The structured deliberation round lets selected experts respond to other roles and revise recommendations, but it is bounded and schema-driven.
 - The second expert round is implemented, but it is sequential and limited to existing safe roles.
 - There is no fully free-form expert debate state machine.
