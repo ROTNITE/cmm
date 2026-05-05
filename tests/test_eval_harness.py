@@ -68,7 +68,10 @@ class EvalHarnessTests(unittest.TestCase):
                 "roles_used": [
                     {"perspective_tag": "strategy"},
                     {"perspective_tag": "risk"},
-                ]
+                ],
+                "cmm_mode": "FULL_CMM",
+                "router_decision": {"complexity": "high", "estimated_cost_class": "L"},
+                "estimated_cost_class": "L",
             },
         }
 
@@ -77,6 +80,9 @@ class EvalHarnessTests(unittest.TestCase):
         self.assertEqual(result["winner"], "CMM")
         self.assertGreater(result["rubric_coverage_delta"], 0)
         self.assertGreater(result["perspective_coverage_delta"], 0)
+        self.assertEqual(result["cmm_mode"], "FULL_CMM")
+        self.assertEqual(result["router_complexity"], "high")
+        self.assertEqual(result["estimated_cost_class"], "L")
 
     def test_score_can_tie(self):
         from cmm.eval import score_case
@@ -126,6 +132,9 @@ class EvalHarnessTests(unittest.TestCase):
             self.assertTrue(json_path.exists())
             payload = json.loads(json_path.read_text(encoding="utf-8"))
             self.assertEqual(len(payload["results"]), 1)
+            self.assertIn("cmm_mode", payload["results"][0])
+            self.assertIn("router_complexity", payload["results"][0])
+            self.assertIn("estimated_cost_class", payload["results"][0])
 
 
 if __name__ == "__main__":

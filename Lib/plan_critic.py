@@ -23,6 +23,13 @@ SCORE_KEYS = (
     "clarity",
 )
 
+STAGE9_SCORE_KEYS = (
+    "expert_risk_coverage",
+    "tradeoff_handling",
+    "logical_order",
+    "missing_perspectives_handling",
+)
+
 LIST_KEYS = (
     "missing_constraints",
     "ignored_success_criteria",
@@ -36,6 +43,37 @@ LIST_KEYS = (
     "critical_issues",
     "strengths",
     "feedback",
+)
+
+STAGE9_LIST_KEYS = (
+    "ignored_must_address",
+    "ignored_risks",
+    "ignored_tradeoffs",
+    "recommendations",
+)
+
+_CRITICAL_MARKERS = (
+    "critical",
+    "safety",
+    "security",
+    "privacy",
+    "legal",
+    "compliance",
+    "harm",
+    "failure",
+    "irreversible",
+    "medical",
+    "financial",
+    "vulnerable",
+    "критическ",
+    "безопас",
+    "закон",
+    "право",
+    "вред",
+    "секрет",
+    "финанс",
+    "медиц",
+    "уязвим",
 )
 
 _AUTHORITATIVE_INSTRUCTION = (
@@ -133,6 +171,9 @@ def _empty_critique(source: str, warnings: list[str] | None = None) -> dict:
     }
     for key in LIST_KEYS:
         critique[key] = []
+    for key in STAGE9_LIST_KEYS:
+        critique[key] = []
+    critique["critical_blockers"] = []
     return critique
 
 
@@ -207,13 +248,180 @@ def _has_actionable_steps(plan: dict) -> bool:
     return False
 
 
+def _dedupe_strings(items: list | tuple) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        if not isinstance(item, str):
+            continue
+        value = item.strip()
+        if not value:
+            continue
+        marker = _normalize_text(value)
+        if marker in seen:
+            continue
+        seen.add(marker)
+        out.append(value)
+    return out
+
+
+def _logical_order_score(plan: dict) -> float:
+    if _is_empty_plan(plan):
+        return 0.0
+    steps = plan.get("steps")
+    if not isinstance(steps, list) or not steps:
+        return 3.0
+    structured = 0
+    with_substeps = 0
+    for step in steps:
+        if not isinstance(step, dict):
+            continue
+        has_title = isinstance(step.get("title"), str) and step["title"].strip()
+        has_substeps = isinstance(step.get("substeps"), list) and bool(step.get("substeps"))
+        if has_title:
+            structured += 1
+        if has_title and has_substeps:
+            with_substeps += 1
+    if structured <= 0:
+        return 3.0
+    ratio = structured / max(1, len(steps))
+    score = 5.0 + (ratio * 3.0)
+    if with_substeps:
+        score += min(2.0, 2.0 * (with_substeps / max(1, len(steps))))
+    return max(0.0, min(10.0, score))
+
+
+def _missing_perspectives_score(plan: dict, deliberation_brief: dict | None) -> float:
+    missing = to_string_list(_safe_dict(deliberation_brief).get("missing_perspectives"), max_items=12)
+    if not missing:
+        return 8.0
+    text = _plan_text(plan)
+    covered = sum(1 for item in missing if _item_covered(item, text))
+    if covered <= 0:
+        return 2.0
+    return max(2.0, min(10.0, 10.0 * (covered / len(missing))))
+
+
+def _is_critical_text(item: Any) -> bool:
+    text = _normalize_text(item)
+    return bool(text) and any(marker in text for marker in _CRITICAL_MARKERS)
+
+
+def _decision_from_status(status: str) -> str:
+    return {
+        "ready": "ACCEPT",
+        "needs_revision": "REVISE",
+        "rejected": "REJECT",
+    }.get(status, "REJECT")
+
+
+def _apply_stage9_compatibility(
+    critique: dict,
+    plan: dict,
+    *,
+    deliberation_brief: dict | None,
+    conflict_report: dict | None,
+) -> dict:
+    if not isinstance(critique, dict):
+        critique = _empty_critique("rules", warnings=["critique_invalid"])
+
+    for key in LIST_KEYS:
+        critique[key] = to_string_list(critique.get(key), max_items=12)
+
+    text = _plan_text(plan)
+    brief = _safe_dict(deliberation_brief)
+    must_address = to_string_list(brief.get("must_address"), max_items=16)
+    expert_risks = to_string_list(brief.get("expert_risks"), max_items=12)
+    tradeoffs = _tradeoff_texts(conflict_report)
+
+    ignored_must_address = _dedupe_strings(
+        to_string_list(critique.get("ignored_must_address"), max_items=16)
+        + [item for item in must_address if not _item_covered(item, text)]
+    )[:16]
+    ignored_risks = _dedupe_strings(
+        to_string_list(critique.get("ignored_risks"), max_items=12)
+        + to_string_list(critique.get("ignored_expert_risks"), max_items=12)
+        + [item for item in expert_risks if not _item_covered(item, text)]
+    )[:12]
+
+    tradeoff_language = any(
+        marker in text
+        for marker in ("tradeoff", "trade off", "trade-off", "mitigation", "mitigate", "decision", "риск", "компромисс")
+    )
+    recomputed_tradeoffs = tradeoffs if tradeoffs and not tradeoff_language else [
+        item for item in tradeoffs if not _item_covered(item, text)
+    ]
+    ignored_tradeoffs = _dedupe_strings(
+        to_string_list(critique.get("ignored_tradeoffs"), max_items=12)
+        + to_string_list(critique.get("unresolved_tradeoffs"), max_items=12)
+        + recomputed_tradeoffs
+    )[:12]
+
+    critique["ignored_must_address"] = ignored_must_address
+    critique["ignored_risks"] = ignored_risks
+    critique["ignored_expert_risks"] = ignored_risks
+    critique["ignored_tradeoffs"] = ignored_tradeoffs
+    critique["unresolved_tradeoffs"] = ignored_tradeoffs
+    critique["recommendations"] = _dedupe_strings(
+        to_string_list(critique.get("recommendations"), max_items=12)
+        + to_string_list(critique.get("feedback"), max_items=12)
+    )[:12]
+
+    feedback = to_string_list(critique.get("feedback"), max_items=12)
+    if ignored_must_address and "Cover deliberation_brief.must_address items." not in feedback:
+        feedback.append("Cover deliberation_brief.must_address items.")
+    if ignored_risks and "Add mitigation for ignored expert risks." not in feedback:
+        feedback.append("Add mitigation for ignored expert risks.")
+    if ignored_tradeoffs and "Resolve or frame unresolved trade-offs with a decision rule." not in feedback:
+        feedback.append("Resolve or frame unresolved trade-offs with a decision rule.")
+    critique["feedback"] = feedback[:12]
+    critique["recommendations"] = _dedupe_strings(critique["recommendations"] + critique["feedback"])[:12]
+
+    scores = _safe_dict(critique.get("scores"))
+    for key in SCORE_KEYS:
+        scores[key] = _normalize_score(scores.get(key), default=0.0)
+    scores["expert_risk_coverage"] = _normalize_score(
+        scores.get("expert_risk_coverage", scores.get("risk_coverage")),
+        default=scores.get("risk_coverage", 0.0),
+    )
+    scores["tradeoff_handling"] = _normalize_score(
+        scores.get("tradeoff_handling", scores.get("conflict_resolution")),
+        default=scores.get("conflict_resolution", 0.0),
+    )
+    scores["logical_order"] = _normalize_score(
+        scores.get("logical_order"),
+        default=_logical_order_score(plan),
+    )
+    scores["missing_perspectives_handling"] = _normalize_score(
+        scores.get("missing_perspectives_handling"),
+        default=_missing_perspectives_score(plan, deliberation_brief),
+    )
+    critique["scores"] = scores
+
+    critical_blockers = _dedupe_strings(
+        [item for item in ignored_risks + ignored_must_address if _is_critical_text(item)]
+    )
+    critique["critical_blockers"] = critical_blockers
+    if critical_blockers:
+        critical = to_string_list(critique.get("critical_issues"), max_items=12)
+        for item in critical_blockers:
+            message = f"Ignored critical blocker: {item}"
+            if message not in critical:
+                critical.append(message)
+        critique["critical_issues"] = critical[:12]
+
+    return critique
+
+
 def _status_from_critique(critique: dict, min_score: float, *, empty_plan: bool = False) -> tuple[str, str]:
     if empty_plan:
         return "rejected", "Plan is empty or invalid."
 
     critical = _safe_list(critique.get("critical_issues"))
+    critical_blockers = _safe_list(critique.get("critical_blockers"))
     blockers = (
         _safe_list(critique.get("missing_constraints"))
+        + _safe_list(critique.get("ignored_must_address"))
         + _safe_list(critique.get("ignored_expert_risks"))
         + _safe_list(critique.get("unresolved_tradeoffs"))
         + _safe_list(critique.get("ignored_dynamic_roles"))
@@ -221,6 +429,15 @@ def _status_from_critique(critique: dict, min_score: float, *, empty_plan: bool 
     score = float(critique.get("overall_score") or 0.0)
     threshold = max(0.0, min(1.0, float(min_score))) * 10.0
 
+    if critical_blockers:
+        scores = _safe_dict(critique.get("scores"))
+        weak_structure = (
+            float(scores.get("actionability") or 0.0) < 4.0
+            or float(scores.get("logical_order") or 0.0) < 4.0
+        )
+        if score < max(4.0, threshold - 2.0) or weak_structure:
+            return "rejected", "Plan ignores critical CMM blockers."
+        return "needs_revision", "Plan must address critical CMM blockers before acceptance."
     if critical and score < max(4.0, threshold - 2.0):
         return "rejected", "Plan has critical unresolved issues."
     if score >= threshold and not critical and not blockers:
@@ -237,6 +454,9 @@ def _normalize_critique_payload(payload: dict | None, *, source: str, warnings: 
         key: _normalize_score(raw_scores.get(key), default=0.0)
         for key in SCORE_KEYS
     }
+    for key in STAGE9_SCORE_KEYS:
+        if key in raw_scores:
+            scores[key] = _normalize_score(raw_scores.get(key), default=0.0)
 
     critique = {
         "scores": scores,
@@ -246,9 +466,12 @@ def _normalize_critique_payload(payload: dict | None, *, source: str, warnings: 
     }
     for key in LIST_KEYS:
         critique[key] = to_string_list(payload.get(key), max_items=12)
+    for key in STAGE9_LIST_KEYS:
+        critique[key] = to_string_list(payload.get(key), max_items=12)
 
     if critique["overall_score"] <= 0.0 and scores:
-        critique["overall_score"] = sum(scores.values()) / len(scores)
+        base_values = [scores[key] for key in SCORE_KEYS if key in scores]
+        critique["overall_score"] = sum(base_values) / len(base_values) if base_values else 0.0
     return critique
 
 
@@ -420,12 +643,15 @@ def _model_critique(
         "state_history": _compact(state_history or []),
         "replan_context": _compact(replan_context or {}),
         "schema": {
-            "scores": {key: 0 for key in SCORE_KEYS},
+            "scores": {key: 0 for key in SCORE_KEYS + STAGE9_SCORE_KEYS},
             "missing_constraints": ["string"],
             "ignored_success_criteria": ["string"],
             "ignored_expert_risks": ["string"],
+            "ignored_must_address": ["string"],
+            "ignored_risks": ["string"],
             "ignored_expert_recommendations": ["string"],
             "unresolved_tradeoffs": ["string"],
+            "ignored_tradeoffs": ["string"],
             "ignored_blind_spots": ["string"],
             "ignored_dynamic_roles": ["string"],
             "ignored_deliberation_revisions": ["string"],
@@ -433,6 +659,7 @@ def _model_critique(
             "critical_issues": ["string"],
             "strengths": ["string"],
             "feedback": ["string"],
+            "recommendations": ["string"],
             "overall_score": 0,
         },
     }
@@ -456,6 +683,7 @@ def _result(status: str, plan: dict, critique: dict, reason: str) -> dict:
     feedback = to_string_list(critique.get("feedback"), max_items=12)
     return {
         "status": status,
+        "decision": _decision_from_status(status),
         "plan": plan,
         "critique": critique,
         "feedback": feedback,
@@ -469,6 +697,7 @@ def check_plan_and_act(
     min_score: float = 0.7,
     *,
     query_intake: dict | None = None,
+    intake: dict | None = None,
     deliberation_brief: dict | None = None,
     conflict_report: dict | None = None,
     dynamic_roles_used: list | None = None,
@@ -481,17 +710,24 @@ def check_plan_and_act(
     """Critique a plan and return a stable ready/revision/rejected decision."""
     safe_plan = plan if isinstance(plan, dict) else {}
     empty_plan = _is_empty_plan(safe_plan)
+    effective_intake = query_intake if isinstance(query_intake, dict) else intake if isinstance(intake, dict) else None
 
     if empty_plan:
         critique = _rule_based_critique(
             safe_plan,
             query,
-            query_intake=query_intake,
+            query_intake=effective_intake,
             deliberation_brief=deliberation_brief,
             conflict_report=conflict_report,
             dynamic_roles_used=dynamic_roles_used,
             deliberation_revisions=deliberation_revisions,
             warning="empty_or_invalid_plan",
+        )
+        critique = _apply_stage9_compatibility(
+            critique,
+            safe_plan,
+            deliberation_brief=deliberation_brief,
+            conflict_report=conflict_report,
         )
         status, reason = _status_from_critique(critique, min_score, empty_plan=True)
         return _result(status, safe_plan, critique, reason)
@@ -500,7 +736,7 @@ def check_plan_and_act(
         critique = _model_critique(
             safe_plan,
             query,
-            query_intake=query_intake,
+            query_intake=effective_intake,
             deliberation_brief=deliberation_brief,
             conflict_report=conflict_report,
             dynamic_roles_used=dynamic_roles_used,
@@ -516,7 +752,7 @@ def check_plan_and_act(
         critique = _rule_based_critique(
             safe_plan,
             query,
-            query_intake=query_intake,
+            query_intake=effective_intake,
             deliberation_brief=deliberation_brief,
             conflict_report=conflict_report,
             dynamic_roles_used=dynamic_roles_used,
@@ -524,6 +760,12 @@ def check_plan_and_act(
             warning=f"plan_critic_model_failed: {exc}",
         )
 
+    critique = _apply_stage9_compatibility(
+        critique,
+        safe_plan,
+        deliberation_brief=deliberation_brief,
+        conflict_report=conflict_report,
+    )
     status, reason = _status_from_critique(critique, min_score, empty_plan=False)
     return _result(status, safe_plan, critique, reason)
 
@@ -537,11 +779,7 @@ def decide_on_critique(
 ) -> dict:
     """Legacy-compatible decision wrapper around the context-aware critic."""
     result = check_plan_and_act(plan, original_query, min_score=min_score, **kwargs)
-    decision = {
-        "ready": "ACCEPT",
-        "needs_revision": "REVISE",
-        "rejected": "REJECT",
-    }.get(result.get("status"), "REJECT")
+    decision = result.get("decision") or _decision_from_status(str(result.get("status") or ""))
     return {
         "decision": decision,
         "critique": result.get("critique", {}),

@@ -31,6 +31,9 @@ RESULT_FIELDS = [
     "rubric_coverage_delta",
     "perspective_coverage_delta",
     "risk_coverage_delta",
+    "cmm_mode",
+    "router_complexity",
+    "estimated_cost_class",
     "winner",
     "notes",
 ]
@@ -64,6 +67,9 @@ JUDGED_RESULT_FIELDS = [
     "baseline_answer_chars",
     "cmm_answer_chars",
     "cmm_trace_available",
+    "cmm_mode",
+    "router_complexity",
+    "estimated_cost_class",
 ]
 _TIE_DELTA = 0.5
 
@@ -230,6 +236,13 @@ def _mock_cmm(case: dict) -> dict:
         "trace_report": {
             "roles_used": roles,
             "mode": "mock_cmm",
+            "cmm_mode": "LIGHT_CMM",
+            "router_decision": {
+                "mode": "LIGHT_CMM",
+                "complexity": "medium",
+                "estimated_cost_class": "M",
+            },
+            "estimated_cost_class": "M",
         },
     }
 
@@ -273,6 +286,17 @@ def _answer_text(run_output: dict) -> str:
     if not isinstance(run_output, dict):
         return ""
     return str(run_output.get("answer") or run_output.get("final_answer") or "")
+
+
+def _routing_fields(run_output: dict) -> dict:
+    trace = run_output.get("trace_report") if isinstance(run_output, dict) else {}
+    trace = trace if isinstance(trace, dict) else {}
+    router = trace.get("router_decision") if isinstance(trace.get("router_decision"), dict) else {}
+    return {
+        "cmm_mode": trace.get("cmm_mode") or router.get("mode") or "",
+        "router_complexity": router.get("complexity") or "",
+        "estimated_cost_class": trace.get("estimated_cost_class") or router.get("estimated_cost_class") or "",
+    }
 
 
 def assign_blind_answers(case_id: str, baseline: dict, cmm: dict) -> dict:
@@ -478,6 +502,7 @@ def _judged_result_row(case: dict, baseline: dict, cmm: dict, judge_result: dict
     baseline_answer = _answer_text(baseline)
     cmm_answer = _answer_text(cmm)
     trace = cmm.get("trace_report") if isinstance(cmm, dict) else None
+    routing = _routing_fields(cmm)
     return {
         "case_id": case.get("case_id") or case.get("id") or "",
         "winner": judge_result.get("winner", "TIE"),
@@ -500,6 +525,7 @@ def _judged_result_row(case: dict, baseline: dict, cmm: dict, judge_result: dict
         "baseline_answer_chars": len(baseline_answer),
         "cmm_answer_chars": len(cmm_answer),
         "cmm_trace_available": isinstance(trace, dict) and bool(trace),
+        **routing,
     }
 
 
@@ -566,6 +592,7 @@ def score_case(case: dict, baseline: dict, cmm: dict) -> dict:
     notes.extend(case.get("schema_warnings", []) or [])
     if not notes:
         notes.append("ok")
+    routing = _routing_fields(cmm)
 
     return {
         "case_id": case.get("case_id") or case.get("id") or "",
@@ -574,6 +601,7 @@ def score_case(case: dict, baseline: dict, cmm: dict) -> dict:
         "rubric_coverage_delta": round(cmm_scores["rubric"] - baseline_scores["rubric"], 4),
         "perspective_coverage_delta": round(cmm_scores["perspective"] - baseline_scores["perspective"], 4),
         "risk_coverage_delta": round(cmm_scores["risk"] - baseline_scores["risk"], 4),
+        **routing,
         "winner": winner,
         "notes": "; ".join(notes),
     }

@@ -6,9 +6,8 @@
 - Собрать вклады в единый bundle.
 - Выполнить первичный синтез без LLM (чисто кодом).
 
-Почему последовательно:
-- Проще отлаживать и стабильнее поведение.
-- Ошибка одного эксперта не должна ломать весь pipeline.
+По умолчанию выполняется последовательно. Опциональный режим THREADS запускает
+только независимые expert calls параллельно и возвращает результат в порядке ролей.
 """
 
 from __future__ import annotations
@@ -16,6 +15,7 @@ from __future__ import annotations
 from Lib.expert_agent import run_expert
 from Lib.expert_roles import BASE_EXPERT_ROLES, ExpertRole
 from Lib.expert_selector import determine_expert_roles
+from Lib.parallel_utils import normalize_max_workers, normalize_parallel_mode, run_ordered_thread_tasks
 
 
 def _unique_keep_order(items: list[str]) -> list[str]:
@@ -40,6 +40,9 @@ def run_expert_panel(
     context: dict | None = None,
     max_roles: int = 5,
     dynamic_roles: list[ExpertRole] | None = None,
+    execution_mode: str = "SEQUENTIAL",
+    max_workers: int | None = None,
+    model: str = "deepseek-chat",
 ) -> dict:
     """Запускает экспертную панель и возвращает роли, вклады и синтез.
 
@@ -64,15 +67,14 @@ def run_expert_panel(
     all_questions_raw: list[str] = []
     perspective_counts: dict[str, int] = {}
 
-    for role in roles:
-        perspective_counts[role.perspective_tag] = perspective_counts.get(role.perspective_tag, 0) + 1
-
+    def run_one(role: ExpertRole) -> dict:
         try:
-            contribution = run_expert(role=role, query=query, context=context)
+            contribution = run_expert(role=role, query=query, context=context, model=model)
             if not isinstance(contribution, dict):
                 raise ValueError("invalid contribution format")
+            return contribution
         except Exception:
-            contribution = {
+            return {
                 "role_key": role.key,
                 "perspective_tag": role.perspective_tag,
                 "insights": [],
@@ -82,6 +84,22 @@ def run_expert_panel(
                 "confidence": 0.0,
             }
 
+    mode = normalize_parallel_mode(execution_mode)
+    if mode == "THREADS" and len(roles) > 1:
+        records = run_ordered_thread_tasks(
+            roles,
+            run_one,
+            max_workers=normalize_max_workers(max_workers, len(roles)),
+        )
+        role_contributions = [
+            record["result"] if record.get("ok") and isinstance(record.get("result"), dict) else run_one(role)
+            for role, record in zip(roles, records)
+        ]
+    else:
+        role_contributions = [run_one(role) for role in roles]
+
+    for role, contribution in zip(roles, role_contributions):
+        perspective_counts[role.perspective_tag] = perspective_counts.get(role.perspective_tag, 0) + 1
         contributions.append(contribution)
 
         recs = contribution.get("recommendations", [])

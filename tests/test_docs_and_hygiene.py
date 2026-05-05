@@ -44,6 +44,56 @@ class DocsAndHygieneTests(unittest.TestCase):
         self.assertIn("original_query` is authoritative", combined)
         self.assertIn("helper text only", combined)
 
+    def test_docs_mark_legacy_modules_as_compatibility_not_current_pipeline(self):
+        docs = [
+            REPO_ROOT / "README.md",
+            REPO_ROOT / "docs" / "architecture.md",
+            REPO_ROOT / "docs" / "PZ_draft.md",
+        ]
+        combined = "\n".join(path.read_text(encoding="utf-8") for path in docs)
+
+        self.assertIn("Legacy compatibility", combined)
+        self.assertIn("Start_formalization.py", combined)
+        self.assertIn("Finish_agent.py", combined)
+        self.assertIn("agent_critic.py", combined)
+        self.assertIn("plan_critic.py", combined)
+        self.assertIn("state_machine.py", combined)
+        self.assertNotIn("agent_critic.py`: builds", combined)
+        self.assertNotIn("Finish_agent.py`: builds", combined)
+
+    def test_legacy_agent_critic_is_silent_by_default(self):
+        from Lib.agent_critic import criticize_plan
+
+        with patch(
+            "Lib.agent_critic.check_plan_and_act",
+            return_value={
+                "status": "ready",
+                "critique": {
+                    "scores": {"query_alignment": 9, "constraint_coverage": 8, "risk_coverage": 7, "clarity": 9},
+                    "overall_score": 8.5,
+                    "strengths": ["Clear"],
+                    "critical_issues": [],
+                },
+                "feedback": ["Keep it concise"],
+            },
+        ):
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                result = criticize_plan({"main_idea": "Idea"}, "query")
+
+        self.assertEqual(buffer.getvalue(), "")
+        self.assertEqual(result["source"], "plan_critic_compat")
+        self.assertEqual(result["final_score"], 8.5)
+        self.assertEqual(result["recommendations"], ["Keep it concise"])
+
+    def test_finish_agent_accepts_none_critique(self):
+        from Lib.Finish_agent import finish_answer
+
+        with patch("Lib.Finish_agent.send_to_AI", return_value=" polished answer "):
+            result = finish_answer("query", {"steps": []}, critique=None, previous_answer="draft")
+
+        self.assertEqual(result, "polished answer")
+
 
 if __name__ == "__main__":
     unittest.main()

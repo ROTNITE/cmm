@@ -232,6 +232,8 @@ class OrchestratorTests(unittest.TestCase):
         return patch.multiple(
             "Lib.state_machine",
             build_query_intake=DEFAULT,
+            route_query=DEFAULT,
+            run_direct_answer=DEFAULT,
             generate_dynamic_roles=DEFAULT,
             analyze_conflicts=DEFAULT,
             run_expert_panel=DEFAULT,
@@ -297,7 +299,7 @@ class OrchestratorTests(unittest.TestCase):
             call_order.append("expert_panel")
             return _sample_expert_bundle()
 
-        def balance(bundle):
+        def balance(bundle, **kwargs):
             call_order.append("balance")
             return _sample_balance_report()
 
@@ -314,6 +316,18 @@ class OrchestratorTests(unittest.TestCase):
             return _sample_plan()
 
         with patch("Lib.state_machine.build_query_intake", side_effect=intake), patch(
+            "Lib.state_machine.route_query",
+            return_value={
+                "mode": "FULL_CMM",
+                "reason": "test full path",
+                "complexity": "high",
+                "needs_expert_panel": True,
+                "needs_second_round": True,
+                "estimated_cost_class": "L",
+                "signals": {},
+                "warnings": [],
+            },
+        ), patch(
             "Lib.state_machine.generate_dynamic_roles", return_value=_sample_dynamic_role_report()
         ), patch(
             "Lib.state_machine.run_expert_panel", side_effect=experts
@@ -739,6 +753,36 @@ class OrchestratorTests(unittest.TestCase):
 
         self.assertIn("cli answer", output.getvalue())
         run_cmm_mock.assert_called_once_with("query")
+
+    def test_run_cmm_accepts_route_mode_keyword(self):
+        from Lib.orchestrator import run_cmm
+
+        with patch("Lib.orchestrator.run_cmm_state_machine", return_value={"final_answer": "", "trace_report": {}, "raw": {}}) as mock:
+            run_cmm("raw query", route_mode="FULL_CMM")
+
+        mock.assert_called_once_with(
+            "raw query",
+            max_iters=2,
+            model="deepseek-chat",
+            route_mode="FULL_CMM",
+            parallel_mode="SEQUENTIAL",
+            max_workers=None,
+        )
+
+    def test_run_cmm_accepts_parallel_options(self):
+        from Lib.orchestrator import run_cmm
+
+        with patch("Lib.orchestrator.run_cmm_state_machine", return_value={"final_answer": "", "trace_report": {}, "raw": {}}) as mock:
+            run_cmm("raw query", route_mode="FULL_CMM", parallel_mode="THREADS", max_workers=3)
+
+        mock.assert_called_once_with(
+            "raw query",
+            max_iters=2,
+            model="deepseek-chat",
+            route_mode="FULL_CMM",
+            parallel_mode="THREADS",
+            max_workers=3,
+        )
 
 
 if __name__ == "__main__":

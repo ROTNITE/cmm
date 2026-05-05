@@ -20,10 +20,15 @@ from Lib.expert_rounds import merge_expert_bundles, run_targeted_expert_round, s
 from Lib.meta_moderator import run_meta_moderator
 from Lib.plan_development import develop_plan
 from Lib.query_intake import build_query_intake
+from Lib.direct_answer import run_direct_answer
+from Lib.parallel_utils import normalize_max_workers, normalize_parallel_mode
 from Lib.role_generator import generate_dynamic_roles
+from Lib.router import route_query
 
 
 INTAKE = "INTAKE"
+ROUTE = "ROUTE"
+DIRECT_ANSWER = "DIRECT_ANSWER"
 PANEL_ROUND_1 = "PANEL_ROUND_1"
 BALANCE = "BALANCE"
 CONFLICT_ANALYSIS = "CONFLICT_ANALYSIS"
@@ -72,6 +77,35 @@ def _conservative_balance_report() -> dict:
         "dominant_perspective": None,
         "missing_perspectives": ["strategy", "engineering", "risk", "user"],
         "notes": ["Balance analysis failed; conservative fallback marks all base perspectives as missing."],
+        "perspective_coverage": {
+            "strategy": 0.0,
+            "engineering": 0.0,
+            "risk": 0.0,
+            "user": 0.0,
+        },
+        "stakeholder_coverage": [],
+        "constraint_coverage": [],
+        "risk_severity_distribution": {"low": 0, "medium": 0, "high": 0, "unknown": 0},
+        "argument_quality": {
+            "evidence_level": 0.0,
+            "specificity": 0.0,
+            "actionability": 0.0,
+            "novelty": 0.0,
+            "tradeoff_awareness": 0.0,
+        },
+        "dominance": {
+            "dominant_perspective": None,
+            "dominant_ratio": 0.0,
+            "counts": {},
+            "total_contributions": 0,
+        },
+        "blind_spots": [
+            "Missing base perspective: strategy.",
+            "Missing base perspective: engineering.",
+            "Missing base perspective: risk.",
+            "Missing base perspective: user.",
+        ],
+        "recommended_action": "ADD_EXPERT",
     }
 
 
@@ -205,6 +239,35 @@ def _flatten_conflict_field(conflict_reports: list | None, key: str) -> list:
         for item in value:
             if item not in out:
                 out.append(item)
+    return out
+
+
+def _flatten_plan_critique_field(plan_critiques: list | None, key: str) -> list[str]:
+    out: list[str] = []
+    for item in _safe_list(plan_critiques):
+        if not isinstance(item, dict):
+            continue
+        critique = item.get("critique") if isinstance(item.get("critique"), dict) else item
+        for value in _safe_list(critique.get(key)):
+            if not isinstance(value, str):
+                continue
+            text = value.strip()
+            if text and text not in out:
+                out.append(text)
+    return out
+
+
+def _flatten_plan_critique_decisions(plan_critiques: list | None) -> list[str]:
+    out: list[str] = []
+    for item in _safe_list(plan_critiques):
+        if not isinstance(item, dict):
+            continue
+        decision = item.get("decision")
+        if not decision:
+            status = str(item.get("status") or "")
+            decision = {"ready": "ACCEPT", "needs_revision": "REVISE", "rejected": "REJECT"}.get(status)
+        if isinstance(decision, str) and decision and decision not in out:
+            out.append(decision)
     return out
 
 
@@ -354,8 +417,12 @@ def init_cmm_state(
     max_iters: int = 2,
     model: str = "deepseek-chat",
     max_transitions: int = 40,
+    route_mode: str = "AUTO",
+    parallel_mode: str = "SEQUENTIAL",
+    max_workers: int | None = None,
 ) -> dict:
     original_query = "" if query is None else str(query)
+    normalized_parallel_mode = normalize_parallel_mode(parallel_mode)
     return {
         "original_query": original_query,
         "model": model,
@@ -367,6 +434,13 @@ def init_cmm_state(
         "query_intake": {},
         "formalized_query": original_query,
         "intake_context": {},
+        "route_mode": str(route_mode or "AUTO").upper(),
+        "parallel_mode": normalized_parallel_mode,
+        "max_workers": normalize_max_workers(max_workers, 4) if normalized_parallel_mode == "THREADS" else None,
+        "parallelized_stages": [],
+        "router_decision": {},
+        "cmm_mode": "",
+        "routing_warnings": [],
         "expert_bundle": _empty_expert_bundle(),
         "expert_rounds": [],
         "dynamic_roles": [],
@@ -422,7 +496,88 @@ def handle_intake(state: dict) -> tuple[str, str]:
     formalized_query = query_intake.get("cleaned_query") if isinstance(query_intake.get("cleaned_query"), str) else ""
     state["formalized_query"] = formalized_query.strip() or original_query
     state["intake_context"] = _build_intake_context(original_query, query_intake)
-    return PANEL_ROUND_1, "query intake complete"
+    return ROUTE, "query intake complete"
+
+
+def _forced_router_decision(mode: str) -> dict:
+    cost = {"DIRECT": "S", "LIGHT_CMM": "M", "FULL_CMM": "L"}[mode]
+    return {
+        "mode": mode,
+        "reason": f"Route mode forced to {mode}.",
+        "complexity": {"DIRECT": "low", "LIGHT_CMM": "medium", "FULL_CMM": "high"}[mode],
+        "needs_expert_panel": mode in {"LIGHT_CMM", "FULL_CMM"},
+        "needs_second_round": mode == "FULL_CMM",
+        "estimated_cost_class": cost,
+        "signals": {"forced": True},
+        "warnings": [],
+    }
+
+
+def handle_route(state: dict) -> tuple[str, str]:
+    requested = str(state.get("route_mode") or "AUTO").upper()
+    valid_modes = {"AUTO", "DIRECT", "LIGHT_CMM", "FULL_CMM"}
+    if requested not in valid_modes:
+        state["warnings"].append(f"invalid_route_mode_{requested}; falling back to AUTO")
+        requested = "AUTO"
+    try:
+        router_decision = (
+            _forced_router_decision(requested)
+            if requested in {"DIRECT", "LIGHT_CMM", "FULL_CMM"}
+            else route_query(state.get("query_intake", {}), original_query=state.get("original_query", ""))
+        )
+        if not isinstance(router_decision, dict):
+            raise ValueError("invalid router decision")
+    except Exception as exc:
+        state["warnings"].append(f"router_failed; falling back to FULL_CMM: {exc}")
+        router_decision = _forced_router_decision("FULL_CMM")
+        router_decision["warnings"] = ["router_failed"]
+
+    mode = str(router_decision.get("mode") or "FULL_CMM").upper()
+    if mode not in {"DIRECT", "LIGHT_CMM", "FULL_CMM"}:
+        state["warnings"].append(f"router_invalid_mode_{mode}; falling back to FULL_CMM")
+        router_decision = _forced_router_decision("FULL_CMM")
+        mode = "FULL_CMM"
+    state["router_decision"] = router_decision
+    state["cmm_mode"] = mode
+    state["routing_warnings"] = _safe_list(router_decision.get("warnings"))
+    for warning in state["routing_warnings"]:
+        if isinstance(warning, str):
+            state["warnings"].append(f"router: {warning}")
+
+    if mode == "DIRECT":
+        return DIRECT_ANSWER, "router selected direct answer"
+    return PANEL_ROUND_1, f"router selected {mode}"
+
+
+def handle_direct_answer(state: dict) -> tuple[str, str]:
+    try:
+        result = run_direct_answer(
+            state["original_query"],
+            query_intake=state.get("query_intake", {}),
+            model=state["model"],
+        )
+        if not isinstance(result, dict):
+            raise ValueError("invalid direct answer result")
+    except Exception as exc:
+        state["warnings"].append(f"direct_answer_failed: {exc}")
+        state["errors"].append("direct_answer_failed")
+        return FAILED, "direct answer generation failed"
+
+    for warning in _safe_list(result.get("parse_warnings")):
+        if isinstance(warning, str):
+            state["warnings"].append(f"direct_answer: {warning}")
+    final_answer = result.get("final_answer")
+    if not isinstance(final_answer, str) or not final_answer.strip():
+        state["errors"].append("direct_answer_empty")
+        return FAILED, "direct answer returned empty final answer"
+    state["final_answer"] = final_answer.strip()
+    state["answers"].append(state["final_answer"])
+    state["moderated_result"] = {
+        "final_answer": state["final_answer"],
+        "reports": [],
+        "trace": {"direct_answer": True, "source": result.get("source") or "unknown"},
+    }
+    return FINALIZE, "direct answer finalized"
 
 
 def handle_panel_round_1(state: dict) -> tuple[str, str]:
@@ -444,11 +599,19 @@ def handle_panel_round_1(state: dict) -> tuple[str, str]:
         panel_context["dynamic_role_views"] = state["dynamic_role_reports"][-1].get("role_views", [])
 
     try:
+        execution_kwargs = {}
+        if state.get("parallel_mode") == "THREADS":
+            execution_kwargs = {
+                "execution_mode": "THREADS",
+                "max_workers": state.get("max_workers"),
+                "model": state["model"],
+            }
         expert_bundle = run_expert_panel(
             state["original_query"],
             context=panel_context,
             max_roles=max(5, 5 + len(initial_dynamic_roles)),
             dynamic_roles=initial_dynamic_roles,
+            **execution_kwargs,
         )
         if not isinstance(expert_bundle, dict):
             state["warnings"].append("expert_panel_invalid; using empty expert bundle")
@@ -458,12 +621,20 @@ def handle_panel_round_1(state: dict) -> tuple[str, str]:
         expert_bundle = _empty_expert_bundle()
     state["expert_bundle"] = expert_bundle
     state["expert_rounds"].append(expert_bundle)
+    if state.get("parallel_mode") == "THREADS":
+        state.setdefault("parallelized_stages", []).append("PANEL_ROUND_1")
     return BALANCE, "initial expert panel complete"
 
 
 def _run_balance(state: dict, warning_prefix: str) -> None:
     try:
-        balance_report = analyze_balance(state.get("expert_bundle", {}))
+        balance_report = analyze_balance(
+            state.get("expert_bundle", {}),
+            query_intake=state.get("query_intake", {}),
+            conflict_report=state.get("conflict_report", {}),
+            dynamic_roles_used=_flatten_dynamic_roles_used(state.get("dynamic_role_reports")),
+            deliberation_revisions=_flatten_deliberation_revisions(state.get("deliberation_rounds")),
+        )
         if not isinstance(balance_report, dict):
             state["warnings"].append(f"{warning_prefix}_invalid; using conservative balance report")
             balance_report = _conservative_balance_report()
@@ -500,6 +671,8 @@ def _rebuild_brief(state: dict, warning_prefix: str) -> None:
 def handle_balance(state: dict) -> tuple[str, str]:
     _run_balance(state, "balance_report")
     _rebuild_brief(state, "deliberation_brief")
+    if state.get("cmm_mode") == "LIGHT_CMM":
+        return PLAN, "light CMM balance and brief complete"
     return CONFLICT_ANALYSIS, "balance and brief complete"
 
 
@@ -661,16 +834,25 @@ def handle_panel_round_extra(state: dict) -> tuple[str, str]:
                 "meta_moderator. Do not repeat round 1 unless necessary."
             ),
         }
+        execution_kwargs = {}
+        if state.get("parallel_mode") == "THREADS":
+            execution_kwargs = {
+                "execution_mode": "THREADS",
+                "max_workers": state.get("max_workers"),
+            }
         second_bundle = run_targeted_expert_round(
             query=state["original_query"],
             roles=targeted_roles,
             context=second_round_context,
             model=state["model"],
+            **execution_kwargs,
         )
         if not isinstance(second_bundle, dict):
             raise ValueError("invalid second expert round bundle")
         state["expert_rounds"].append(second_bundle)
         state["expert_bundle"] = merge_expert_bundles(state.get("expert_bundle", {}), second_bundle)
+        if state.get("parallel_mode") == "THREADS":
+            state.setdefault("parallelized_stages", []).append("PANEL_ROUND_EXTRA")
     except Exception as exc:
         state["warnings"].append(f"second_expert_round_failed; continuing_with_current_bundle: {exc}")
     state["extra_panel_done"] = True
@@ -765,6 +947,12 @@ def handle_plan_critique(state: dict) -> tuple[str, str]:
             }
             return REPLAN, f"plan critique requested {status}"
         message = f"plan_{status}_after_max_iters"
+        critical_blockers = _safe_list(state.get("plan_critique", {}).get("critical_blockers"))
+        critical_issues = _safe_list(state.get("plan_critique", {}).get("critical_issues"))
+        if status == "needs_revision" and not critical_blockers and not critical_issues:
+            state["warnings"].append(f"{message}; proceeding_with_best_effort_plan")
+            state["replan_context"] = {}
+            return ANSWER, "plan critique exhausted non-critical revisions; proceeding best effort"
         state["warnings"].append(message)
         state["errors"].append(message)
         return FAILED, "plan critique exhausted replan iterations"
@@ -824,6 +1012,13 @@ def _build_trace_report(state: dict) -> dict:
         "original_query": state.get("original_query", ""),
         "formalized_query": state.get("formalized_query", ""),
         "query_intake": state.get("query_intake", {}),
+        "router_decision": state.get("router_decision", {}),
+        "cmm_mode": state.get("cmm_mode") or "",
+        "estimated_cost_class": _safe_dict(state.get("router_decision")).get("estimated_cost_class") or "",
+        "routing_warnings": _safe_list(state.get("routing_warnings")),
+        "parallel_mode": state.get("parallel_mode") or "SEQUENTIAL",
+        "max_workers": state.get("max_workers"),
+        "parallelized_stages": _safe_list(state.get("parallelized_stages")),
         "roles_used": _safe_list(expert_bundle.get("roles")),
         "expert_rounds": _safe_list(state.get("expert_rounds")),
         "deliberation_brief": state.get("deliberation_brief", {}),
@@ -857,6 +1052,11 @@ def _build_trace_report(state: dict) -> dict:
         "plan_replan_reasons": [
             item.get("reason") for item in plan_critiques if isinstance(item, dict) and item.get("reason")
         ],
+        "plan_critique_decisions": _flatten_plan_critique_decisions(plan_critiques),
+        "plan_critique_blockers": _flatten_plan_critique_field(plan_critiques, "critical_blockers"),
+        "ignored_must_address": _flatten_plan_critique_field(plan_critiques, "ignored_must_address"),
+        "ignored_risks": _flatten_plan_critique_field(plan_critiques, "ignored_risks"),
+        "ignored_tradeoffs": _flatten_plan_critique_field(plan_critiques, "ignored_tradeoffs"),
         "errors": _safe_list(state.get("errors")),
     }
 
@@ -864,6 +1064,10 @@ def _build_trace_report(state: dict) -> dict:
 def _compact_raw_state(state: dict) -> dict:
     return {
         "current_state": state.get("current_state"),
+        "cmm_mode": state.get("cmm_mode") or "",
+        "router_decision": state.get("router_decision", {}),
+        "parallel_mode": state.get("parallel_mode") or "SEQUENTIAL",
+        "max_workers": state.get("max_workers"),
         "transition_count": state.get("transition_count", 0),
         "iteration_count": state.get("iteration_count", 0),
         "warnings": _safe_list(state.get("warnings")),
@@ -889,6 +1093,8 @@ def _build_result(state: dict) -> dict:
 
 _HANDLERS = {
     INTAKE: handle_intake,
+    ROUTE: handle_route,
+    DIRECT_ANSWER: handle_direct_answer,
     PANEL_ROUND_1: handle_panel_round_1,
     BALANCE: handle_balance,
     CONFLICT_ANALYSIS: handle_conflict_analysis,
@@ -910,9 +1116,20 @@ def run_cmm_state_machine(
     max_iters: int = 2,
     model: str = "deepseek-chat",
     max_transitions: int = 40,
+    route_mode: str = "AUTO",
+    parallel_mode: str = "SEQUENTIAL",
+    max_workers: int | None = None,
 ) -> dict:
     """Run CMM through a bounded explicit state machine."""
-    state = init_cmm_state(query, max_iters=max_iters, model=model, max_transitions=max_transitions)
+    state = init_cmm_state(
+        query,
+        max_iters=max_iters,
+        model=model,
+        max_transitions=max_transitions,
+        route_mode=route_mode,
+        parallel_mode=parallel_mode,
+        max_workers=max_workers,
+    )
 
     while state.get("current_state") not in {FINALIZE, FAILED}:
         if int(state.get("transition_count", 0)) >= int(state.get("max_transitions", 40)):

@@ -195,6 +195,8 @@ class StateMachineTests(unittest.TestCase):
         return patch.multiple(
             "Lib.state_machine",
             build_query_intake=DEFAULT,
+            route_query=DEFAULT,
+            run_direct_answer=DEFAULT,
             generate_dynamic_roles=DEFAULT,
             run_expert_panel=DEFAULT,
             analyze_balance=DEFAULT,
@@ -211,6 +213,17 @@ class StateMachineTests(unittest.TestCase):
 
     def _configure_success(self, mocks):
         mocks["build_query_intake"].return_value = _query_intake()
+        mocks["route_query"].return_value = {
+            "mode": "FULL_CMM",
+            "reason": "test full path",
+            "complexity": "high",
+            "needs_expert_panel": True,
+            "needs_second_round": True,
+            "estimated_cost_class": "L",
+            "signals": {},
+            "warnings": [],
+        }
+        mocks["run_direct_answer"].return_value = {"final_answer": "direct answer", "source": "test", "parse_warnings": []}
         mocks["generate_dynamic_roles"].return_value = _dynamic_report()
         mocks["run_expert_panel"].return_value = _expert_bundle()
         mocks["analyze_balance"].return_value = _balance()
@@ -230,10 +243,167 @@ class StateMachineTests(unittest.TestCase):
         trace = result["trace_report"]
         self.assertEqual(result["final_answer"], "final answer")
         self.assertEqual(trace["final_state"], "FINALIZE")
+        self.assertEqual(trace["cmm_mode"], "FULL_CMM")
         states = [item["from"] for item in trace["state_history"]]
         self.assertIn("INTAKE", states)
+        self.assertIn("ROUTE", states)
         self.assertIn("PLAN", states)
         self.assertIn("ANSWER", states)
+
+    def test_direct_mode_skips_full_cmm_stages(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["route_query"].return_value = {
+                "mode": "DIRECT",
+                "reason": "simple",
+                "complexity": "low",
+                "needs_expert_panel": False,
+                "needs_second_round": False,
+                "estimated_cost_class": "S",
+                "signals": {},
+                "warnings": [],
+            }
+            mocks["run_direct_answer"].return_value = {
+                "final_answer": "direct final answer",
+                "source": "test",
+                "parse_warnings": [],
+            }
+            result = run_cmm_state_machine("simple query")
+
+        trace = result["trace_report"]
+        self.assertEqual(result["final_answer"], "direct final answer")
+        self.assertEqual(trace["cmm_mode"], "DIRECT")
+        self.assertEqual(trace["estimated_cost_class"], "S")
+        self.assertEqual(trace["expert_rounds"], [])
+        self.assertEqual(trace["balance_reports"], [])
+        self.assertEqual(trace["conflict_reports"], [])
+        self.assertEqual(trace["meta_moderation_decisions"], [])
+        self.assertEqual(trace["plans"], [])
+        self.assertEqual(trace["plan_critiques"], [])
+        mocks["run_expert_panel"].assert_not_called()
+        mocks["analyze_balance"].assert_not_called()
+        mocks["analyze_conflicts"].assert_not_called()
+        mocks["run_meta_moderator"].assert_not_called()
+        mocks["develop_plan"].assert_not_called()
+        mocks["check_plan_and_act"].assert_not_called()
+
+    def test_direct_mode_ignores_threaded_expert_settings(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["route_query"].return_value = {
+                "mode": "DIRECT",
+                "reason": "simple",
+                "complexity": "low",
+                "needs_expert_panel": False,
+                "needs_second_round": False,
+                "estimated_cost_class": "S",
+                "signals": {},
+                "warnings": [],
+            }
+            result = run_cmm_state_machine("simple query", parallel_mode="THREADS", max_workers=3)
+
+        trace = result["trace_report"]
+        self.assertEqual(trace["cmm_mode"], "DIRECT")
+        self.assertEqual(trace["parallel_mode"], "THREADS")
+        self.assertEqual(trace["parallelized_stages"], [])
+        mocks["run_expert_panel"].assert_not_called()
+
+    def test_direct_mode_fallback_answer_still_finalizes(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["route_query"].return_value = {
+                "mode": "DIRECT",
+                "reason": "simple",
+                "complexity": "low",
+                "needs_expert_panel": False,
+                "needs_second_round": False,
+                "estimated_cost_class": "S",
+                "signals": {},
+                "warnings": [],
+            }
+            mocks["run_direct_answer"].return_value = {
+                "final_answer": "fallback direct answer",
+                "source": "fallback",
+                "parse_warnings": ["direct_answer_failed"],
+            }
+            result = run_cmm_state_machine("simple query")
+
+        self.assertEqual(result["final_answer"], "fallback direct answer")
+        self.assertEqual(result["trace_report"]["final_state"], "FINALIZE")
+        self.assertIn("direct_answer: direct_answer_failed", result["trace_report"]["warnings"])
+        self.assertEqual(result["trace_report"]["errors"], [])
+
+    def test_light_cmm_runs_panel_balance_plan_but_skips_full_stages(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["route_query"].return_value = {
+                "mode": "LIGHT_CMM",
+                "reason": "moderate",
+                "complexity": "medium",
+                "needs_expert_panel": True,
+                "needs_second_round": False,
+                "estimated_cost_class": "M",
+                "signals": {},
+                "warnings": [],
+            }
+            result = run_cmm_state_machine("moderate query")
+
+        trace = result["trace_report"]
+        self.assertEqual(result["final_answer"], "final answer")
+        self.assertEqual(trace["cmm_mode"], "LIGHT_CMM")
+        self.assertEqual(trace["estimated_cost_class"], "M")
+        mocks["run_expert_panel"].assert_called_once()
+        mocks["analyze_balance"].assert_called_once()
+        mocks["develop_plan"].assert_called_once()
+        mocks["check_plan_and_act"].assert_called_once()
+        mocks["analyze_conflicts"].assert_not_called()
+        mocks["run_meta_moderator"].assert_not_called()
+        mocks["run_deliberation_round"].assert_not_called()
+        mocks["run_targeted_expert_round"].assert_not_called()
+
+    def test_threaded_mode_passes_config_to_initial_expert_panel_and_trace(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        captured = {}
+
+        def capture_panel(query, context=None, max_roles=5, dynamic_roles=None, **kwargs):
+            captured["kwargs"] = kwargs
+            return _expert_bundle()
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["run_expert_panel"].side_effect = capture_panel
+            result = run_cmm_state_machine("raw query", parallel_mode="THREADS", max_workers=3)
+
+        trace = result["trace_report"]
+        self.assertEqual(captured["kwargs"]["execution_mode"], "THREADS")
+        self.assertEqual(captured["kwargs"]["max_workers"], 3)
+        self.assertEqual(captured["kwargs"]["model"], "deepseek-chat")
+        self.assertEqual(trace["parallel_mode"], "THREADS")
+        self.assertEqual(trace["max_workers"], 3)
+        self.assertIn("PANEL_ROUND_1", trace["parallelized_stages"])
+
+    def test_forced_full_cmm_preserves_full_path_without_router_call(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            result = run_cmm_state_machine("raw query", route_mode="FULL_CMM")
+
+        trace = result["trace_report"]
+        self.assertEqual(trace["cmm_mode"], "FULL_CMM")
+        self.assertIn("CONFLICT_ANALYSIS", [item["from"] for item in trace["state_history"]])
+        mocks["route_query"].assert_not_called()
+        mocks["analyze_conflicts"].assert_called()
+        mocks["run_meta_moderator"].assert_called()
 
     def test_run_cmm_delegates_to_state_machine_or_returns_state_trace(self):
         from Lib.orchestrator import run_cmm
@@ -320,6 +490,45 @@ class StateMachineTests(unittest.TestCase):
         self.assertEqual(result["trace_report"]["final_state"], "FAILED")
         self.assertTrue(any("plan_rejected" in item for item in result["trace_report"]["warnings"]))
 
+    def test_noncritical_needs_revision_after_max_iters_proceeds_best_effort(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["check_plan_and_act"].return_value = {
+                "status": "needs_revision",
+                "critique": {"feedback": ["Improve specificity"]},
+                "feedback": ["Improve specificity"],
+                "reason": "minor gaps",
+            }
+            result = run_cmm_state_machine("raw query", max_iters=0)
+
+        self.assertEqual(result["final_answer"], "final answer")
+        self.assertEqual(result["trace_report"]["final_state"], "FINALIZE")
+        self.assertTrue(
+            any("plan_needs_revision_after_max_iters; proceeding_with_best_effort_plan" in item for item in result["trace_report"]["warnings"])
+        )
+        self.assertEqual(result["trace_report"]["errors"], [])
+        mocks["run_moderated_loop"].assert_called_once()
+
+    def test_critical_needs_revision_after_max_iters_still_fails(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["check_plan_and_act"].return_value = {
+                "status": "needs_revision",
+                "critique": {"critical_blockers": ["critical privacy risk"]},
+                "feedback": ["Fix blocker"],
+                "reason": "critical blocker",
+            }
+            result = run_cmm_state_machine("raw query", max_iters=0)
+
+        self.assertEqual(result["final_answer"], "")
+        self.assertEqual(result["trace_report"]["final_state"], "FAILED")
+        self.assertIn("plan_needs_revision_after_max_iters", result["trace_report"]["errors"])
+        mocks["run_moderated_loop"].assert_not_called()
+
     def test_meta_finalize_short_circuits_to_finalize(self):
         from Lib.state_machine import run_cmm_state_machine
 
@@ -375,6 +584,37 @@ class StateMachineTests(unittest.TestCase):
         history_states = [item["from"] for item in result["trace_report"]["state_history"]]
         self.assertIn("PANEL_ROUND_EXTRA", history_states)
 
+    def test_threaded_mode_passes_config_to_targeted_round(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        captured = {}
+
+        def capture_second_round(query, roles, context, model="deepseek-chat", **kwargs):
+            captured["kwargs"] = kwargs
+            return _second_bundle()
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["run_meta_moderator"].return_value = _meta("ADD_EXPERT")
+            mocks["analyze_balance"].side_effect = [_balance(missing=["user"]), _balance()]
+            mocks["run_targeted_expert_round"].side_effect = capture_second_round
+            mocks["merge_expert_bundles"].return_value = {
+                "roles": _expert_bundle()["roles"] + _second_bundle()["roles"],
+                "contributions": _expert_bundle()["contributions"] + _second_bundle()["contributions"],
+                "synthesis": {
+                    "recommendations": ["Recommendation A", "Recommendation B"],
+                    "risks": ["Risk A", "Risk B"],
+                    "questions": ["Question A", "Question B"],
+                    "perspective_counts": {"strategy": 1, "user": 1},
+                },
+            }
+            result = run_cmm_state_machine("raw query", parallel_mode="THREADS", max_workers=2)
+
+        trace = result["trace_report"]
+        self.assertEqual(captured["kwargs"]["execution_mode"], "THREADS")
+        self.assertEqual(captured["kwargs"]["max_workers"], 2)
+        self.assertIn("PANEL_ROUND_EXTRA", trace["parallelized_stages"])
+
     def test_max_transitions_guard(self):
         from Lib.state_machine import run_cmm_state_machine
 
@@ -404,6 +644,35 @@ class StateMachineTests(unittest.TestCase):
             "moderation_reports",
         ):
             self.assertIn(key, trace)
+
+    def test_trace_flattens_plan_critique_compatibility_fields(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        critique = {
+            "ignored_must_address": ["critical privacy requirement"],
+            "ignored_risks": ["security risk"],
+            "ignored_tradeoffs": ["speed vs safety"],
+            "critical_blockers": ["critical privacy requirement"],
+        }
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["check_plan_and_act"].return_value = {
+                "status": "needs_revision",
+                "decision": "REVISE",
+                "critique": critique,
+                "feedback": ["Fix blockers"],
+                "reason": "Plan must address critical blockers",
+            }
+            result = run_cmm_state_machine("raw query", max_iters=0)
+
+        trace = result["trace_report"]
+        self.assertIn("REVISE", trace["plan_critique_decisions"])
+        self.assertIn("critical privacy requirement", trace["plan_critique_blockers"])
+        self.assertIn("critical privacy requirement", trace["ignored_must_address"])
+        self.assertIn("security risk", trace["ignored_risks"])
+        self.assertIn("speed vs safety", trace["ignored_tradeoffs"])
+        self.assertIn("needs_revision", trace["plan_critique_statuses"])
+        self.assertIn("Plan must address critical blockers", trace["plan_replan_reasons"])
 
 
 if __name__ == "__main__":

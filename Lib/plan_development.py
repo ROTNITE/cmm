@@ -156,8 +156,6 @@ def develop_plan(query, context=None, depth="detailed"):
     depth - глубина плана: "quick", "detailed", "comprehensive"
     """
 
-    print(f"\n🎯 Планировщик: {query[:1000]}...")
-
     # Проверяем, что запрос не пустой
     if not query:
         return {"error": "Пустой запрос"}
@@ -201,8 +199,6 @@ Original query is authoritative. Cleaned/formalized query is helper text only. D
     # Запрос к ИИ
     user_prompt = f"Составь план для вопроса: {query}{context_text}"
 
-    # Отправляем запрос
-    print("🔄 Отправляю запрос к ИИ...")
     response = send_to_AI(
         user_prompt=user_prompt,
         system_prompt=system_prompt,
@@ -211,7 +207,6 @@ Original query is authoritative. Cleaned/formalized query is helper text only. D
     )
 
     if not response or isinstance(response, Exception):
-        print("❌ Ошибка, создаю простой план")
         return _fallback_plan(query, depth=depth)
 
     parsed = safe_json_loads(response)
@@ -219,11 +214,10 @@ Original query is authoritative. Cleaned/formalized query is helper text only. D
     if plan is None:
         plan = _parse_legacy_text_plan(response, query=query, depth=depth)
 
-    print(f"✅ План готов ({len(response)} символов)")
     return plan
 
 def show_plan(plan):
-    """Показывает план красиво"""
+    """Manual display helper for local scripts."""
     print("\n" + "="*50)
     print("📋 ПЛАН")
     print("="*50)

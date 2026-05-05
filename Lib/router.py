@@ -1,0 +1,197 @@
+"""Deterministic routing for choosing DIRECT, LIGHT_CMM, or FULL_CMM."""
+
+from __future__ import annotations
+
+import re
+from typing import Any
+
+
+MODES = {"DIRECT", "LIGHT_CMM", "FULL_CMM"}
+_COMPLEXITY_MAP = {"simple": "low", "moderate": "medium", "complex": "high", "low": "low", "medium": "medium", "high": "high"}
+
+_HIGH_RISK_MARKERS = (
+    "legal",
+    "law",
+    "compliance",
+    "medical",
+    "health",
+    "financial",
+    "finance",
+    "security",
+    "safety",
+    "privacy",
+    "harm",
+    "vulnerable",
+    "закон",
+    "право",
+    "комплаенс",
+    "медиц",
+    "здоров",
+    "финанс",
+    "безопас",
+    "приват",
+    "вред",
+    "уязвим",
+)
+_FULL_MARKERS = (
+    "strategy",
+    "architecture",
+    "governance",
+    "evaluation",
+    "tradeoff",
+    "trade-off",
+    "conflict",
+    "stakeholder",
+    "policy",
+    "risk",
+    "roadmap",
+    "multi-stakeholder",
+    "разбери подробно",
+    "стратег",
+    "архитект",
+    "управлен",
+    "оцен",
+    "риски",
+    "концепц",
+    "компромисс",
+    "конфликт",
+    "стейкхолдер",
+)
+_LIGHT_MARKERS = (
+    "plan",
+    "steps",
+    "compare",
+    "choose",
+    "improve",
+    "metrics",
+    "implementation",
+    "план",
+    "шаг",
+    "сравн",
+    "выбрать",
+    "улучш",
+    "метрик",
+    "внедр",
+)
+
+
+def _safe_dict(value: Any) -> dict:
+    return value if isinstance(value, dict) else {}
+
+
+def _safe_list(value: Any) -> list:
+    return value if isinstance(value, list) else []
+
+
+def _normalize_text(value: Any) -> str:
+    text = str(value or "").lower()
+    text = re.sub(r"[_\-]+", " ", text)
+    text = re.sub(r"[^\w\sа-яё]+", " ", text, flags=re.IGNORECASE)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _contains_any(text: str, markers: tuple[str, ...]) -> bool:
+    return any(marker in text for marker in markers)
+
+
+def _intake_text(query_intake: dict, original_query: str) -> str:
+    parts = [original_query]
+    for key in ("original_query", "cleaned_query", "task_goal"):
+        value = query_intake.get(key)
+        if isinstance(value, str):
+            parts.append(value)
+    for key in ("context", "constraints", "success_criteria", "unknowns", "user_preferences"):
+        for item in _safe_list(query_intake.get(key)):
+            parts.append(str(item))
+    return _normalize_text(" ".join(parts))
+
+
+def _router_complexity(query_intake: dict, text: str) -> str:
+    raw = str(query_intake.get("complexity") or "").strip().lower()
+    if raw in _COMPLEXITY_MAP:
+        return _COMPLEXITY_MAP[raw]
+    words = text.split()
+    if len(words) <= 12:
+        return "low"
+    if len(words) > 80 or _contains_any(text, _FULL_MARKERS):
+        return "high"
+    return "medium"
+
+
+def _normalize_decision(mode: str, reason: str, complexity: str, signals: dict, warnings: list[str] | None = None) -> dict:
+    mode = mode if mode in MODES else "LIGHT_CMM"
+    cost = {"DIRECT": "S", "LIGHT_CMM": "M", "FULL_CMM": "L"}[mode]
+    return {
+        "mode": mode,
+        "reason": reason,
+        "complexity": complexity if complexity in {"low", "medium", "high"} else "medium",
+        "needs_expert_panel": mode in {"LIGHT_CMM", "FULL_CMM"},
+        "needs_second_round": mode == "FULL_CMM" and bool(signals.get("needs_second_round")),
+        "estimated_cost_class": cost,
+        "signals": dict(signals),
+        "warnings": list(warnings or []),
+    }
+
+
+def route_query(query_intake: dict, *, original_query: str = "") -> dict:
+    """Route a query to DIRECT, LIGHT_CMM, or FULL_CMM without model calls."""
+    warnings: list[str] = []
+    intake = _safe_dict(query_intake)
+    if not intake:
+        warnings.append("router_empty_intake")
+    text = _intake_text(intake, original_query)
+    complexity = _router_complexity(intake, text)
+    risk_level = str(intake.get("risk_level") or "").strip().lower()
+    should_use_cmm = intake.get("should_use_cmm")
+    constraints = _safe_list(intake.get("constraints"))
+    success_criteria = _safe_list(intake.get("success_criteria"))
+    context = _safe_list(intake.get("context"))
+    unknowns = _safe_list(intake.get("unknowns"))
+    preferences = _safe_list(intake.get("user_preferences"))
+    word_count = len(text.split())
+
+    signals = {
+        "risk_level": risk_level or "unknown",
+        "word_count": word_count,
+        "constraints_count": len(constraints),
+        "success_criteria_count": len(success_criteria),
+        "context_count": len(context),
+        "unknowns_count": len(unknowns),
+        "preferences_count": len(preferences),
+        "should_use_cmm": bool(should_use_cmm) if isinstance(should_use_cmm, bool) else None,
+        "has_high_risk_markers": _contains_any(text, _HIGH_RISK_MARKERS),
+        "has_full_markers": _contains_any(text, _FULL_MARKERS),
+        "has_light_markers": _contains_any(text, _LIGHT_MARKERS),
+        "needs_second_round": False,
+    }
+
+    high_risk = risk_level == "high" or signals["has_high_risk_markers"]
+    many_constraints = len(constraints) >= 3 or len(success_criteria) >= 3
+    multi_stakeholder = len(context) >= 2 or "stakeholder" in text or "стейкхолдер" in text
+    full_signals = high_risk or complexity == "high" or many_constraints or multi_stakeholder or signals["has_full_markers"]
+    if full_signals:
+        signals["needs_second_round"] = high_risk or complexity == "high" or many_constraints or multi_stakeholder
+        return _normalize_decision("FULL_CMM", "Complex, high-risk, or multi-stakeholder signals require full CMM.", complexity, signals, warnings)
+
+    simple_direct = (
+        complexity == "low"
+        and risk_level in {"", "low", "unknown"}
+        and should_use_cmm is False
+        and not constraints
+        and not success_criteria
+        and not context
+        and not unknowns
+        and not preferences
+        and word_count <= 24
+        and not signals["has_light_markers"]
+    )
+    if simple_direct:
+        return _normalize_decision("DIRECT", "Simple low-risk request does not need CMM.", complexity, signals, warnings)
+
+    if should_use_cmm is False and not high_risk and complexity == "low" and not constraints and not success_criteria:
+        return _normalize_decision("DIRECT", "Intake indicates CMM is unnecessary and no risk markers were found.", complexity, signals, warnings)
+
+    return _normalize_decision("LIGHT_CMM", "Moderate or mildly constrained request benefits from a light CMM pass.", complexity, signals, warnings)
+
+
+__all__ = ["route_query"]

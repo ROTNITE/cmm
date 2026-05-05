@@ -99,10 +99,20 @@ class PlanCriticTests(unittest.TestCase):
             result = check_plan_and_act(_plan(), "Build a privacy-safe pilot", **_context())
 
         self.assertEqual(result["status"], "ready")
+        self.assertEqual(result["decision"], "ACCEPT")
         self.assertEqual(result["critique"]["source"], "model")
         self.assertAlmostEqual(result["critique"]["scores"]["query_alignment"], 9.0)
         self.assertAlmostEqual(result["critique"]["overall_score"], 8.5)
         self.assertEqual(result["feedback"], ["Proceed"])
+        for key in (
+            "expert_risk_coverage",
+            "tradeoff_handling",
+            "logical_order",
+            "missing_perspectives_handling",
+        ):
+            self.assertIn(key, result["critique"]["scores"])
+        for key in ("ignored_must_address", "ignored_risks", "ignored_tradeoffs", "recommendations"):
+            self.assertIn(key, result["critique"])
 
     def test_plan_critic_parses_markdown_json(self):
         from Lib.plan_critic import check_plan_and_act
@@ -123,6 +133,41 @@ class PlanCriticTests(unittest.TestCase):
         self.assertIn(result["status"], {"needs_revision", "rejected"})
         self.assertEqual(result["critique"]["source"], "rules")
         self.assertTrue(result["critique"]["parse_warnings"])
+        self.assertIn(result["decision"], {"REVISE", "REJECT"})
+        for key in ("ignored_must_address", "ignored_risks", "ignored_tradeoffs", "recommendations"):
+            self.assertIn(key, result["critique"])
+
+    def test_check_plan_and_act_accepts_intake_alias(self):
+        from Lib.plan_critic import check_plan_and_act
+
+        intake = {"constraints": ["limited budget"], "success_criteria": []}
+        with patch("Lib.plan_critic.send_to_AI", return_value="invalid"):
+            result = check_plan_and_act(
+                _generic_plan("Pilot with clear steps"),
+                "Build pilot",
+                intake=intake,
+                deliberation_brief={},
+                conflict_report={},
+            )
+
+        self.assertIn("limited budget", result["critique"]["missing_constraints"])
+
+    def test_query_intake_wins_over_intake_alias(self):
+        from Lib.plan_critic import check_plan_and_act
+
+        query_intake = {"constraints": ["privacy constraint"], "success_criteria": []}
+        intake = {"constraints": ["limited budget"], "success_criteria": []}
+        with patch("Lib.plan_critic.send_to_AI", return_value="invalid"):
+            result = check_plan_and_act(
+                _generic_plan("Pilot covers privacy constraint with clear ordered steps"),
+                "Build pilot",
+                query_intake=query_intake,
+                intake=intake,
+                deliberation_brief={},
+                conflict_report={},
+            )
+
+        self.assertNotIn("limited budget", result["critique"]["missing_constraints"])
 
     def test_empty_plan_rejected(self):
         from Lib.plan_critic import check_plan_and_act
@@ -155,6 +200,11 @@ class PlanCriticTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "needs_revision")
         self.assertIn("speed vs safety", result["critique"]["unresolved_tradeoffs"])
+        self.assertIn("speed vs safety", result["critique"]["ignored_tradeoffs"])
+        self.assertEqual(
+            result["critique"]["scores"]["tradeoff_handling"],
+            result["critique"]["scores"]["conflict_resolution"],
+        )
 
     def test_ignored_dynamic_role_causes_needs_revision(self):
         from Lib.plan_critic import check_plan_and_act
@@ -178,6 +228,55 @@ class PlanCriticTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "ready")
         self.assertEqual(result["critique"]["source"], "rules")
+
+    def test_critical_expert_risk_blocks_acceptance(self):
+        from Lib.plan_critic import check_plan_and_act
+
+        ctx = _context()
+        ctx["query_intake"]["constraints"] = []
+        ctx["deliberation_brief"]["expert_risks"] = ["critical security failure risk"]
+        ctx["deliberation_brief"]["must_address"] = []
+        ctx["conflict_report"] = {"unresolved_tradeoffs": [], "blind_spots": [], "premature_consensus_risks": []}
+        with patch("Lib.plan_critic.send_to_AI", return_value=json.dumps(_valid_payload())):
+            result = check_plan_and_act(_generic_plan("Run a generic pilot"), "Build pilot", **ctx)
+
+        self.assertNotEqual(result["status"], "ready")
+        self.assertNotEqual(result["decision"], "ACCEPT")
+        self.assertIn("critical security failure risk", result["critique"]["ignored_risks"])
+        self.assertTrue(result["critique"]["critical_blockers"])
+
+    def test_critical_must_address_blocks_acceptance(self):
+        from Lib.plan_critic import check_plan_and_act
+
+        ctx = _context()
+        ctx["query_intake"]["constraints"] = []
+        ctx["deliberation_brief"]["expert_risks"] = []
+        ctx["deliberation_brief"]["must_address"] = ["critical privacy compliance requirement"]
+        ctx["conflict_report"] = {"unresolved_tradeoffs": [], "blind_spots": [], "premature_consensus_risks": []}
+        with patch("Lib.plan_critic.send_to_AI", return_value=json.dumps(_valid_payload())):
+            result = check_plan_and_act(_generic_plan("Run a generic pilot"), "Build pilot", **ctx)
+
+        self.assertNotEqual(result["status"], "ready")
+        self.assertNotEqual(result["decision"], "ACCEPT")
+        self.assertIn("critical privacy compliance requirement", result["critique"]["ignored_must_address"])
+        self.assertTrue(result["critique"]["critical_blockers"])
+
+    def test_missing_perspectives_handling_score(self):
+        from Lib.plan_critic import check_plan_and_act
+
+        ctx = {
+            "query_intake": {"constraints": [], "success_criteria": []},
+            "deliberation_brief": {"missing_perspectives": ["legal"], "must_address": [], "expert_risks": []},
+            "conflict_report": {"unresolved_tradeoffs": [], "blind_spots": [], "premature_consensus_risks": []},
+        }
+        with patch("Lib.plan_critic.send_to_AI", return_value="invalid"):
+            ignored = check_plan_and_act(_generic_plan("Run a generic pilot"), "Build pilot", **ctx)
+            covered = check_plan_and_act(_generic_plan("Add legal review before launch"), "Build pilot", **ctx)
+
+        self.assertLess(
+            ignored["critique"]["scores"]["missing_perspectives_handling"],
+            covered["critique"]["scores"]["missing_perspectives_handling"],
+        )
 
     def test_check_plan_and_act_backward_compatible(self):
         from Lib.critic_decision import check_plan_and_act

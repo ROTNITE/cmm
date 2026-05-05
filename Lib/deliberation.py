@@ -28,6 +28,16 @@ def _as_dict(value: Any) -> dict:
     return value if isinstance(value, dict) else {}
 
 
+def _as_dict_list(value: Any, max_items: int) -> list[dict]:
+    out: list[dict] = []
+    for item in value if isinstance(value, list) else []:
+        if isinstance(item, dict):
+            out.append(dict(item))
+        if len(out) >= max_items:
+            break
+    return out
+
+
 def build_deliberation_brief(
     query: str,
     expert_bundle: dict | None,
@@ -42,6 +52,13 @@ def build_deliberation_brief(
     risks = _as_string_list(synthesis.get("risks"), max_items=10)
     questions = _as_string_list(synthesis.get("questions"), max_items=8)
     balance_notes = _as_string_list(balance.get("notes"), max_items=6)
+    balance_quality = _as_dict(balance.get("argument_quality"))
+    balance_blind_spots = _as_string_list(balance.get("blind_spots"), max_items=8)
+    constraint_coverage = _as_dict_list(balance.get("constraint_coverage"), max_items=8)
+    stakeholder_coverage = _as_dict_list(balance.get("stakeholder_coverage"), max_items=8)
+    recommended_balance_action = balance.get("recommended_action")
+    if recommended_balance_action not in {"SYNTHESIZE", "DEEPEN", "ADD_EXPERT"}:
+        recommended_balance_action = "SYNTHESIZE"
 
     perspective_counts = synthesis.get("perspective_counts")
     if not isinstance(perspective_counts, dict):
@@ -60,6 +77,8 @@ def build_deliberation_brief(
     if dominant_perspective_found:
         dominant = balance.get("dominant_perspective") or "unknown"
         must_address.append(f"Mitigate dominant perspective: {dominant}")
+    for item in balance_blind_spots[:4]:
+        must_address.append("Address balance blind spot: " + item)
 
     brief = {
         "summary": (
@@ -72,6 +91,11 @@ def build_deliberation_brief(
         "missing_perspectives": missing_perspectives,
         "dominant_perspective_found": dominant_perspective_found,
         "balance_notes": balance_notes,
+        "balance_quality": balance_quality,
+        "constraint_coverage": constraint_coverage,
+        "stakeholder_coverage": stakeholder_coverage,
+        "balance_blind_spots": balance_blind_spots,
+        "recommended_balance_action": recommended_balance_action,
         "must_address": _as_string_list(must_address, max_items=12),
     }
 

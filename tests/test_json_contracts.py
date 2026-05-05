@@ -62,9 +62,11 @@ class JsonContractTests(unittest.TestCase):
         )
 
         with patch("Lib.plan_development.send_to_AI", return_value=raw):
-            with redirect_stdout(io.StringIO()):
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
                 plan = develop_plan("query", context={"expert_risks": ["Risk A"]})
 
+        self.assertEqual(buffer.getvalue(), "")
         self.assertEqual(plan["raw_format"], "json")
         self.assertEqual(plan["main_idea"], "Idea")
         self.assertEqual(plan["steps"][0]["uses_expert_inputs"], ["Risk A"])

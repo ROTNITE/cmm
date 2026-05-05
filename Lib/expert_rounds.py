@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from Lib.expert_agent import run_expert
 from Lib.expert_roles import BASE_EXPERT_ROLES, ExpertRole
+from Lib.parallel_utils import normalize_max_workers, normalize_parallel_mode, run_ordered_thread_tasks
 
 
 def _string_items(value) -> list[str]:
@@ -165,8 +166,10 @@ def run_targeted_expert_round(
     roles: list[ExpertRole],
     context: dict,
     model: str = "deepseek-chat",
+    execution_mode: str = "SEQUENTIAL",
+    max_workers: int | None = None,
 ) -> dict:
-    """Run selected experts sequentially and return an expert bundle."""
+    """Run selected experts and return an expert bundle in selected-role order."""
     dynamic_role_views = {}
     if isinstance(context, dict) and isinstance(context.get("dynamic_role_views"), list):
         for view in context.get("dynamic_role_views", []):
@@ -188,14 +191,28 @@ def run_targeted_expert_round(
         role_views.append(view)
     contributions: list[dict] = []
 
-    for role in roles:
+    def run_one(role: ExpertRole) -> dict:
         try:
             contribution = run_expert(role=role, query=query, context=context, model=model)
             if not isinstance(contribution, dict):
                 raise ValueError("invalid contribution format")
+            return contribution
         except Exception:
-            contribution = _fallback_contribution(role)
-        contributions.append(contribution)
+            return _fallback_contribution(role)
+
+    mode = normalize_parallel_mode(execution_mode)
+    if mode == "THREADS" and len(roles) > 1:
+        records = run_ordered_thread_tasks(
+            roles,
+            run_one,
+            max_workers=normalize_max_workers(max_workers, len(roles)),
+        )
+        contributions = [
+            record["result"] if record.get("ok") and isinstance(record.get("result"), dict) else run_one(role)
+            for role, record in zip(roles, records)
+        ]
+    else:
+        contributions = [run_one(role) for role in roles]
 
     return _bundle_from_roles_and_contributions(role_views, contributions)
 

@@ -20,6 +20,9 @@ class ImportAndHelperTests(unittest.TestCase):
             "Lib.json_utils",
             "Lib.orchestrator",
             "Lib.state_machine",
+            "Lib.router",
+            "Lib.direct_answer",
+            "Lib.parallel_utils",
             "Lib.role_generator",
             "Lib.meta_moderator",
             "Lib.agent_improver",
@@ -41,6 +44,23 @@ class ImportAndHelperTests(unittest.TestCase):
             ["strategy", "engineering", "risk", "user"],
         )
         self.assertFalse(result["dominant_perspective_found"])
+
+    def test_balance_analyzer_reports_dominant_perspective_tag(self):
+        from Lib.balance_analyzer import analyze_balance
+
+        bundle = {
+            "contributions": [
+                {"perspective_tag": "risk"},
+                {"perspective_tag": "risk"},
+                {"perspective_tag": "risk"},
+                {"perspective_tag": "strategy"},
+            ]
+        }
+
+        result = analyze_balance(bundle)
+
+        self.assertTrue(result["dominant_perspective_found"])
+        self.assertEqual(result["dominant_perspective"], "risk")
 
     def test_expert_agent_json_fallback(self):
         from Lib.expert_agent import _safe_json_loads

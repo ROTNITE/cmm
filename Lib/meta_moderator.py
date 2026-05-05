@@ -58,6 +58,12 @@ def _rule_based_decision(
 
     missing = to_string_list(balance.get("missing_perspectives"), max_items=8)
     dominant_found = bool(balance.get("dominant_perspective_found", False))
+    recommended_balance_action = balance.get("recommended_action")
+    balance_blind_spots = to_string_list(balance.get("blind_spots"), max_items=8)
+    argument_quality = balance.get("argument_quality") if isinstance(balance.get("argument_quality"), dict) else {}
+    perspective_coverage = balance.get("perspective_coverage") if isinstance(balance.get("perspective_coverage"), dict) else {}
+    constraint_coverage = balance.get("constraint_coverage") if isinstance(balance.get("constraint_coverage"), list) else []
+    stakeholder_coverage = balance.get("stakeholder_coverage") if isinstance(balance.get("stakeholder_coverage"), list) else []
     risks = to_string_list(brief.get("expert_risks"), max_items=10)
     must_address = to_string_list(brief.get("must_address"), max_items=12)
     questions = to_string_list(brief.get("expert_questions"), max_items=10)
@@ -72,6 +78,43 @@ def _rule_based_decision(
     ]
     complexity = str(brief.get("complexity") or "").lower()
     complex_query = complexity in {"moderate", "complex"}
+
+    uncovered_constraints = [
+        str(item.get("constraint") or "Uncovered constraint")
+        for item in constraint_coverage
+        if isinstance(item, dict) and not item.get("covered")
+    ]
+    uncovered_stakeholders = [
+        str(item.get("stakeholder") or "Uncovered stakeholder")
+        for item in stakeholder_coverage
+        if isinstance(item, dict) and not item.get("covered")
+    ]
+    weak_quality_keys = [
+        key
+        for key, value in argument_quality.items()
+        if key in {"specificity", "actionability", "novelty"}
+        and isinstance(value, (int, float))
+        and float(value) < 0.35
+    ]
+    weak_base_coverage = [
+        key
+        for key in ("strategy", "engineering", "risk", "user")
+        if isinstance(perspective_coverage.get(key), (int, float)) and float(perspective_coverage.get(key)) < 0.35
+    ]
+
+    if recommended_balance_action == "ADD_EXPERT":
+        return {
+            "decision": "ADD_EXPERT",
+            "reason": "Balance Analyzer 2.0 recommends adding expertise for missing or weakly covered perspectives.",
+            "missing_perspectives": missing or weak_base_coverage[:5],
+            "conflicts_to_resolve": balance_blind_spots[:5],
+            "risks_to_address": risks[:5],
+            "questions_to_answer": questions[:5],
+            "next_actions": ["Add targeted expertise before synthesis."],
+            "confidence": 0.76,
+            "parse_warnings": ["meta_moderator_rule_fallback"],
+            "source": "rules",
+        }
 
     if unresolved_tradeoffs:
         return {
@@ -132,6 +175,20 @@ def _rule_based_decision(
             "questions_to_answer": questions[:5],
             "next_actions": ["Address semantic blind spots before synthesis."],
             "confidence": 0.72,
+            "parse_warnings": ["meta_moderator_rule_fallback"],
+            "source": "rules",
+        }
+
+    if recommended_balance_action == "DEEPEN" or uncovered_constraints or uncovered_stakeholders or balance_blind_spots or weak_quality_keys:
+        return {
+            "decision": "DEEPEN",
+            "reason": "Balance Analyzer 2.0 found weak coverage or argument-quality gaps.",
+            "missing_perspectives": [],
+            "conflicts_to_resolve": (balance_blind_spots + uncovered_constraints + uncovered_stakeholders + weak_quality_keys)[:8],
+            "risks_to_address": risks[:5],
+            "questions_to_answer": questions[:5],
+            "next_actions": ["Deepen expert synthesis around balance-quality gaps."],
+            "confidence": 0.73,
             "parse_warnings": ["meta_moderator_rule_fallback"],
             "source": "rules",
         }

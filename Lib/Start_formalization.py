@@ -1,5 +1,9 @@
-# В схеме это агент под номером 1 (сразу после запроса)
-# Цель агента нормально формализовать то что написал юзер в качестве запроса
+"""Legacy query formalization compatibility helper.
+
+The active CMM intake path is ``Lib.query_intake``. This module is kept for old
+manual scripts that call ``formalization(...)`` directly; it must remain silent
+by default and must not be treated as the main state-machine intake layer.
+"""
 
 
 import re
@@ -120,4 +124,3 @@ def formalization(inp_text: str) -> str:
         return code_cleaned
 
     return ai_cleaned
-
