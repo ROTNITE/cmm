@@ -147,13 +147,14 @@ def _parse_legacy_text_plan(response, query, depth):
 
     return plan
 
-def develop_plan(query, context=None, depth="detailed"):
+def develop_plan(query, context=None, depth="detailed", model="deepseek-chat"):
     """
     Создаёт план ответа на запрос.
 
     query - вопрос пользователя
     context - дополнительная информация (необязательно)
     depth - глубина плана: "quick", "detailed", "comprehensive"
+    model - model name forwarded to the configured AI provider
     """
 
     # Проверяем, что запрос не пустой
@@ -203,7 +204,8 @@ Original query is authoritative. Cleaned/formalized query is helper text only. D
         user_prompt=user_prompt,
         system_prompt=system_prompt,
         temp=current["temp"],
-        tokens=current["tokens"]
+        tokens=current["tokens"],
+        model=model,
     )
 
     if not response or isinstance(response, Exception):

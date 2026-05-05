@@ -81,6 +81,44 @@ class DeliberationFlowTests(unittest.TestCase):
         self.assertIn("ОБЯЗАТЕЛЬНО УЧЕСТЬ", captured["user_prompt"])
         self.assertTrue(result["meta"]["deliberation_brief_used"])
 
+    def test_improver_model_error_uses_plan_fallback(self):
+        from Lib.agent_improver import improve_plan_to_answer
+
+        plan = {
+            "main_idea": "Explain the concept",
+            "steps": [{"number": "1", "title": "Give a short definition", "substeps": []}],
+            "potential_problems": ["Avoid overclaiming"],
+        }
+        with patch("Lib.agent_improver.send_to_AI", return_value="Error: missing key"):
+            result = improve_plan_to_answer("query", plan)
+
+        self.assertNotIn("Error:", result["answer"])
+        self.assertIn("fallback", result["answer"])
+        self.assertIn("Explain the concept", result["answer"])
+        self.assertEqual(result["meta"]["source"], "fallback")
+
+    def test_improver_empty_response_uses_plan_fallback(self):
+        from Lib.agent_improver import improve_plan_to_answer
+
+        with patch("Lib.agent_improver.send_to_AI", return_value=""):
+            result = improve_plan_to_answer(
+                "query",
+                {"main_idea": "Fallback idea", "steps": [{"title": "Step A"}]},
+            )
+
+        self.assertTrue(result["answer"].strip())
+        self.assertIn("Fallback idea", result["answer"])
+        self.assertEqual(result["meta"]["source"], "fallback")
+
+    def test_improver_valid_response_passes_through(self):
+        from Lib.agent_improver import improve_plan_to_answer
+
+        with patch("Lib.agent_improver.send_to_AI", return_value=" valid answer "):
+            result = improve_plan_to_answer("query", {"steps": []})
+
+        self.assertEqual(result["answer"], "valid answer")
+        self.assertEqual(result["meta"]["source"], "model")
+
     def test_moderator_prompt_includes_balance_and_expert_checks(self):
         from Lib.agent_moderator import moderate_answer
         from Lib.deliberation import build_deliberation_brief

@@ -59,6 +59,46 @@ def _plan_to_text(plan: Dict[str, Any],
     return "\n".join([p for p in parts if p.strip()])
 
 
+def _is_model_error(value: Any) -> bool:
+    return isinstance(value, str) and value.strip().lower().startswith("error:")
+
+
+def _fallback_answer_from_plan(original_query: str, plan: Dict[str, Any]) -> str:
+    if not isinstance(plan, dict):
+        plan = {}
+    parts: List[str] = [
+        "Не удалось получить стабильный ответ от модели. Ниже — краткий fallback на основе уже построенного плана.",
+        "",
+        f"Запрос: {original_query}".strip(),
+    ]
+    main_idea = plan.get("main_idea")
+    if isinstance(main_idea, str) and main_idea.strip():
+        parts.append(f"Основная идея: {main_idea.strip()}")
+
+    steps = plan.get("steps") if isinstance(plan.get("steps"), list) else []
+    if steps:
+        parts.append("Ключевые шаги:")
+        for index, step in enumerate(steps[:8], start=1):
+            if isinstance(step, dict):
+                title = str(step.get("title") or "").strip()
+            else:
+                title = str(step).strip()
+            if title:
+                parts.append(f"{index}. {title}")
+
+    risks = plan.get("potential_problems") if isinstance(plan.get("potential_problems"), list) else []
+    if risks:
+        parts.append("Риски и ограничения:")
+        for risk in risks[:6]:
+            text = str(risk).strip()
+            if text:
+                parts.append(f"- {text}")
+
+    if len(parts) <= 3:
+        parts.append("Коротко: нужно ответить на запрос с учётом исходного контекста, ограничений и рисков.")
+    return "\n".join(parts).strip()
+
+
 def _brief_to_text(deliberation_brief: Optional[Dict[str, Any]]) -> str:
     """Compact expert deliberation context for the answer prompt."""
     if not isinstance(deliberation_brief, dict):
@@ -205,8 +245,10 @@ def improve_plan_to_answer(
         model=model
     )
 
-    if not response or isinstance(response, Exception):
-        response = "Не удалось сгенерировать ответ (ошибка модели). Попробуйте повторить запрос."
+    source = "model"
+    if not response or isinstance(response, Exception) or _is_model_error(response):
+        response = _fallback_answer_from_plan(original_query, plan)
+        source = "fallback"
 
     return {
         "answer": response.strip(),
@@ -215,6 +257,7 @@ def improve_plan_to_answer(
         "depth": depth,
         "meta": {
             "agent": "improver",
+            "source": source,
             "timestamp": datetime.now().isoformat(timespec="seconds"),
             "model": model,
             "depth": depth,

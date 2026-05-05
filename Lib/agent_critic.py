@@ -29,7 +29,7 @@ def criticize_plan(plan, original_query, depth="standard"):
     not print. New code should import from ``Lib.plan_critic`` or
     ``Lib.critic_decision`` directly.
     """
-    result = check_plan_and_act(plan, original_query, depth=depth)
+    result = check_plan_and_act(plan, original_query)
     critique = result.get("critique") if isinstance(result, dict) else {}
     critique = critique if isinstance(critique, dict) else {}
     feedback = result.get("feedback") if isinstance(result, dict) and isinstance(result.get("feedback"), list) else []
@@ -49,6 +49,7 @@ def criticize_plan(plan, original_query, depth="standard"):
         "final_score": final_score,
         "status": result.get("status") if isinstance(result, dict) else "needs_revision",
         "source": "plan_critic_compat",
+        "legacy_depth": depth,
     }
 
 

@@ -311,7 +311,7 @@ class OrchestratorTests(unittest.TestCase):
             call_order.append("meta")
             return _sample_meta_decision()
 
-        def plan(query, context=None, depth="detailed"):
+        def plan(query, context=None, depth="detailed", model="deepseek-chat"):
             call_order.append("plan")
             return _sample_plan()
 
@@ -408,7 +408,7 @@ class OrchestratorTests(unittest.TestCase):
 
         captured = {}
 
-        def capture_plan(query, context=None, depth="detailed"):
+        def capture_plan(query, context=None, depth="detailed", model="deepseek-chat"):
             captured["context"] = context
             return _sample_plan()
 
@@ -504,7 +504,7 @@ class OrchestratorTests(unittest.TestCase):
 
         captured = {}
 
-        def capture_plan(query, context=None, depth="detailed"):
+        def capture_plan(query, context=None, depth="detailed", model="deepseek-chat"):
             captured["query"] = query
             captured["context"] = context
             return _sample_plan()
@@ -569,7 +569,7 @@ class OrchestratorTests(unittest.TestCase):
 
         captured = {}
 
-        def capture_plan(query, context=None, depth="detailed"):
+        def capture_plan(query, context=None, depth="detailed", model="deepseek-chat"):
             captured["context"] = context
             return _sample_plan()
 
@@ -687,7 +687,7 @@ class OrchestratorTests(unittest.TestCase):
 
         captured = {}
 
-        def capture_plan(query, context=None, depth="detailed"):
+        def capture_plan(query, context=None, depth="detailed", model="deepseek-chat"):
             captured["context"] = context
             return _sample_plan()
 

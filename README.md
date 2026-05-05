@@ -132,7 +132,8 @@ Optional parallelism is deliberately narrow. The default `parallel_mode="SEQUENT
 - `router_decision`, `cmm_mode`, `estimated_cost_class`, and `routing_warnings`
 - `parallel_mode`, `max_workers`, and `parallelized_stages`
 - `roles_used` and `expert_rounds`
-- `dynamic_role_reports` and `dynamic_roles_used`
+- `dynamic_role_reports`, `dynamic_roles_generated`, `dynamic_roles_executed`, `dynamic_roles_rejected`
+- `dynamic_roles_used` is retained as a compatibility alias for `dynamic_roles_executed`
 - `deliberation_brief`
 - `balance_reports`
 - `conflict_reports`

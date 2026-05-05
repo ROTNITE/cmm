@@ -138,6 +138,20 @@ def _dynamic_report_with_role():
     }
 
 
+def _expert_bundle_with_dynamic_role():
+    bundle = _expert_bundle()
+    bundle["roles"] = list(bundle["roles"]) + [
+        {
+            "key": "legal_reviewer",
+            "name": "Legal Reviewer",
+            "perspective_tag": "legal",
+            "dynamic": True,
+            "why_needed": "Legal constraints appear in the task.",
+        }
+    ]
+    return bundle
+
+
 def _deliberation_bundle():
     return {
         "type": "deliberation_round",
@@ -369,6 +383,73 @@ class StateMachineTests(unittest.TestCase):
         mocks["run_deliberation_round"].assert_not_called()
         mocks["run_targeted_expert_round"].assert_not_called()
 
+    def test_answer_moderation_accept_finalizes(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["run_moderated_loop"].return_value = {
+                "final_answer": "accepted answer",
+                "reports": [{"decision": "ACCEPT", "avg_score": 9.0, "critical_issues": []}],
+            }
+            result = run_cmm_state_machine("raw query")
+
+        trace = result["trace_report"]
+        self.assertEqual(result["final_answer"], "accepted answer")
+        self.assertEqual(trace["final_state"], "FINALIZE")
+        self.assertEqual(trace["answer_moderation_final_decision"], "ACCEPT")
+        self.assertFalse(trace["answer_moderation_best_effort"])
+
+    def test_answer_moderation_revise_noncritical_finalizes_with_warning(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["run_moderated_loop"].return_value = {
+                "final_answer": "revised best effort",
+                "reports": [{"decision": "REVISE", "avg_score": 6.0, "critical_issues": []}],
+            }
+            result = run_cmm_state_machine("raw query")
+
+        trace = result["trace_report"]
+        self.assertEqual(result["final_answer"], "revised best effort")
+        self.assertEqual(trace["final_state"], "FINALIZE")
+        self.assertEqual(trace["answer_moderation_final_decision"], "REVISE")
+        self.assertTrue(trace["answer_moderation_best_effort"])
+        self.assertIn("answer_moderation_revise_best_effort", trace["warnings"])
+
+    def test_answer_moderation_reject_with_answer_fails(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["run_moderated_loop"].return_value = {
+                "final_answer": "rejected answer",
+                "reports": [{"decision": "REJECT", "avg_score": 2.0, "critical_issues": ["unsafe"]}],
+            }
+            result = run_cmm_state_machine("raw query")
+
+        trace = result["trace_report"]
+        self.assertEqual(result["final_answer"], "")
+        self.assertEqual(trace["final_state"], "FAILED")
+        self.assertEqual(trace["answer_moderation_final_decision"], "REJECT")
+        self.assertEqual(trace["answer_moderation_critical_issues"], ["unsafe"])
+        self.assertIn("answer_moderation_rejected", trace["errors"])
+
+    def test_answer_moderation_empty_answer_fails(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["run_moderated_loop"].return_value = {
+                "final_answer": "",
+                "reports": [{"decision": "ACCEPT", "avg_score": 9.0, "critical_issues": []}],
+            }
+            result = run_cmm_state_machine("raw query")
+
+        self.assertEqual(result["trace_report"]["final_state"], "FAILED")
+        self.assertIn("moderated_loop_returned_empty_final_answer", result["trace_report"]["errors"])
+
     def test_threaded_mode_passes_config_to_initial_expert_panel_and_trace(self):
         from Lib.state_machine import run_cmm_state_machine
 
@@ -422,7 +503,7 @@ class StateMachineTests(unittest.TestCase):
         captured_contexts = []
         captured_critique_kwargs = []
 
-        def capture_plan(query, context=None, depth="detailed"):
+        def capture_plan(query, context=None, depth="detailed", model="deepseek-chat"):
             captured_contexts.append(context)
             return _plan(f"plan-{len(captured_contexts)}")
 
@@ -448,6 +529,22 @@ class StateMachineTests(unittest.TestCase):
         self.assertEqual(captured_contexts[1]["replan_context"]["feedback"], ["Fix A"])
         self.assertEqual(captured_critique_kwargs[1]["replan_context"]["feedback"], ["Fix A"])
 
+    def test_state_machine_passes_model_to_develop_plan(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        captured = {}
+
+        def capture_plan(query, context=None, depth="detailed", model="deepseek-chat"):
+            captured["model"] = model
+            return _plan()
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["develop_plan"].side_effect = capture_plan
+            run_cmm_state_machine("raw query", model="test-model")
+
+        self.assertEqual(captured["model"], "test-model")
+
     def test_state_machine_passes_context_to_plan_critic(self):
         from Lib.state_machine import run_cmm_state_machine
 
@@ -460,6 +557,7 @@ class StateMachineTests(unittest.TestCase):
         with self._patch_core() as mocks:
             self._configure_success(mocks)
             mocks["generate_dynamic_roles"].return_value = _dynamic_report_with_role()
+            mocks["run_expert_panel"].return_value = _expert_bundle_with_dynamic_role()
             mocks["check_plan_and_act"].side_effect = capture_critique
             run_cmm_state_machine("raw query")
 
@@ -473,6 +571,28 @@ class StateMachineTests(unittest.TestCase):
         self.assertTrue(kwargs["state_history"])
         self.assertEqual(kwargs["replan_context"], {})
         self.assertEqual(kwargs["model"], "deepseek-chat")
+
+    def test_plan_critic_receives_only_executed_dynamic_roles(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        captured = {}
+
+        def capture_critique(plan, query, min_score=0.7, **kwargs):
+            captured["dynamic_roles_used"] = kwargs.get("dynamic_roles_used")
+            return {"status": "ready", "critique": _critique()}
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["generate_dynamic_roles"].return_value = _dynamic_report_with_role()
+            mocks["run_expert_panel"].return_value = _expert_bundle()
+            mocks["check_plan_and_act"].side_effect = capture_critique
+            result = run_cmm_state_machine("raw query")
+
+        trace = result["trace_report"]
+        self.assertEqual(trace["dynamic_roles_generated"][0]["key"], "legal_reviewer")
+        self.assertEqual(trace["dynamic_roles_executed"], [])
+        self.assertEqual(trace["dynamic_roles_used"], [])
+        self.assertEqual(captured["dynamic_roles_used"], [])
 
     def test_plan_rejected_fails_after_max_iters(self):
         from Lib.state_machine import run_cmm_state_machine

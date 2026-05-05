@@ -117,6 +117,7 @@ Real judged evaluation является отдельным opt-in режимом
 - Второй экспертный раунд есть, но он ограничен: он использует существующие базовые роли и whitelist dynamic role templates, и является targeted follow-up, а не свободной дискуссией.
 - Structured deliberation round есть, но он ограничен одной schema-driven итерацией и не является полноценной свободной debate/state-machine системой.
 - Dynamic roles ограничены заранее заданными шаблонами; модель может предложить только разрешенный key/tag, но не произвольный `system_prompt`.
+- Trace разделяет `dynamic_roles_generated`, `dynamic_roles_executed` и `dynamic_roles_rejected`; старое поле `dynamic_roles_used` сохранено как alias к реально выполненным `dynamic_roles_executed`.
 - State machine является bounded MVP-оркестратором, а не бесконечным автономным процессом.
 - Router является deterministic heuristic и может ошибочно выбрать слишком лёгкий или слишком тяжёлый путь; real eval следует анализировать по `cmm_mode` и router complexity.
 - Context-aware plan critic проверяет план по ограничениям, экспертным рискам, unresolved trade-offs, dynamic-role concerns и deliberation revisions, но остаётся heuristic/model-assisted проверкой, а не формальной верификацией корректности.

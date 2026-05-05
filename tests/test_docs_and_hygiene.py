@@ -86,6 +86,19 @@ class DocsAndHygieneTests(unittest.TestCase):
         self.assertEqual(result["final_score"], 8.5)
         self.assertEqual(result["recommendations"], ["Keep it concise"])
 
+    def test_legacy_agent_critic_real_call_does_not_raise(self):
+        from Lib.agent_critic import criticize_plan
+
+        buffer = io.StringIO()
+        with patch("Lib.plan_critic.send_to_AI", return_value="not json"):
+            with redirect_stdout(buffer):
+                result = criticize_plan({"main_idea": "x", "steps": []}, "query")
+
+        self.assertEqual(buffer.getvalue(), "")
+        self.assertIsInstance(result, dict)
+        self.assertEqual(result["source"], "plan_critic_compat")
+        self.assertEqual(result["legacy_depth"], "standard")
+
     def test_finish_agent_accepts_none_critique(self):
         from Lib.Finish_agent import finish_answer
 

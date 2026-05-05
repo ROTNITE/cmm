@@ -95,7 +95,8 @@ The trace report is a structured audit object, not just debug logs. It includes:
 - query fields
 - query intake
 - roles and expert rounds
-- dynamic role reports and dynamic roles used
+- dynamic role reports, generated dynamic roles, executed dynamic roles, and rejected suggestions
+- `dynamic_roles_used` is retained as a compatibility alias for `dynamic_roles_executed`
 - deliberation brief
 - balance reports
 - conflict reports

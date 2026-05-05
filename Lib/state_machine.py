@@ -308,7 +308,7 @@ def _sanitize_dynamic_role_report(report: dict) -> dict:
     }
 
 
-def _flatten_dynamic_roles_used(dynamic_role_reports: list | None) -> list[dict]:
+def _flatten_dynamic_roles_generated(dynamic_role_reports: list | None) -> list[dict]:
     out: list[dict] = []
     seen: set[tuple[str, str]] = set()
     for report in _safe_list(dynamic_role_reports):
@@ -335,6 +335,76 @@ def _flatten_dynamic_roles_used(dynamic_role_reports: list | None) -> list[dict]
                 }
             )
     return out
+
+
+def _flatten_dynamic_roles_rejected(dynamic_role_reports: list | None) -> list[dict]:
+    out: list[dict] = []
+    seen: set[tuple[str, str, str]] = set()
+    for report in _safe_list(dynamic_role_reports):
+        if not isinstance(report, dict):
+            continue
+        round_name = str(report.get("round") or "")
+        for item in _safe_list(report.get("rejected_suggestions")):
+            if not isinstance(item, dict):
+                continue
+            raw_key = str(item.get("raw_key") or item.get("key") or "").strip()
+            reason = str(item.get("reason") or "").strip()
+            marker = (round_name, raw_key, reason)
+            if marker in seen:
+                continue
+            seen.add(marker)
+            rejected = dict(item)
+            rejected["round"] = round_name
+            out.append(rejected)
+    return out
+
+
+def _flatten_dynamic_roles_executed(expert_rounds: list | None, dynamic_role_reports: list | None) -> list[dict]:
+    generated_by_key: dict[str, dict] = {}
+    for role in _flatten_dynamic_roles_generated(dynamic_role_reports):
+        key = role.get("key")
+        if isinstance(key, str) and key and key not in generated_by_key:
+            generated_by_key[key] = role
+
+    out: list[dict] = []
+    seen: set[tuple[str, str]] = set()
+    for index, bundle in enumerate(_safe_list(expert_rounds)):
+        if not isinstance(bundle, dict):
+            continue
+        round_name = "initial" if index == 0 else "extra"
+        for view in _safe_list(bundle.get("roles")):
+            if not isinstance(view, dict):
+                continue
+            key = str(view.get("key") or "").strip()
+            if not key:
+                continue
+            is_dynamic = bool(view.get("dynamic")) or key in generated_by_key
+            if not is_dynamic:
+                continue
+            marker = (round_name, key)
+            if marker in seen:
+                continue
+            seen.add(marker)
+            generated = generated_by_key.get(key, {})
+            out.append(
+                {
+                    "key": key,
+                    "name": view.get("name") or generated.get("name") or "",
+                    "perspective_tag": view.get("perspective_tag") or generated.get("perspective_tag") or "",
+                    "why_needed": view.get("why_needed") or generated.get("why_needed") or "",
+                    "round": round_name,
+                }
+            )
+    return out
+
+
+def _flatten_dynamic_roles_used(dynamic_role_reports: list | None) -> list[dict]:
+    """Backward-compatible generated-role flattener for older internal tests.
+
+    Trace/report generation now uses ``_flatten_dynamic_roles_executed`` for the
+    public ``dynamic_roles_used`` compatibility field.
+    """
+    return _flatten_dynamic_roles_generated(dynamic_role_reports)
 
 
 def _record_dynamic_role_report(state: dict, report: dict, round_name: str) -> list:
@@ -460,6 +530,9 @@ def init_cmm_state(
         "answers": [],
         "moderated_result": {},
         "moderation_reports": [],
+        "answer_moderation_final_decision": "",
+        "answer_moderation_critical_issues": [],
+        "answer_moderation_best_effort": False,
         "warnings": [],
         "errors": [],
         "history": [],
@@ -632,7 +705,10 @@ def _run_balance(state: dict, warning_prefix: str) -> None:
             state.get("expert_bundle", {}),
             query_intake=state.get("query_intake", {}),
             conflict_report=state.get("conflict_report", {}),
-            dynamic_roles_used=_flatten_dynamic_roles_used(state.get("dynamic_role_reports")),
+            dynamic_roles_used=_flatten_dynamic_roles_executed(
+                state.get("expert_rounds"),
+                state.get("dynamic_role_reports"),
+            ),
             deliberation_revisions=_flatten_deliberation_revisions(state.get("deliberation_rounds")),
         )
         if not isinstance(balance_report, dict):
@@ -882,7 +958,12 @@ def handle_rebalance(state: dict) -> tuple[str, str]:
 def handle_plan(state: dict) -> tuple[str, str]:
     try:
         planner_context = _build_planner_context(state)
-        plan = develop_plan(state["original_query"], context=planner_context, depth="detailed")
+        plan = develop_plan(
+            state["original_query"],
+            context=planner_context,
+            depth="detailed",
+            model=state["model"],
+        )
         if not isinstance(plan, dict):
             state["warnings"].append("plan_invalid; stopping before moderation")
             plan = {"error": "plan_invalid"}
@@ -912,7 +993,10 @@ def handle_plan_critique(state: dict) -> tuple[str, str]:
             query_intake=state.get("query_intake", {}),
             deliberation_brief=state.get("deliberation_brief", {}),
             conflict_report=state.get("conflict_report", {}),
-            dynamic_roles_used=_flatten_dynamic_roles_used(state.get("dynamic_role_reports")),
+            dynamic_roles_used=_flatten_dynamic_roles_executed(
+                state.get("expert_rounds"),
+                state.get("dynamic_role_reports"),
+            ),
             deliberation_revisions=_flatten_deliberation_revisions(state.get("deliberation_rounds")),
             meta_decision=state.get("meta_decision", {}),
             state_history=state.get("history", []),
@@ -994,10 +1078,41 @@ def handle_answer(state: dict) -> tuple[str, str]:
 
 
 def handle_answer_moderation(state: dict) -> tuple[str, str]:
-    if state.get("final_answer"):
-        return FINALIZE, "final answer available"
-    state["errors"].append("moderated_loop_returned_empty_final_answer")
-    return FAILED, "answer moderation failed to produce final answer"
+    final_answer = state.get("final_answer")
+    if not isinstance(final_answer, str) or not final_answer.strip():
+        state["errors"].append("moderated_loop_returned_empty_final_answer")
+        return FAILED, "answer moderation failed to produce final answer"
+
+    reports = _safe_list(state.get("moderation_reports"))
+    last_report = reports[-1] if reports and isinstance(reports[-1], dict) else {}
+    decision = str(last_report.get("decision") or "").upper()
+    critical_issues = [str(item).strip() for item in _safe_list(last_report.get("critical_issues")) if str(item).strip()]
+    state["answer_moderation_final_decision"] = decision
+    state["answer_moderation_critical_issues"] = critical_issues
+    state["answer_moderation_best_effort"] = False
+
+    if decision == "ACCEPT":
+        return FINALIZE, "answer moderation accepted final answer"
+
+    if decision == "REVISE":
+        if critical_issues:
+            state["errors"].append("answer_moderation_revise_critical_issues")
+            return FAILED, "answer moderation requested revision with critical issues"
+        state["warnings"].append("answer_moderation_revise_best_effort")
+        state["answer_moderation_best_effort"] = True
+        return FINALIZE, "answer moderation requested non-critical revision; finalized best effort"
+
+    if decision == "REJECT":
+        state["errors"].append("answer_moderation_rejected")
+        return FAILED, "answer moderation rejected final answer"
+
+    if critical_issues:
+        state["errors"].append("answer_moderation_unknown_decision_with_critical_issues")
+        return FAILED, "answer moderation returned critical issues without accept decision"
+
+    state["warnings"].append("answer_moderation_missing_decision_best_effort")
+    state["answer_moderation_best_effort"] = True
+    return FINALIZE, "answer moderation decision missing; finalized best effort"
 
 
 def _build_trace_report(state: dict) -> dict:
@@ -1007,6 +1122,8 @@ def _build_trace_report(state: dict) -> dict:
     plan_critiques = _safe_list(state.get("plan_critiques"))
     deliberation_rounds = _safe_list(state.get("deliberation_rounds"))
     dynamic_role_reports = _safe_list(state.get("dynamic_role_reports"))
+    dynamic_roles_generated = _flatten_dynamic_roles_generated(dynamic_role_reports)
+    dynamic_roles_executed = _flatten_dynamic_roles_executed(state.get("expert_rounds"), dynamic_role_reports)
     expert_bundle = _safe_dict(state.get("expert_bundle"))
     return {
         "original_query": state.get("original_query", ""),
@@ -1027,13 +1144,19 @@ def _build_trace_report(state: dict) -> dict:
         "deliberation_rounds": deliberation_rounds,
         "deliberation_revisions": _flatten_deliberation_revisions(deliberation_rounds),
         "dynamic_role_reports": [_sanitize_dynamic_role_report(report) for report in dynamic_role_reports],
-        "dynamic_roles_used": _flatten_dynamic_roles_used(dynamic_role_reports),
+        "dynamic_roles_generated": dynamic_roles_generated,
+        "dynamic_roles_executed": dynamic_roles_executed,
+        "dynamic_roles_rejected": _flatten_dynamic_roles_rejected(dynamic_role_reports),
+        "dynamic_roles_used": dynamic_roles_executed,
         "unresolved_tradeoffs": _flatten_conflict_field(conflict_reports, "unresolved_tradeoffs"),
         "premature_consensus_risks": _flatten_conflict_field(conflict_reports, "premature_consensus_risks"),
         "blind_spots": _flatten_conflict_field(conflict_reports, "blind_spots"),
         "plan": state.get("plan", {}),
         "plan_critique": state.get("plan_critique", {}),
         "moderation_reports": moderation_reports,
+        "answer_moderation_final_decision": state.get("answer_moderation_final_decision") or "",
+        "answer_moderation_critical_issues": _safe_list(state.get("answer_moderation_critical_issues")),
+        "answer_moderation_best_effort": bool(state.get("answer_moderation_best_effort")),
         "revision_count": max(0, len(moderation_reports) - 1),
         "final_confidence": _extract_final_confidence(moderation_reports),
         "meta_moderation_decisions": meta_decisions,

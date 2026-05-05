@@ -72,6 +72,26 @@ class JsonContractTests(unittest.TestCase):
         self.assertEqual(plan["steps"][0]["uses_expert_inputs"], ["Risk A"])
         self.assertEqual(plan["parse_warnings"], [])
 
+    def test_develop_plan_passes_model_to_send_to_ai(self):
+        from Lib.plan_development import develop_plan
+
+        raw = json.dumps(
+            {
+                "main_idea": "Idea",
+                "preparation": [],
+                "steps": [{"number": "1", "title": "Step", "substeps": [], "uses_expert_inputs": []}],
+                "nuances": [],
+                "potential_problems": [],
+                "result": "Result",
+            },
+            ensure_ascii=False,
+        )
+
+        with patch("Lib.plan_development.send_to_AI", return_value=raw) as mocked_send:
+            develop_plan("query", model="custom-model")
+
+        self.assertEqual(mocked_send.call_args.kwargs["model"], "custom-model")
+
     def test_planner_parses_markdown_wrapped_json(self):
         from Lib.plan_development import develop_plan
 
