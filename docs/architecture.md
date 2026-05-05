@@ -32,7 +32,8 @@ INTAKE
 - `Lib/router.py` deterministically selects `DIRECT`, `LIGHT_CMM`, or `FULL_CMM`.
 - `Lib/direct_answer.py` handles simple low-risk direct answers.
 - `Lib/query_intake.py` preserves `original_query` as the authoritative source and extracts helper fields such as `cleaned_query`, context, constraints, success criteria, unknowns, and user preferences.
-- `Lib/role_generator.py` maps model/rule suggestions to whitelist-limited dynamic role templates.
+- `Lib/json_retry.py` retries strict JSON model calls once with a repair prompt before fallback.
+- `Lib/role_generator.py` maps rule-first and optional model suggestions to whitelist-limited dynamic role templates.
 - `Lib/expert_selector.py`, `Lib/expert_roles.py`, `Lib/expert_agent.py`, and `Lib/expert_panel.py` implement expert selection and contribution collection. Expert calls are sequential by default, with optional ordered thread execution for independent first-round calls.
 - `Lib/expert_rounds.py` selects safe follow-up roles, runs targeted second expert rounds, and merges expert bundles. Targeted expert calls can use the same opt-in thread execution when several roles are selected.
 - `Lib/parallel_utils.py` provides bounded standard-library helpers for ordered `ThreadPoolExecutor` execution.
@@ -78,7 +79,7 @@ When `meta_moderator` returns `DEEPEN` or `ADD_EXPERT`, the state machine can se
 
 Before planning, the state machine can also run one structured deliberation round when conflict or meta-moderation state shows disagreements, unresolved trade-offs, blind spots, or premature consensus. This pass is not another gap-filling expert round: each selected expert sees its own first contribution, compact positions from other roles, and the conflict report, then returns agreements, disagreements, missed points, revised recommendations, new risks, and group questions. The revisions are merged into expert context and conflict analysis is recomputed.
 
-Dynamic roles are generated only through a fixed template catalog. The model may suggest allowed role keys or perspective tags, but code rejects arbitrary keys, arbitrary tags, unsafe text, duplicates, over-limit suggestions, and any attempt to provide `system_prompt`.
+Dynamic roles are generated only through a fixed template catalog. Rules run first and can fill obvious roles without any model call. If open slots remain and the context is complex, the model may suggest allowed role keys or perspective tags, but code rejects arbitrary keys, arbitrary tags, unsafe text, duplicates, over-limit suggestions, and any attempt to provide `system_prompt`.
 
 Balance Analyzer 2.0 remains offline and deterministic. It preserves the original tag/count fields while adding perspective coverage, constraint coverage, stakeholder coverage, risk severity distribution, argument quality, dominance detail, blind spots, and a recommended action for meta moderation.
 
@@ -116,7 +117,8 @@ The MVP favors explicit fallback structures over crashes:
 - missing/invalid query intake falls back to the full original query plus mechanically cleaned helper text
 - expert panel failure falls back to an empty expert bundle
 - balance failure falls back to conservative missing-perspective data
-- invalid model JSON records parse warnings where applicable
+- intake, role suggestion, and plan-critic JSON calls retry once on invalid JSON and record `json_attempts` / parse warnings
+- invalid model JSON still records parse warnings and falls back where applicable
 - weak or context-missing plans return `needs_revision` / `rejected` with structured feedback
 - rejected plans return structured failure instead of continuing blindly
 

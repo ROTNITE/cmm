@@ -15,7 +15,7 @@ class QueryIntakeTests(unittest.TestCase):
             "Критерии успеха: рост вовлечённости, понятные метрики, не увеличить нагрузку."
         ) * 4
 
-        with patch("Lib.query_intake.send_to_AI", side_effect=RuntimeError("no real API")):
+        with patch("Lib.json_retry.send_to_AI", side_effect=RuntimeError("no real API")):
             intake = build_query_intake(original)
 
         self.assertEqual(intake["original_query"], original)
@@ -38,7 +38,7 @@ class QueryIntakeTests(unittest.TestCase):
             "should_use_cmm": True,
         }
 
-        with patch("Lib.query_intake.send_to_AI", return_value=json.dumps(payload)):
+        with patch("Lib.json_retry.send_to_AI", return_value=json.dumps(payload)):
             intake = build_query_intake("raw query")
 
         self.assertEqual(intake["original_query"], "raw query")
@@ -48,6 +48,7 @@ class QueryIntakeTests(unittest.TestCase):
         self.assertEqual(intake["complexity"], "complex")
         self.assertTrue(intake["should_use_cmm"])
         self.assertEqual(intake["source"], "model")
+        self.assertEqual(intake["json_attempts"], 1)
 
     def test_build_query_intake_markdown_json(self):
         from Lib.query_intake import build_query_intake
@@ -65,7 +66,7 @@ class QueryIntakeTests(unittest.TestCase):
         }
         raw = "```json\n" + json.dumps(payload) + "\n```"
 
-        with patch("Lib.query_intake.send_to_AI", return_value=raw):
+        with patch("Lib.json_retry.send_to_AI", return_value=raw):
             intake = build_query_intake("raw query")
 
         self.assertEqual(intake["source"], "model")
@@ -76,18 +77,41 @@ class QueryIntakeTests(unittest.TestCase):
         from Lib.query_intake import build_query_intake
 
         original = "Нужно решить задачу. Ограничение: бюджет маленький."
-        with patch("Lib.query_intake.send_to_AI", return_value="not json"):
+        with patch("Lib.json_retry.send_to_AI", return_value="not json"):
             intake = build_query_intake(original)
 
         self.assertEqual(intake["original_query"], original)
         self.assertEqual(intake["source"], "fallback")
         self.assertIn("model_intake_invalid_json", intake["parse_warnings"])
+        self.assertEqual(intake["json_attempts"], 2)
         self.assertTrue(intake["should_use_cmm"])
+
+    def test_build_query_intake_retries_invalid_json_once(self):
+        from Lib.query_intake import build_query_intake
+
+        payload = {
+            "task_goal": "Retry success",
+            "context": [],
+            "constraints": [],
+            "success_criteria": [],
+            "unknowns": [],
+            "user_preferences": [],
+            "risk_level": "low",
+            "complexity": "simple",
+            "should_use_cmm": False,
+        }
+        with patch("Lib.json_retry.send_to_AI", side_effect=["not json", json.dumps(payload)]):
+            intake = build_query_intake("simple query")
+
+        self.assertEqual(intake["source"], "model")
+        self.assertEqual(intake["task_goal"], "Retry success")
+        self.assertEqual(intake["json_attempts"], 2)
+        self.assertIn("json_retry_after_invalid_json", intake["parse_warnings"])
 
     def test_no_real_api_calls_in_intake_tests(self):
         from Lib.query_intake import build_query_intake
 
-        with patch("Lib.query_intake.send_to_AI", side_effect=AssertionError("no real API")):
+        with patch("Lib.json_retry.send_to_AI", side_effect=AssertionError("no real API")):
             intake = build_query_intake("Short request")
 
         self.assertEqual(intake["original_query"], "Short request")

@@ -95,7 +95,7 @@ class PlanCriticTests(unittest.TestCase):
     def test_plan_critic_parses_valid_json(self):
         from Lib.plan_critic import check_plan_and_act
 
-        with patch("Lib.plan_critic.send_to_AI", return_value=json.dumps(_valid_payload())):
+        with patch("Lib.json_retry.send_to_AI", return_value=json.dumps(_valid_payload())):
             result = check_plan_and_act(_plan(), "Build a privacy-safe pilot", **_context())
 
         self.assertEqual(result["status"], "ready")
@@ -118,7 +118,7 @@ class PlanCriticTests(unittest.TestCase):
         from Lib.plan_critic import check_plan_and_act
 
         raw = "```json\n" + json.dumps(_valid_payload()) + "\n```"
-        with patch("Lib.plan_critic.send_to_AI", return_value=raw):
+        with patch("Lib.json_retry.send_to_AI", return_value=raw):
             result = check_plan_and_act(_plan(), "Build a privacy-safe pilot", **_context())
 
         self.assertEqual(result["status"], "ready")
@@ -127,7 +127,7 @@ class PlanCriticTests(unittest.TestCase):
     def test_plan_critic_invalid_json_fallback(self):
         from Lib.plan_critic import check_plan_and_act
 
-        with patch("Lib.plan_critic.send_to_AI", return_value="not json"):
+        with patch("Lib.json_retry.send_to_AI", return_value="not json"):
             result = check_plan_and_act(_generic_plan("generic step"), "Build a privacy-safe pilot", **_context())
 
         self.assertIn(result["status"], {"needs_revision", "rejected"})
@@ -137,11 +137,21 @@ class PlanCriticTests(unittest.TestCase):
         for key in ("ignored_must_address", "ignored_risks", "ignored_tradeoffs", "recommendations"):
             self.assertIn(key, result["critique"])
 
+    def test_plan_critic_retries_invalid_json_once(self):
+        from Lib.plan_critic import check_plan_and_act
+
+        with patch("Lib.json_retry.send_to_AI", side_effect=["not json", json.dumps(_valid_payload())]):
+            result = check_plan_and_act(_plan(), "Build a privacy-safe pilot", **_context())
+
+        self.assertEqual(result["critique"]["source"], "model")
+        self.assertEqual(result["critique"]["json_attempts"], 2)
+        self.assertIn("json_retry_after_invalid_json", result["critique"]["parse_warnings"])
+
     def test_check_plan_and_act_accepts_intake_alias(self):
         from Lib.plan_critic import check_plan_and_act
 
         intake = {"constraints": ["limited budget"], "success_criteria": []}
-        with patch("Lib.plan_critic.send_to_AI", return_value="invalid"):
+        with patch("Lib.json_retry.send_to_AI", return_value="invalid"):
             result = check_plan_and_act(
                 _generic_plan("Pilot with clear steps"),
                 "Build pilot",
@@ -157,7 +167,7 @@ class PlanCriticTests(unittest.TestCase):
 
         query_intake = {"constraints": ["privacy constraint"], "success_criteria": []}
         intake = {"constraints": ["limited budget"], "success_criteria": []}
-        with patch("Lib.plan_critic.send_to_AI", return_value="invalid"):
+        with patch("Lib.json_retry.send_to_AI", return_value="invalid"):
             result = check_plan_and_act(
                 _generic_plan("Pilot covers privacy constraint with clear ordered steps"),
                 "Build pilot",
@@ -172,7 +182,7 @@ class PlanCriticTests(unittest.TestCase):
     def test_empty_plan_rejected(self):
         from Lib.plan_critic import check_plan_and_act
 
-        with patch("Lib.plan_critic.send_to_AI", side_effect=AssertionError("model should not be called")):
+        with patch("Lib.json_retry.send_to_AI", side_effect=AssertionError("model should not be called")):
             result = check_plan_and_act({}, "Build a privacy-safe pilot", **_context())
 
         self.assertEqual(result["status"], "rejected")
@@ -181,7 +191,7 @@ class PlanCriticTests(unittest.TestCase):
     def test_missing_constraints_causes_needs_revision(self):
         from Lib.plan_critic import check_plan_and_act
 
-        with patch("Lib.plan_critic.send_to_AI", return_value="invalid"):
+        with patch("Lib.json_retry.send_to_AI", return_value="invalid"):
             result = check_plan_and_act(_generic_plan("Do a generic pilot"), "Build a privacy-safe pilot", **_context())
 
         self.assertIn(result["status"], {"needs_revision", "rejected"})
@@ -195,7 +205,7 @@ class PlanCriticTests(unittest.TestCase):
         ctx["query_intake"]["constraints"] = []
         ctx["deliberation_brief"]["expert_risks"] = []
         ctx["dynamic_roles_used"] = []
-        with patch("Lib.plan_critic.send_to_AI", return_value="invalid"):
+        with patch("Lib.json_retry.send_to_AI", return_value="invalid"):
             result = check_plan_and_act(_generic_plan("Implement quickly with ordered steps"), "Build pilot", **ctx)
 
         self.assertEqual(result["status"], "needs_revision")
@@ -214,7 +224,7 @@ class PlanCriticTests(unittest.TestCase):
         ctx["deliberation_brief"]["expert_risks"] = []
         ctx["conflict_report"] = {"unresolved_tradeoffs": [], "blind_spots": [], "premature_consensus_risks": []}
         ctx["dynamic_roles_used"] = [{"key": "measurement_expert", "perspective_tag": "measurement"}]
-        with patch("Lib.plan_critic.send_to_AI", return_value="invalid"):
+        with patch("Lib.json_retry.send_to_AI", return_value="invalid"):
             result = check_plan_and_act(_generic_plan("Execute a generic implementation plan"), "Build pilot", **ctx)
 
         self.assertEqual(result["status"], "needs_revision")
@@ -223,7 +233,7 @@ class PlanCriticTests(unittest.TestCase):
     def test_good_plan_ready_with_context(self):
         from Lib.plan_critic import check_plan_and_act
 
-        with patch("Lib.plan_critic.send_to_AI", return_value="invalid"):
+        with patch("Lib.json_retry.send_to_AI", return_value="invalid"):
             result = check_plan_and_act(_plan(), "Build a privacy-safe pilot", **_context())
 
         self.assertEqual(result["status"], "ready")
@@ -237,7 +247,7 @@ class PlanCriticTests(unittest.TestCase):
         ctx["deliberation_brief"]["expert_risks"] = ["critical security failure risk"]
         ctx["deliberation_brief"]["must_address"] = []
         ctx["conflict_report"] = {"unresolved_tradeoffs": [], "blind_spots": [], "premature_consensus_risks": []}
-        with patch("Lib.plan_critic.send_to_AI", return_value=json.dumps(_valid_payload())):
+        with patch("Lib.json_retry.send_to_AI", return_value=json.dumps(_valid_payload())):
             result = check_plan_and_act(_generic_plan("Run a generic pilot"), "Build pilot", **ctx)
 
         self.assertNotEqual(result["status"], "ready")
@@ -253,7 +263,7 @@ class PlanCriticTests(unittest.TestCase):
         ctx["deliberation_brief"]["expert_risks"] = []
         ctx["deliberation_brief"]["must_address"] = ["critical privacy compliance requirement"]
         ctx["conflict_report"] = {"unresolved_tradeoffs": [], "blind_spots": [], "premature_consensus_risks": []}
-        with patch("Lib.plan_critic.send_to_AI", return_value=json.dumps(_valid_payload())):
+        with patch("Lib.json_retry.send_to_AI", return_value=json.dumps(_valid_payload())):
             result = check_plan_and_act(_generic_plan("Run a generic pilot"), "Build pilot", **ctx)
 
         self.assertNotEqual(result["status"], "ready")
@@ -269,7 +279,7 @@ class PlanCriticTests(unittest.TestCase):
             "deliberation_brief": {"missing_perspectives": ["legal"], "must_address": [], "expert_risks": []},
             "conflict_report": {"unresolved_tradeoffs": [], "blind_spots": [], "premature_consensus_risks": []},
         }
-        with patch("Lib.plan_critic.send_to_AI", return_value="invalid"):
+        with patch("Lib.json_retry.send_to_AI", return_value="invalid"):
             ignored = check_plan_and_act(_generic_plan("Run a generic pilot"), "Build pilot", **ctx)
             covered = check_plan_and_act(_generic_plan("Add legal review before launch"), "Build pilot", **ctx)
 
@@ -281,7 +291,7 @@ class PlanCriticTests(unittest.TestCase):
     def test_check_plan_and_act_backward_compatible(self):
         from Lib.critic_decision import check_plan_and_act
 
-        with patch("Lib.plan_critic.send_to_AI", return_value="invalid"):
+        with patch("Lib.json_retry.send_to_AI", return_value="invalid"):
             result = check_plan_and_act(_plan("Answer the query with clear steps"), "Answer the query", min_score=0.7)
 
         self.assertIn(result["status"], {"ready", "needs_revision", "rejected"})
@@ -291,7 +301,7 @@ class PlanCriticTests(unittest.TestCase):
     def test_no_real_api_calls(self):
         from Lib.plan_critic import check_plan_and_act
 
-        with patch("Lib.plan_critic.send_to_AI", side_effect=RuntimeError("no network")):
+        with patch("Lib.json_retry.send_to_AI", side_effect=RuntimeError("no network")):
             result = check_plan_and_act(_plan("Generic plan"), "Build a privacy-safe pilot", **_context())
 
         self.assertIn(result["status"], {"needs_revision", "rejected"})

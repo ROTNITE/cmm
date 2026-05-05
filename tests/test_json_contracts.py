@@ -39,6 +39,55 @@ class JsonContractTests(unittest.TestCase):
         self.assertEqual(safe_json_loads('prefix {"ok": true} suffix'), {"ok": True})
         self.assertIsNone(safe_json_loads("not json"))
 
+    def test_call_json_model_no_retry_when_first_valid(self):
+        from Lib.json_retry import call_json_model
+
+        with patch("Lib.json_retry.send_to_AI", return_value='{"ok": true}') as mocked_send:
+            result = call_json_model(
+                user_prompt="return json",
+                system_prompt="json only",
+                model="test-model",
+                temp=0.1,
+                tokens=50,
+            )
+
+        self.assertEqual(result["payload"], {"ok": True})
+        self.assertEqual(result["attempts"], 1)
+        self.assertEqual(result["warnings"], [])
+        mocked_send.assert_called_once()
+
+    def test_call_json_model_retries_invalid_then_valid(self):
+        from Lib.json_retry import call_json_model
+
+        with patch("Lib.json_retry.send_to_AI", side_effect=["not json", '{"ok": true}']):
+            result = call_json_model(
+                user_prompt="return json",
+                system_prompt="json only",
+                model="test-model",
+                temp=0.1,
+                tokens=50,
+            )
+
+        self.assertEqual(result["payload"], {"ok": True})
+        self.assertEqual(result["attempts"], 2)
+        self.assertIn("json_retry_after_invalid_json", result["warnings"])
+
+    def test_call_json_model_returns_none_after_retry_exhausted(self):
+        from Lib.json_retry import call_json_model
+
+        with patch("Lib.json_retry.send_to_AI", return_value="not json"):
+            result = call_json_model(
+                user_prompt="return json",
+                system_prompt="json only",
+                model="test-model",
+                temp=0.1,
+                tokens=50,
+            )
+
+        self.assertIsNone(result["payload"])
+        self.assertEqual(result["attempts"], 2)
+        self.assertIn("json_retry_exhausted", result["warnings"])
+
     def test_planner_parses_json_contract(self):
         from Lib.plan_development import develop_plan
 

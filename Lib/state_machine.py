@@ -298,6 +298,8 @@ def _sanitize_dynamic_role_report(report: dict) -> dict:
             "warnings": ["invalid_dynamic_role_report"],
             "source": "fallback",
             "round": "",
+            "model_called": False,
+            "json_attempts": 0,
         }
     return {
         "role_views": _safe_list(report.get("role_views")),
@@ -305,6 +307,8 @@ def _sanitize_dynamic_role_report(report: dict) -> dict:
         "warnings": _safe_list(report.get("warnings")),
         "source": report.get("source") or "fallback",
         "round": report.get("round") or "",
+        "model_called": bool(report.get("model_called")),
+        "json_attempts": int(report.get("json_attempts") or 0),
     }
 
 

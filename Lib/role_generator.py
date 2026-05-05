@@ -11,9 +11,8 @@ import json
 import re
 from typing import Any
 
-from Lib.AI_request import send_to_AI
 from Lib.expert_roles import ExpertRole
-from Lib.json_utils import safe_json_loads
+from Lib.json_retry import call_json_model
 
 
 ALLOWED_DYNAMIC_PERSPECTIVE_TAGS = {
@@ -391,6 +390,8 @@ def _report(
     rejected_suggestions: list[dict],
     warnings: list[str],
     source: str,
+    model_called: bool = False,
+    json_attempts: int = 0,
 ) -> dict:
     return {
         "roles": roles,
@@ -398,7 +399,71 @@ def _report(
         "rejected_suggestions": rejected_suggestions,
         "warnings": warnings,
         "source": source,
+        "model_called": model_called,
+        "json_attempts": json_attempts,
     }
+
+
+def _should_call_model_for_roles(
+    *,
+    query_intake: dict,
+    meta_decision: dict | None,
+    conflict_report: dict | None,
+    balance_report: dict | None,
+    remaining_slots: int,
+) -> bool:
+    if remaining_slots <= 0:
+        return False
+    if isinstance(query_intake, dict) and query_intake.get("complexity") == "complex":
+        return True
+    for context in (meta_decision, conflict_report, balance_report):
+        if isinstance(context, dict) and any(context.get(key) for key in (
+            "missing_perspectives",
+            "blind_spots",
+            "unresolved_tradeoffs",
+            "premature_consensus_risks",
+            "recommended_action",
+        )):
+            return True
+    return False
+
+
+def _model_role_suggestions(
+    *,
+    query_intake: dict,
+    meta_decision: dict | None,
+    conflict_report: dict | None,
+    balance_report: dict | None,
+    existing_roles: list | None,
+    max_roles: int,
+    model: str,
+) -> tuple[list, list[str], int]:
+    system_prompt, user_prompt = _build_model_prompts(
+        query_intake=query_intake,
+        meta_decision=meta_decision,
+        conflict_report=conflict_report,
+        balance_report=balance_report,
+        existing_roles=existing_roles,
+        max_roles=max_roles,
+    )
+    result = call_json_model(
+        user_prompt=user_prompt,
+        system_prompt=system_prompt,
+        temp=0.15,
+        tokens=350,
+        model=model,
+        max_retries=1,
+    )
+    warnings = list(result.get("warnings") or [])
+    attempts = int(result.get("attempts") or 0)
+    parsed = result.get("payload")
+    if not isinstance(parsed, dict):
+        warnings.append("dynamic_role_json_parse_failed")
+        return [], warnings, attempts
+    suggestions = parsed.get("roles")
+    if not isinstance(suggestions, list):
+        return [], warnings, attempts
+    return suggestions, warnings, attempts
 
 
 def generate_dynamic_roles(
@@ -410,67 +475,96 @@ def generate_dynamic_roles(
     existing_roles: list | None = None,
     max_roles: int = 2,
     model: str = "deepseek-chat",
+    strategy: str = "rules_first",
 ) -> dict:
     """Generate safe dynamic roles from static templates only."""
     max_roles = max(0, int(max_roles))
     warnings: list[str] = []
+    strategy = str(strategy or "rules_first").lower()
 
-    try:
-        system_prompt, user_prompt = _build_model_prompts(
-            query_intake=query_intake,
-            meta_decision=meta_decision,
-            conflict_report=conflict_report,
-            balance_report=balance_report,
-            existing_roles=existing_roles,
-            max_roles=max_roles,
-        )
-        raw = send_to_AI(
-            user_prompt=user_prompt,
-            system_prompt=system_prompt,
-            temp=0.15,
-            tokens=350,
-            model=model,
-        )
-        parsed = safe_json_loads(raw if isinstance(raw, str) else "")
-        if parsed is None:
-            raise ValueError("dynamic_role_json_parse_failed")
-        suggestions = parsed.get("roles")
-        if not isinstance(suggestions, list):
-            suggestions = []
-        roles, role_views, rejected, normalize_warnings = _normalize_suggestions(
-            suggestions,
-            existing_roles=existing_roles,
-            max_roles=max_roles,
-        )
-        warnings.extend(normalize_warnings)
-        return _report(
-            roles=roles,
-            role_views=role_views,
-            rejected_suggestions=rejected,
-            warnings=warnings,
-            source="model",
-        )
-    except Exception as exc:
-        warnings.append(f"dynamic_role_model_failed: {exc}")
-
-    suggestions = _rule_suggestions(
+    rule_suggestions = _rule_suggestions(
         query_intake=query_intake or {},
         meta_decision=meta_decision,
         conflict_report=conflict_report,
         balance_report=balance_report,
+    )
+
+    if strategy != "model_first":
+        roles, role_views, rejected, normalize_warnings = _normalize_suggestions(
+            rule_suggestions,
+            existing_roles=existing_roles,
+            max_roles=max_roles,
+        )
+        warnings.extend(normalize_warnings)
+        remaining = max_roles - len(roles)
+        if remaining <= 0 or not _should_call_model_for_roles(
+            query_intake=query_intake or {},
+            meta_decision=meta_decision,
+            conflict_report=conflict_report,
+            balance_report=balance_report,
+            remaining_slots=remaining,
+        ):
+            return _report(
+                roles=roles,
+                role_views=role_views,
+                rejected_suggestions=rejected,
+                warnings=warnings,
+                source="rules" if role_views else "fallback",
+                model_called=False,
+                json_attempts=0,
+            )
+
+        model_existing = list(existing_roles or []) + roles
+        suggestions, model_warnings, attempts = _model_role_suggestions(
+            query_intake=query_intake or {},
+            meta_decision=meta_decision,
+            conflict_report=conflict_report,
+            balance_report=balance_report,
+            existing_roles=model_existing,
+            max_roles=remaining,
+            model=model,
+        )
+        model_roles, model_views, model_rejected, normalize_warnings = _normalize_suggestions(
+            suggestions,
+            existing_roles=model_existing,
+            max_roles=remaining,
+        )
+        warnings.extend(model_warnings)
+        warnings.extend(normalize_warnings)
+        return _report(
+            roles=roles + model_roles,
+            role_views=role_views + model_views,
+            rejected_suggestions=rejected + model_rejected,
+            warnings=warnings,
+            source="rules+model" if model_roles else "rules" if roles else "fallback",
+            model_called=True,
+            json_attempts=attempts,
+        )
+
+    suggestions, model_warnings, attempts = _model_role_suggestions(
+        query_intake=query_intake or {},
+        meta_decision=meta_decision,
+        conflict_report=conflict_report,
+        balance_report=balance_report,
+        existing_roles=existing_roles,
+        max_roles=max_roles,
+        model=model,
     )
     roles, role_views, rejected, normalize_warnings = _normalize_suggestions(
         suggestions,
         existing_roles=existing_roles,
         max_roles=max_roles,
     )
+    warnings.extend(model_warnings)
     warnings.extend(normalize_warnings)
     return _report(
         roles=roles,
         role_views=role_views,
         rejected_suggestions=rejected,
         warnings=warnings,
-        source="rules" if suggestions else "fallback",
+        source="model" if role_views else "fallback",
+        model_called=True,
+        json_attempts=attempts,
     )
 
 

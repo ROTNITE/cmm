@@ -82,7 +82,8 @@ Key modules:
 - `Lib/router.py`: deterministic router that chooses `DIRECT`, `LIGHT_CMM`, or `FULL_CMM`.
 - `Lib/direct_answer.py`: low-cost direct answer path for simple low-risk requests.
 - `Lib/query_intake.py`: preserves the original query as authoritative and extracts helper structure such as constraints, context, success criteria, unknowns, and preferences.
-- `Lib/role_generator.py`: suggests safe template-based dynamic roles from a whitelist; models cannot create role prompts.
+- `Lib/json_retry.py`: retries strict JSON model calls once with a repair prompt before fallback.
+- `Lib/role_generator.py`: suggests safe template-based dynamic roles from rules first, with optional whitelist-normalized model additions; models cannot create role prompts.
 - `Lib/expert_panel.py`: runs selected expert roles and collects contributions; sequential execution is the default, with opt-in threaded execution for independent expert calls.
 - `Lib/expert_rounds.py`: selects safe follow-up roles, runs targeted second rounds, and merges bundles; targeted expert calls can also use the same opt-in thread mode.
 - `Lib/parallel_utils.py`: small standard-library helpers for bounded, deterministic, ordered thread execution.
@@ -104,7 +105,7 @@ The router prevents overusing the full pipeline. `DIRECT` is for simple low-risk
 
 Balance Analyzer 2.0 preserves tag/count checks for missing and dominant perspectives, then adds deterministic heuristics for perspective coverage, constraints, stakeholder coverage, risk severity, argument quality, dominance, blind spots, and a recommended balance action. Semantic conflict analysis adds support for detecting meaning-level disagreements, trade-offs, blind spots, and premature consensus. These signals are heuristic support, not proof of answer quality.
 
-Dynamic roles are whitelist-limited templates. The model may suggest an allowed role key such as `legal_reviewer` or `measurement_expert`, but code normalizes it to a predefined `ExpertRole`; arbitrary tags and model-generated `system_prompt` values are rejected. Dynamic roles are capped and used to address missing expertise, blind spots, trade-offs, and `ADD_EXPERT` / `DEEPEN` decisions.
+Dynamic roles are whitelist-limited templates. The rule layer suggests obvious roles first, so budget/metrics/legal/ethics signals do not depend on fragile JSON model output. If capacity remains and the task is complex, the model may suggest an allowed role key such as `legal_reviewer` or `measurement_expert`, but code normalizes it to a predefined `ExpertRole`; arbitrary tags and model-generated `system_prompt` values are rejected. Dynamic roles are capped and used to address missing expertise, blind spots, trade-offs, and `ADD_EXPERT` / `DEEPEN` decisions.
 
 Optional parallelism is deliberately narrow. The default `parallel_mode="SEQUENTIAL"` keeps deterministic sequential execution. `parallel_mode="THREADS"` may run independent first-round and targeted follow-up expert calls with a bounded `ThreadPoolExecutor`, but outputs are collected in selected-role order and all state-machine transitions, routing, balance/conflict/meta, planning, critique, answer generation, and moderation remain sequential. `DIRECT` ignores expert parallel settings because it does not run experts.
 
@@ -153,6 +154,7 @@ Optional parallelism is deliberately narrow. The default `parallel_mode="SEQUENT
 The project uses JSON-first contracts where downstream code depends on structured model output:
 
 - Query intake requests JSON extraction and falls back to rule-based/fallback structure while preserving the full original query.
+- Query intake, dynamic role model suggestions, and plan critique use a shared JSON retry helper. If the first model response is invalid JSON, CMM asks once for JSON repair and records `json_attempts` / parse warnings.
 - Router decisions are deterministic and offline-first; they fall back to `FULL_CMM` if routing fails.
 - Planner requests a JSON plan and falls back to legacy text parsing or a safe fallback plan.
 - Plan critic requests JSON critique and falls back to conservative rule checks against constraints, expert risks, trade-offs, dynamic roles, and deliberation revisions.

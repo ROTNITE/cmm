@@ -6,8 +6,8 @@ import json
 import re
 from typing import Any
 
-from Lib.AI_request import send_to_AI
-from Lib.json_utils import safe_json_loads, to_number, to_string_list
+from Lib.json_retry import call_json_model
+from Lib.json_utils import to_number, to_string_list
 
 
 SCORE_KEYS = (
@@ -167,6 +167,7 @@ def _empty_critique(source: str, warnings: list[str] | None = None) -> dict:
         "scores": _empty_scores(),
         "overall_score": 0.0,
         "parse_warnings": warnings or [],
+        "json_attempts": 0,
         "source": source,
     }
     for key in LIST_KEYS:
@@ -445,7 +446,13 @@ def _status_from_critique(critique: dict, min_score: float, *, empty_plan: bool 
     return "needs_revision", "Plan needs revision to address CMM context gaps."
 
 
-def _normalize_critique_payload(payload: dict | None, *, source: str, warnings: list[str] | None = None) -> dict | None:
+def _normalize_critique_payload(
+    payload: dict | None,
+    *,
+    source: str,
+    warnings: list[str] | None = None,
+    json_attempts: int = 1,
+) -> dict | None:
     if not isinstance(payload, dict):
         return None
 
@@ -462,6 +469,7 @@ def _normalize_critique_payload(payload: dict | None, *, source: str, warnings: 
         "scores": scores,
         "overall_score": _normalize_score(payload.get("overall_score"), default=0.0),
         "parse_warnings": warnings or [],
+        "json_attempts": json_attempts,
         "source": source,
     }
     for key in LIST_KEYS:
@@ -663,19 +671,22 @@ def _model_critique(
             "overall_score": 0,
         },
     }
-    raw = send_to_AI(
+    result = call_json_model(
         user_prompt="Evaluate this CMM plan and return strict JSON only:\n" + json.dumps(packet, ensure_ascii=False),
         system_prompt=system_prompt,
         temp=0.2,
         tokens=850,
         model=model,
+        max_retries=1,
     )
-    if not isinstance(raw, str) or not raw.strip() or raw.strip().lower().startswith("error:"):
+    parsed = result.get("payload")
+    if not isinstance(parsed, dict):
         return None
-    parsed = safe_json_loads(raw)
-    critique = _normalize_critique_payload(parsed, source="model")
+    warnings = result.get("warnings") if isinstance(result.get("warnings"), list) else []
+    attempts = result.get("attempts") if isinstance(result.get("attempts"), int) else 1
+    critique = _normalize_critique_payload(parsed, source="model", warnings=warnings, json_attempts=attempts)
     if critique is not None:
-        critique["raw"] = raw
+        critique["raw"] = result.get("raw", "")
     return critique
 
 

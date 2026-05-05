@@ -90,7 +90,7 @@ class DocsAndHygieneTests(unittest.TestCase):
         from Lib.agent_critic import criticize_plan
 
         buffer = io.StringIO()
-        with patch("Lib.plan_critic.send_to_AI", return_value="not json"):
+        with patch("Lib.json_retry.send_to_AI", return_value="not json"):
             with redirect_stdout(buffer):
                 result = criticize_plan({"main_idea": "x", "steps": []}, "query")
 

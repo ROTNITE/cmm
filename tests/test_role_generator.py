@@ -53,21 +53,23 @@ class RoleGeneratorTests(unittest.TestCase):
             ]
         }
 
-        with patch("Lib.role_generator.send_to_AI", return_value=json.dumps(payload)):
-            report = generate_dynamic_roles(query_intake=_intake(), max_roles=2)
+        with patch("Lib.json_retry.send_to_AI", return_value=json.dumps(payload)):
+            report = generate_dynamic_roles(query_intake=_intake(), max_roles=2, strategy="model_first")
 
         self.assertEqual([role.key for role in report["roles"]], ["ethics_reviewer", "measurement_expert"])
         self.assertTrue(all(isinstance(role, ExpertRole) for role in report["roles"]))
         self.assertTrue(all("Fairness concern" not in role.system_prompt for role in report["roles"]))
         self.assertEqual(report["source"], "model")
+        self.assertTrue(report["model_called"])
+        self.assertEqual(report["json_attempts"], 1)
 
     def test_generate_roles_from_markdown_json(self):
         from Lib.role_generator import generate_dynamic_roles
 
         raw = "```json\n{\"roles\": [{\"key\": \"cost_optimizer\", \"why_needed\": \"Budget.\"}]}\n```"
 
-        with patch("Lib.role_generator.send_to_AI", return_value=raw):
-            report = generate_dynamic_roles(query_intake=_intake("limited budget"), max_roles=1)
+        with patch("Lib.json_retry.send_to_AI", return_value=raw):
+            report = generate_dynamic_roles(query_intake=_intake("neutral complex task"), max_roles=1, strategy="model_first")
 
         self.assertEqual([role.key for role in report["roles"]], ["cost_optimizer"])
         self.assertEqual(report["role_views"][0]["why_needed"], "Budget.")
@@ -75,7 +77,7 @@ class RoleGeneratorTests(unittest.TestCase):
     def test_invalid_json_uses_rule_fallback(self):
         from Lib.role_generator import generate_dynamic_roles
 
-        with patch("Lib.role_generator.send_to_AI", return_value="not json"):
+        with patch("Lib.json_retry.send_to_AI", return_value="not json"):
             report = generate_dynamic_roles(
                 query_intake=_intake("We need metrics, KPI, fairness, and a limited budget"),
                 max_roles=2,
@@ -83,13 +85,14 @@ class RoleGeneratorTests(unittest.TestCase):
 
         self.assertIn(report["source"], {"rules", "fallback"})
         self.assertTrue(report["roles"])
-        self.assertTrue(report["warnings"])
+        self.assertFalse(report["model_called"])
+        self.assertEqual(report["warnings"], [])
 
     def test_unknown_role_rejected(self):
         from Lib.role_generator import generate_dynamic_roles
 
-        with patch("Lib.role_generator.send_to_AI", return_value=json.dumps({"roles": [{"key": "hacker_role"}]})):
-            report = generate_dynamic_roles(query_intake=_intake(), max_roles=2)
+        with patch("Lib.json_retry.send_to_AI", return_value=json.dumps({"roles": [{"key": "hacker_role"}]})):
+            report = generate_dynamic_roles(query_intake=_intake(), max_roles=2, strategy="model_first")
 
         self.assertEqual(report["roles"], [])
         self.assertEqual(report["rejected_suggestions"][0]["reason"], "not_allowed")
@@ -107,8 +110,8 @@ class RoleGeneratorTests(unittest.TestCase):
             ]
         }
 
-        with patch("Lib.role_generator.send_to_AI", return_value=json.dumps(payload)):
-            report = generate_dynamic_roles(query_intake=_intake(), max_roles=2)
+        with patch("Lib.json_retry.send_to_AI", return_value=json.dumps(payload)):
+            report = generate_dynamic_roles(query_intake=_intake(), max_roles=2, strategy="model_first")
 
         self.assertEqual(report["roles"], [])
         self.assertEqual(report["rejected_suggestions"][0]["reason"], "unsafe")
@@ -125,8 +128,8 @@ class RoleGeneratorTests(unittest.TestCase):
             ]
         }
 
-        with patch("Lib.role_generator.send_to_AI", return_value=json.dumps(payload)):
-            report = generate_dynamic_roles(query_intake=_intake(), max_roles=1)
+        with patch("Lib.json_retry.send_to_AI", return_value=json.dumps(payload)):
+            report = generate_dynamic_roles(query_intake=_intake(), max_roles=1, strategy="model_first")
 
         self.assertEqual([role.key for role in report["roles"]], ["ethics_reviewer"])
         reasons = [item["reason"] for item in report["rejected_suggestions"]]
@@ -136,7 +139,7 @@ class RoleGeneratorTests(unittest.TestCase):
     def test_rule_fallback_selects_cost_and_measurement(self):
         from Lib.role_generator import generate_dynamic_roles
 
-        with patch("Lib.role_generator.send_to_AI", side_effect=RuntimeError("offline")):
+        with patch("Lib.json_retry.send_to_AI", side_effect=AssertionError("rules should avoid model call")):
             report = generate_dynamic_roles(
                 query_intake=_intake("Limited budget; define KPI metrics and evaluation."),
                 max_roles=2,
@@ -144,6 +147,34 @@ class RoleGeneratorTests(unittest.TestCase):
 
         self.assertEqual([role.key for role in report["roles"]], ["measurement_expert", "cost_optimizer"])
         self.assertEqual(report["source"], "rules")
+        self.assertFalse(report["model_called"])
+
+    def test_rules_empty_complex_query_calls_model(self):
+        from Lib.role_generator import generate_dynamic_roles
+
+        payload = {"roles": [{"key": "adversarial_reviewer", "why_needed": "Stress-test complex assumptions."}]}
+        intake = _intake("Neutral task with no lexical markers")
+        intake["complexity"] = "complex"
+        with patch("Lib.json_retry.send_to_AI", return_value=json.dumps(payload)) as mocked_send:
+            report = generate_dynamic_roles(query_intake=intake, max_roles=1)
+
+        self.assertTrue(mocked_send.called)
+        self.assertTrue(report["model_called"])
+        self.assertEqual([role.key for role in report["roles"]], ["adversarial_reviewer"])
+        self.assertEqual(report["source"], "rules+model")
+
+    def test_invalid_model_json_does_not_break_rule_output(self):
+        from Lib.role_generator import generate_dynamic_roles
+
+        intake = _intake("Limited budget and KPI metrics")
+        intake["complexity"] = "complex"
+        with patch("Lib.json_retry.send_to_AI", return_value="not json"):
+            report = generate_dynamic_roles(query_intake=intake, max_roles=3)
+
+        self.assertIn("measurement_expert", [role.key for role in report["roles"]])
+        self.assertIn("cost_optimizer", [role.key for role in report["roles"]])
+        self.assertTrue(report["model_called"])
+        self.assertTrue(report["warnings"])
 
     def test_dynamic_roles_merge_with_expert_panel(self):
         from Lib.expert_panel import run_expert_panel
@@ -222,6 +253,8 @@ class RoleGeneratorTests(unittest.TestCase):
             trace = run_cmm_state_machine("raw query")["trace_report"]
 
         self.assertEqual(trace["dynamic_role_reports"][0]["source"], "rules")
+        self.assertFalse(trace["dynamic_role_reports"][0]["model_called"])
+        self.assertEqual(trace["dynamic_role_reports"][0]["json_attempts"], 0)
         self.assertEqual(trace["dynamic_roles_used"][0]["key"], "cost_optimizer")
         self.assertEqual(trace["dynamic_roles_used"][0]["round"], "initial")
 
@@ -322,4 +355,3 @@ class RoleGeneratorTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -73,7 +73,8 @@ Collective Meta-Moderation — экспериментальный програм
 - `Lib/direct_answer.py`: прямой low-cost ответ для простых low-risk задач.
 - `Lib/parallel_utils.py`: bounded helpers для optional ordered thread execution независимых экспертных вызовов.
 - `Lib/query_intake.py`: безопасный входной слой, который сохраняет `original_query` и извлекает `cleaned_query`, контекст, ограничения, критерии успеха, неизвестные и предпочтения.
-- `Lib/role_generator.py`: безопасная template-based генерация дополнительных ролей из whitelist без model-generated system prompts.
+- `Lib/json_retry.py`: общий retry helper для JSON-first model calls; при invalid JSON делает один repair-запрос и фиксирует `json_attempts` / warnings.
+- `Lib/role_generator.py`: безопасная rules-first и template-based генерация дополнительных ролей из whitelist без model-generated system prompts.
 - `Lib/expert_*`: роли, выбор ролей, экспертные вклады и панель.
 - `Lib/expert_rounds.py`: выбор целевых ролей для второго экспертного раунда, запуск follow-up экспертов и объединение expert bundles.
 - `Lib/balance_analyzer.py`: Balance Analyzer 2.0, который сохраняет tag/count checks и добавляет deterministic quality heuristics.
@@ -117,6 +118,7 @@ Real judged evaluation является отдельным opt-in режимом
 - Второй экспертный раунд есть, но он ограничен: он использует существующие базовые роли и whitelist dynamic role templates, и является targeted follow-up, а не свободной дискуссией.
 - Structured deliberation round есть, но он ограничен одной schema-driven итерацией и не является полноценной свободной debate/state-machine системой.
 - Dynamic roles ограничены заранее заданными шаблонами; модель может предложить только разрешенный key/tag, но не произвольный `system_prompt`.
+- Role generation теперь rules-first: очевидные cost/measurement/legal/ethics роли выбираются без model call; модель используется только как дополнительный источник при свободных слотах и сложном контексте.
 - Trace разделяет `dynamic_roles_generated`, `dynamic_roles_executed` и `dynamic_roles_rejected`; старое поле `dynamic_roles_used` сохранено как alias к реально выполненным `dynamic_roles_executed`.
 - State machine является bounded MVP-оркестратором, а не бесконечным автономным процессом.
 - Router является deterministic heuristic и может ошибочно выбрать слишком лёгкий или слишком тяжёлый путь; real eval следует анализировать по `cmm_mode` и router complexity.

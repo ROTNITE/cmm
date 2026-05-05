@@ -18,6 +18,7 @@ class ImportAndHelperTests(unittest.TestCase):
             "Lib.deliberation",
             "Lib.deliberation_round",
             "Lib.json_utils",
+            "Lib.json_retry",
             "Lib.orchestrator",
             "Lib.state_machine",
             "Lib.router",

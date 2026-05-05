@@ -10,8 +10,8 @@ import json
 import re
 from typing import Any
 
-from Lib.AI_request import send_to_AI
-from Lib.json_utils import safe_json_loads, to_string_list
+from Lib.json_retry import call_json_model
+from Lib.json_utils import to_string_list
 
 
 _RISK_LEVELS = {"low", "medium", "high"}
@@ -139,7 +139,14 @@ def _truncate_task_goal(value: str, limit: int = 700) -> str:
     return text[: limit - 3].rstrip() + "..."
 
 
-def _rule_based_intake(original_query: str, cleaned_query: str, warning: str | None = None) -> dict:
+def _rule_based_intake(
+    original_query: str,
+    cleaned_query: str,
+    warning: str | None = None,
+    *,
+    json_attempts: int = 0,
+    extra_warnings: list[str] | None = None,
+) -> dict:
     """Build conservative fallback/rules intake without model dependency."""
     source = "fallback" if warning else "rules"
     complexity = _derive_complexity(original_query)
@@ -182,6 +189,7 @@ def _rule_based_intake(original_query: str, cleaned_query: str, warning: str | N
     warnings = []
     if warning:
         warnings.append(warning)
+    warnings.extend(extra_warnings or [])
 
     return {
         "original_query": original_query,
@@ -196,6 +204,7 @@ def _rule_based_intake(original_query: str, cleaned_query: str, warning: str | N
         "complexity": complexity,
         "should_use_cmm": complexity in {"moderate", "complex"},
         "parse_warnings": warnings,
+        "json_attempts": json_attempts,
         "source": source,
     }
 
@@ -220,7 +229,14 @@ def _normalize_bool(value: Any, default: bool) -> bool:
     return default
 
 
-def _normalize_intake_payload(payload: dict | None, original_query: str, cleaned_query: str) -> dict | None:
+def _normalize_intake_payload(
+    payload: dict | None,
+    original_query: str,
+    cleaned_query: str,
+    *,
+    parse_warnings: list[str] | None = None,
+    json_attempts: int = 1,
+) -> dict | None:
     if not isinstance(payload, dict):
         return None
 
@@ -244,12 +260,13 @@ def _normalize_intake_payload(payload: dict | None, original_query: str, cleaned
         "risk_level": risk_level,
         "complexity": complexity,
         "should_use_cmm": _normalize_bool(payload.get("should_use_cmm"), complexity in {"moderate", "complex"}),
-        "parse_warnings": [],
+        "parse_warnings": parse_warnings or [],
+        "json_attempts": json_attempts,
         "source": "model",
     }
 
 
-def _model_intake(original_query: str, cleaned_query: str, *, model: str, max_ai_tokens: int) -> dict | None:
+def _model_intake(original_query: str, cleaned_query: str, *, model: str, max_ai_tokens: int) -> dict:
     system_prompt = (
         "You are a safe query intake extractor for a Collective Meta-Moderation pipeline.\n"
         f"{_AUTHORITATIVE_RULE}\n"
@@ -273,16 +290,14 @@ def _model_intake(original_query: str, cleaned_query: str, *, model: str, max_ai
         "cleaned_query_helper": cleaned_query,
         "instruction": _AUTHORITATIVE_RULE,
     }
-    raw = send_to_AI(
+    return call_json_model(
         user_prompt="Extract safe query intake structure:\n" + json.dumps(state, ensure_ascii=False),
         system_prompt=system_prompt,
         temp=0.2,
         tokens=max_ai_tokens,
         model=model,
+        max_retries=1,
     )
-    if not isinstance(raw, str) or not raw.strip() or raw.strip().lower().startswith("error:"):
-        return None
-    return safe_json_loads(raw)
 
 
 def build_query_intake(
@@ -299,10 +314,26 @@ def build_query_intake(
         return _rule_based_intake(original, cleaned)
 
     try:
-        payload = _model_intake(original, cleaned, model=model, max_ai_tokens=max_ai_tokens)
-        normalized = _normalize_intake_payload(payload, original, cleaned)
+        result = _model_intake(original, cleaned, model=model, max_ai_tokens=max_ai_tokens)
+        payload = result.get("payload") if isinstance(result, dict) else None
+        retry_warnings = result.get("warnings") if isinstance(result, dict) and isinstance(result.get("warnings"), list) else []
+        json_attempts = result.get("attempts") if isinstance(result, dict) and isinstance(result.get("attempts"), int) else 0
+        normalized = _normalize_intake_payload(
+            payload,
+            original,
+            cleaned,
+            parse_warnings=retry_warnings,
+            json_attempts=json_attempts,
+        )
         if normalized is not None:
             return normalized
-        return _rule_based_intake(original, cleaned, warning="model_intake_invalid_json")
+        warning = "model_intake_failed" if any("json_model_call_failed" in item for item in retry_warnings) else "model_intake_invalid_json"
+        return _rule_based_intake(
+            original,
+            cleaned,
+            warning=warning,
+            json_attempts=json_attempts,
+            extra_warnings=retry_warnings,
+        )
     except Exception as exc:
         return _rule_based_intake(original, cleaned, warning=f"model_intake_failed: {exc}")
