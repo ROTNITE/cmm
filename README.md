@@ -86,6 +86,7 @@ Key modules:
 - `Lib/deliberation_round.py`: runs a structured deliberation pass where experts respond to other roles and revise recommendations.
 - `Lib/meta_moderator.py`: makes process-level decisions such as `SYNTHESIZE` or `DEEPEN`.
 - `Lib/plan_development.py`: creates a JSON-first plan with legacy fallback.
+- `Lib/plan_critic.py`: checks plans against the current CMM context and returns structured `ready` / `needs_revision` / `rejected` feedback.
 - `Lib/agent_moderator.py`: evaluates answers and drives revision.
 - `cmm/eval.py`: offline-first baseline vs CMM evaluation harness.
 
@@ -95,7 +96,7 @@ Balance analysis remains mostly tag/count based. Semantic conflict analysis adds
 
 Dynamic roles are whitelist-limited templates. The model may suggest an allowed role key such as `legal_reviewer` or `measurement_expert`, but code normalizes it to a predefined `ExpertRole`; arbitrary tags and model-generated `system_prompt` values are rejected. Dynamic roles are capped and used to address missing expertise, blind spots, trade-offs, and `ADD_EXPERT` / `DEEPEN` decisions.
 
-`REPLAN` is intentionally bounded: it regenerates the plan from the latest query intake, deliberation brief, conflict report, previous plan, and critique feedback. It does not restart the full expert pipeline.
+`PLAN_CRITIQUE` is context-aware: it checks whether the plan covers query-intake constraints, success criteria, expert risks and recommendations, `must_address`, unresolved trade-offs, blind spots, selected dynamic roles, deliberation revisions, and previous replan feedback. `REPLAN` is intentionally bounded: it regenerates the plan from the latest CMM context, previous plan, and actionable critique feedback. It does not restart the full expert pipeline.
 
 ## Trace Report
 
@@ -138,6 +139,7 @@ The project uses JSON-first contracts where downstream code depends on structure
 
 - Query intake requests JSON extraction and falls back to rule-based/fallback structure while preserving the full original query.
 - Planner requests a JSON plan and falls back to legacy text parsing or a safe fallback plan.
+- Plan critic requests JSON critique and falls back to conservative rule checks against constraints, expert risks, trade-offs, dynamic roles, and deliberation revisions.
 - Expert agents and selector parse markdown-wrapped JSON through shared helpers.
 - Moderator requests JSON evaluation with expert coverage, balance handling, unresolved questions, issues, and improvements.
 - Invalid model output is treated as untrusted input and produces explicit fallback data with parse warnings.
@@ -191,6 +193,7 @@ The test suite is designed to run without a real API key, network access, or ext
 - Semantic conflict analysis supports trade-off and consensus-risk detection, but it does not fully solve groupthink by itself.
 - The state machine is bounded and MVP-level; it is not an unbounded autonomous process controller.
 - The structured deliberation round lets selected experts respond to other roles and revise recommendations, but it is bounded and schema-driven.
+- The context-aware plan critic is still an MVP control node, not formal verification of plan correctness.
 - The second expert round is implemented, but it is sequential and limited to existing safe base roles plus whitelisted dynamic templates.
 - There is no fully free-form expert debate state machine.
 - There is no async/parallel execution.

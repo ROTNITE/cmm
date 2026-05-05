@@ -121,6 +121,23 @@ def _dynamic_report():
     return {"roles": [], "role_views": [], "rejected_suggestions": [], "warnings": [], "source": "test"}
 
 
+def _dynamic_report_with_role():
+    return {
+        "roles": [],
+        "role_views": [
+            {
+                "key": "legal_reviewer",
+                "name": "Legal Reviewer",
+                "perspective_tag": "legal",
+                "why_needed": "Legal constraints appear in the task.",
+            }
+        ],
+        "rejected_suggestions": [],
+        "warnings": [],
+        "source": "test",
+    }
+
+
 def _deliberation_bundle():
     return {
         "type": "deliberation_round",
@@ -233,18 +250,22 @@ class StateMachineTests(unittest.TestCase):
         from Lib.state_machine import run_cmm_state_machine
 
         captured_contexts = []
+        captured_critique_kwargs = []
 
         def capture_plan(query, context=None, depth="detailed"):
             captured_contexts.append(context)
             return _plan(f"plan-{len(captured_contexts)}")
 
+        def capture_critique(plan, query, min_score=0.7, **kwargs):
+            captured_critique_kwargs.append(kwargs)
+            if len(captured_critique_kwargs) == 1:
+                return {"status": "needs_revision", "critique": _critique(), "feedback": ["Fix A"]}
+            return {"status": "ready", "critique": _critique()}
+
         with self._patch_core() as mocks:
             self._configure_success(mocks)
             mocks["develop_plan"].side_effect = capture_plan
-            mocks["check_plan_and_act"].side_effect = [
-                {"status": "needs_revision", "critique": _critique(), "feedback": ["Fix A"]},
-                {"status": "ready", "critique": _critique()},
-            ]
+            mocks["check_plan_and_act"].side_effect = capture_critique
             result = run_cmm_state_machine("raw query", max_iters=2)
 
         history = result["trace_report"]["state_history"]
@@ -255,6 +276,33 @@ class StateMachineTests(unittest.TestCase):
         self.assertGreaterEqual(len(result["trace_report"]["plan_critiques"]), 2)
         self.assertIn("replan_context", captured_contexts[1])
         self.assertEqual(captured_contexts[1]["replan_context"]["feedback"], ["Fix A"])
+        self.assertEqual(captured_critique_kwargs[1]["replan_context"]["feedback"], ["Fix A"])
+
+    def test_state_machine_passes_context_to_plan_critic(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        captured = {}
+
+        def capture_critique(plan, query, min_score=0.7, **kwargs):
+            captured["kwargs"] = kwargs
+            return {"status": "ready", "critique": _critique()}
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["generate_dynamic_roles"].return_value = _dynamic_report_with_role()
+            mocks["check_plan_and_act"].side_effect = capture_critique
+            run_cmm_state_machine("raw query")
+
+        kwargs = captured["kwargs"]
+        self.assertEqual(kwargs["query_intake"], _query_intake())
+        self.assertIn("must_address", kwargs["deliberation_brief"])
+        self.assertEqual(kwargs["conflict_report"], _conflict())
+        self.assertEqual(kwargs["dynamic_roles_used"][0]["key"], "legal_reviewer")
+        self.assertEqual(kwargs["deliberation_revisions"], [])
+        self.assertEqual(kwargs["meta_decision"], _meta("SYNTHESIZE"))
+        self.assertTrue(kwargs["state_history"])
+        self.assertEqual(kwargs["replan_context"], {})
+        self.assertEqual(kwargs["model"], "deepseek-chat")
 
     def test_plan_rejected_fails_after_max_iters(self):
         from Lib.state_machine import run_cmm_state_machine

@@ -32,8 +32,8 @@ Collective Meta-Moderation — экспериментальный програм
 7. `PANEL_ROUND_EXTRA`: при необходимости запустить один targeted second expert round.
 8. `REBALANCE`: обновить balance, brief и conflict in-place без нового meta loop.
 9. `PLAN`: сгенерировать план.
-10. `PLAN_CRITIQUE`: проверить план критиком.
-11. `REPLAN`: при `needs_revision` / `rejected` пересоздать только план на основе последнего контекста и critique feedback.
+10. `PLAN_CRITIQUE`: проверить план context-aware критиком с учётом `query_intake`, `must_address`, экспертных рисков и рекомендаций, conflict reports, dynamic roles, deliberation revisions, meta decision и предыдущего replan feedback.
+11. `REPLAN`: при `needs_revision` / `rejected` пересоздать только план на основе последнего контекста и actionable critique feedback.
 12. `ANSWER` / `ANSWER_MODERATION`: использовать существующий `run_moderated_loop` как black-box компонент.
 13. `FINALIZE` или `FAILED`: вернуть `final_answer`, `trace_report` и raw-данные.
 
@@ -77,6 +77,7 @@ Collective Meta-Moderation — экспериментальный програм
 - `Lib/deliberation_round.py`: структурированный раунд, где выбранные эксперты отвечают на позиции других ролей и пересматривают рекомендации.
 - `Lib/meta_moderator.py`: управление процессом.
 - `Lib/plan_development.py`: JSON-first планировщик.
+- `Lib/plan_critic.py`: context-aware JSON-first критик плана.
 - `Lib/agent_moderator.py`: модерация ответа и revision loop.
 - `Lib/json_utils.py`: безопасный разбор JSON-like output.
 - `cmm/eval.py`: evaluation harness.
@@ -108,6 +109,7 @@ Real judged evaluation является отдельным opt-in режимом
 - Structured deliberation round есть, но он ограничен одной schema-driven итерацией и не является полноценной свободной debate/state-machine системой.
 - Dynamic roles ограничены заранее заданными шаблонами; модель может предложить только разрешенный key/tag, но не произвольный `system_prompt`.
 - State machine является bounded MVP-оркестратором, а не бесконечным автономным процессом.
+- Context-aware plan critic проверяет план по ограничениям, экспертным рискам, unresolved trade-offs, dynamic-role concerns и deliberation revisions, но не является формальной верификацией корректности.
 - `REPLAN` не перезапускает весь экспертный pipeline; он пересоздаёт только план по последнему контексту и feedback критика.
 - Query intake защищает исходный запрос от перезаписи, но сам по себе не доказывает повышение качества downstream-ответов.
 - Нет fully free-form прямой дискуссии экспертов друг с другом.

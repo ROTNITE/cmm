@@ -723,7 +723,20 @@ def handle_plan(state: dict) -> tuple[str, str]:
 
 def handle_plan_critique(state: dict) -> tuple[str, str]:
     try:
-        critique_result = check_plan_and_act(state.get("plan", {}), state["original_query"], min_score=0.7)
+        critique_result = check_plan_and_act(
+            state.get("plan", {}),
+            state["original_query"],
+            min_score=0.7,
+            query_intake=state.get("query_intake", {}),
+            deliberation_brief=state.get("deliberation_brief", {}),
+            conflict_report=state.get("conflict_report", {}),
+            dynamic_roles_used=_flatten_dynamic_roles_used(state.get("dynamic_role_reports")),
+            deliberation_revisions=_flatten_deliberation_revisions(state.get("deliberation_rounds")),
+            meta_decision=state.get("meta_decision", {}),
+            state_history=state.get("history", []),
+            replan_context=state.get("replan_context", {}),
+            model=state["model"],
+        )
         if not isinstance(critique_result, dict):
             state["warnings"].append("plan_critique_invalid; continuing with empty critique")
             critique_result = {"status": "ready", "critique": {}}
@@ -803,6 +816,7 @@ def _build_trace_report(state: dict) -> dict:
     moderation_reports = _safe_list(state.get("moderation_reports"))
     meta_decisions = _safe_list(state.get("meta_decisions"))
     conflict_reports = _safe_list(state.get("conflict_reports"))
+    plan_critiques = _safe_list(state.get("plan_critiques"))
     deliberation_rounds = _safe_list(state.get("deliberation_rounds"))
     dynamic_role_reports = _safe_list(state.get("dynamic_role_reports"))
     expert_bundle = _safe_dict(state.get("expert_bundle"))
@@ -836,7 +850,13 @@ def _build_trace_report(state: dict) -> dict:
         "transition_count": state.get("transition_count", 0),
         "iteration_count": state.get("iteration_count", 0),
         "plans": _safe_list(state.get("plans")),
-        "plan_critiques": _safe_list(state.get("plan_critiques")),
+        "plan_critiques": plan_critiques,
+        "plan_critique_statuses": [
+            item.get("status") for item in plan_critiques if isinstance(item, dict) and item.get("status")
+        ],
+        "plan_replan_reasons": [
+            item.get("reason") for item in plan_critiques if isinstance(item, dict) and item.get("reason")
+        ],
         "errors": _safe_list(state.get("errors")),
     }
 

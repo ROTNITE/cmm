@@ -8,6 +8,7 @@ class ImportAndHelperTests(unittest.TestCase):
             "main",
             "Lib.Start_formalization",
             "Lib.plan_development",
+            "Lib.plan_critic",
             "Lib.critic_decision",
             "Lib.expert_roles",
             "Lib.expert_selector",

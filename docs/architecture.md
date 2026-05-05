@@ -35,7 +35,7 @@ INTAKE
 - `Lib/deliberation.py` converts expert output and balance data into a compact downstream context.
 - `Lib/deliberation_round.py` runs one structured deliberation pass where selected experts answer other roles' positions and revise recommendations.
 - `Lib/meta_moderator.py` evaluates process quality and can request deeper treatment.
-- `Lib/plan_development.py`, `Lib/agent_critic.py`, `Lib/agent_improver.py`, and `Lib/agent_moderator.py` build, critique, answer, moderate, and revise.
+- `Lib/plan_development.py`, `Lib/plan_critic.py`, `Lib/agent_improver.py`, and `Lib/agent_moderator.py` build, critique, answer, moderate, and revise.
 - `cmm/eval.py` provides the offline-first evaluation CLI plus opt-in real judged evaluation with blind Answer A/B packets.
 
 ## Data Flow Notes
@@ -70,7 +70,9 @@ Before planning, the state machine can also run one structured deliberation roun
 
 Dynamic roles are generated only through a fixed template catalog. The model may suggest allowed role keys or perspective tags, but code rejects arbitrary keys, arbitrary tags, unsafe text, duplicates, over-limit suggestions, and any attempt to provide `system_prompt`.
 
-`REPLAN` is a bounded planner-only transition. It uses the latest query intake, deliberation brief, conflict report, previous plan, and critique feedback. It does not restart query intake or expert rounds in this MVP.
+`PLAN_CRITIQUE` is a context-aware control node. It evaluates the generated plan against query-intake constraints, success criteria, `deliberation_brief.must_address`, expert recommendations and risks, semantic conflict reports, dynamic roles, deliberation revisions, latest meta decision, state history, and previous replan feedback.
+
+`REPLAN` is a bounded planner-only transition. It uses the latest query intake, deliberation brief, conflict report, previous plan, and context-aware critique feedback. It does not restart query intake or expert rounds in this MVP.
 
 ## Trace Report
 
@@ -98,6 +100,7 @@ The MVP favors explicit fallback structures over crashes:
 - expert panel failure falls back to an empty expert bundle
 - balance failure falls back to conservative missing-perspective data
 - invalid model JSON records parse warnings where applicable
+- weak or context-missing plans return `needs_revision` / `rejected` with structured feedback
 - rejected plans return structured failure instead of continuing blindly
 
 ## Known Gaps
@@ -108,6 +111,7 @@ The MVP favors explicit fallback structures over crashes:
 - Balance analysis is still mostly tag/count based.
 - Semantic conflict analysis is support for detecting trade-offs and consensus risks; deliberation is bounded and schema-driven.
 - Query intake preserves source truth but does not guarantee downstream semantic completeness.
+- Context-aware plan critique improves REPLAN feedback, but it is not formal verification and can still miss semantic failures.
 - Mock evaluation is heuristic and deterministic by default. Real judged evaluation provides limited first evidence, not proof of universal superiority.
 - No async/parallel orchestration is implemented.
 - No arbitrary dynamic role generation is implemented; dynamic roles are capped and template-based.
