@@ -103,6 +103,54 @@ def _is_critical_text(value: Any) -> bool:
     return bool(text) and any(marker in text for marker in CRITICAL_MARKERS)
 
 
+def _is_plan_stop_text(value: Any) -> bool:
+    """True only for real no-answer blockers: safety/legal/privacy/medical/etc.
+
+    Do not treat generic words like 'critical' or any REJECT as automatic
+    no-answer blockers. Generic plan-quality rejection is handled separately
+    by state_machine as plan_rejected_after_max_iters.
+    """
+    text = _normalize_text(value)
+    if not text:
+        return False
+
+    stop_markers = (
+        "safety",
+        "security",
+        "privacy",
+        "legal",
+        "compliance",
+        "harm",
+        "unsafe",
+        "danger",
+        "irreversible",
+        "medical",
+        "financial",
+        "vulnerable",
+        "secret",
+        "credential",
+        "leak",
+        "pii",
+        "gdpr",
+        "hipaa",
+        "безопас",
+        "опасн",
+        "закон",
+        "право",
+        "комплаенс",
+        "приват",
+        "персональн",
+        "утеч",
+        "вред",
+        "секрет",
+        "ключ",
+        "финанс",
+        "медиц",
+        "уязвим",
+    )
+    return any(marker in text for marker in stop_markers)
+
+
 def _normalize_decision(value: Any, default: str = "") -> str:
     decision = str(value or "").upper().strip()
     if decision in {"ACCEPT", "REVISE", "REJECT"}:
@@ -121,13 +169,27 @@ def _decision_from_status(value: Any) -> str:
 
 
 def plan_blockers(critique_result: Any) -> list[str]:
-    """Return critical plan blockers from a plan critique result."""
+    """Return only critical no-answer plan blockers.
+
+    Important:
+    - Do not include every critical_issues item automatically.
+    - Do not turn every REJECT into critical_plan_blockers.
+    - Generic plan-quality failure is still handled by state_machine, but as
+      plan_rejected_after_max_iters, not as critical safety/legal blocker.
+    """
     result = _safe_dict(critique_result)
     critique = result.get("critique") if isinstance(result.get("critique"), dict) else result
 
     blockers: list[str] = []
+
+    # Explicit critical_blockers are trusted, but still deduped.
     blockers.extend(_string_items(critique.get("critical_blockers")))
-    blockers.extend(_string_items(critique.get("critical_issues")))
+
+    # Model critical_issues are only hard blockers if they mention true
+    # safety/legal/privacy/medical/security/financial risk.
+    for item in _string_items(critique.get("critical_issues")):
+        if _is_plan_stop_text(item):
+            blockers.append(item)
 
     for key in (
         "ignored_must_address",
@@ -137,12 +199,8 @@ def plan_blockers(critique_result: Any) -> list[str]:
         "ignored_tradeoffs",
     ):
         for item in _string_items(critique.get(key)):
-            if _is_critical_text(item):
+            if _is_plan_stop_text(item):
                 blockers.append(item)
-
-    if _decision_from_status(result.get("decision") or result.get("status")) == "REJECT":
-        reason = str(result.get("reason") or "").strip()
-        blockers.append(reason or "Plan critique rejected the plan.")
 
     return _dedupe(blockers)
 
@@ -160,6 +218,11 @@ def _last_report(moderated_result: dict) -> dict:
 
 
 def _collect_answer_critical_issues(moderated_result: dict) -> list[str]:
+    """Collect only true safety/legal/privacy critical issues from answer moderation.
+
+    Do not treat every item labeled 'critical_issues' as a hard blocker.
+    Only block finalization for true safety/legal/privacy/medical/financial risks.
+    """
     issues: list[str] = []
     last = _last_report(moderated_result)
 
@@ -176,7 +239,8 @@ def _collect_answer_critical_issues(moderated_result: dict) -> list[str]:
 
     critical: list[str] = []
     for item in issues:
-        if _is_critical_text(item) or item in _string_items(moderated_result.get("critical_issues")):
+        # Use _is_plan_stop_text instead of _is_critical_text for stricter filtering
+        if _is_plan_stop_text(item):
             critical.append(item)
 
     return _dedupe(critical)

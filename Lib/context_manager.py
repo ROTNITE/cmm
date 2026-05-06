@@ -421,6 +421,52 @@ def _brief_summary_for_planner(state: dict) -> dict:
     }
 
 
+def _compact_previous_plan_for_replan(plan: Any) -> dict:
+    """Compact previous plan for replan context to avoid bloat."""
+    plan = _as_dict(plan)
+    steps = []
+    for index, step in enumerate(_as_list(plan.get("steps"))[:5], start=1):
+        if not isinstance(step, dict):
+            continue
+        steps.append(
+            {
+                "number": str(step.get("number") or index),
+                "title": _clip_string(step.get("title"), 180),
+                "substeps": _string_list(step.get("substeps"), max_items=4, max_chars=180),
+                "uses_expert_inputs": _string_list(step.get("uses_expert_inputs"), max_items=4, max_chars=180),
+            }
+        )
+
+    return {
+        "main_idea": _clip_string(plan.get("main_idea"), 500),
+        "steps": steps,
+        "potential_problems": _string_list(plan.get("potential_problems"), max_items=6, max_chars=180),
+        "result": _clip_string(plan.get("result"), 300),
+        "raw_format": _clip_string(plan.get("raw_format"), 80),
+        "source": _clip_string(plan.get("source"), 80),
+    }
+
+
+def _compact_replan_context_for_planner(replan_context: Any) -> dict:
+    """Ultra-compact replan context for planner to avoid context overload."""
+    replan = _as_dict(replan_context)
+    critique = _as_dict(replan.get("plan_critique"))
+
+    return {
+        "previous_plan": _compact_previous_plan_for_replan(replan.get("previous_plan")),
+        "reason": _clip_string(replan.get("reason"), 300),
+        "feedback": _string_list(replan.get("feedback"), max_items=6, max_chars=220),
+        "instruction": "Revise previous_plan. Keep useful concrete steps. Add only missing constraints, risks, trade-offs, and metrics.",
+        "plan_critique": {
+            "critical_blockers": _string_list(critique.get("critical_blockers"), max_items=4, max_chars=220),
+            "ignored_must_address": _string_list(critique.get("ignored_must_address"), max_items=6, max_chars=220),
+            "ignored_risks": _string_list(critique.get("ignored_risks"), max_items=5, max_chars=220),
+            "ignored_tradeoffs": _string_list(critique.get("ignored_tradeoffs"), max_items=4, max_chars=220),
+            "recommendations": _string_list(critique.get("recommendations"), max_items=5, max_chars=220),
+        },
+    }
+
+
 def build_compact_planner_context(state: dict) -> dict:
     """Context passed to develop_plan(...). Preserve legacy keys used by fallback/tests.
 
@@ -462,7 +508,7 @@ def build_compact_planner_context(state: dict) -> dict:
 
     replan_context = _as_dict(state.get("replan_context"))
     if replan_context:
-        context["replan_context"] = _compact_jsonable(replan_context, max_string_chars=400, max_list_items=5)
+        context["replan_context"] = _compact_replan_context_for_planner(replan_context)
 
     return context
 

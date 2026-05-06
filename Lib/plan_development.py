@@ -222,6 +222,105 @@ def _parse_legacy_text_plan(response, query, depth, context=None):
 
     return plan
 
+
+def _replan_feedback_items(context, max_items=8):
+    if not isinstance(context, dict):
+        return []
+
+    replan = context.get("replan_context") if isinstance(context.get("replan_context"), dict) else {}
+    critique = replan.get("plan_critique") if isinstance(replan.get("plan_critique"), dict) else {}
+
+    items = []
+    for key in (
+        "feedback",
+        "critical_blockers",
+        "ignored_must_address",
+        "ignored_risks",
+        "ignored_tradeoffs",
+        "ignored_expert_risks",
+        "unresolved_tradeoffs",
+    ):
+        source = replan.get(key)
+        if source is None:
+            source = critique.get(key)
+        items.extend(to_string_list(source, max_items=max_items))
+
+    deduped = []
+    seen = set()
+    for item in items:
+        marker = item.strip().lower()
+        if marker and marker not in seen:
+            seen.add(marker)
+            deduped.append(item.strip())
+        if len(deduped) >= max_items:
+            break
+    return deduped
+
+
+def _previous_plan_from_context(context):
+    if not isinstance(context, dict):
+        return {}
+    replan = context.get("replan_context") if isinstance(context.get("replan_context"), dict) else {}
+    previous = replan.get("previous_plan")
+    return previous if isinstance(previous, dict) else {}
+
+
+def _repair_previous_plan_fallback(
+    query,
+    depth="detailed",
+    *,
+    context=None,
+    extra_warnings=None,
+    json_attempts=0,
+):
+    """Repair previous valid plan instead of replacing it with generic fallback."""
+    previous = _previous_plan_from_context(context)
+    if not isinstance(previous, dict) or not previous.get("steps"):
+        return None
+
+    plan = {
+        "query": query,
+        "main_idea": previous.get("main_idea") or f"Ответить на: {query}",
+        "preparation": to_string_list(previous.get("preparation"), max_items=10),
+        "steps": [],
+        "nuances": to_string_list(previous.get("nuances"), max_items=10),
+        "potential_problems": to_string_list(previous.get("potential_problems"), max_items=10),
+        "result": previous.get("result") if isinstance(previous.get("result"), str) else "",
+        "timestamp": str(datetime.now()),
+        "depth": depth,
+        "parse_warnings": ["json_replan_failed_used_previous_plan_repair"] + list(extra_warnings or []),
+        "json_attempts": int(json_attempts or 0),
+        "raw_format": "fallback_repair",
+        "source": "fallback_repair",
+    }
+
+    for index, item in enumerate(previous.get("steps") or [], start=1):
+        step = _normalize_step(item, index)
+        if step:
+            plan["steps"].append(step)
+
+    feedback_items = _replan_feedback_items(context, max_items=8)
+    if feedback_items:
+        plan["steps"].append(
+            {
+                "number": str(len(plan["steps"]) + 1),
+                "title": "Закрыть замечания критика перед финальным ответом",
+                "substeps": feedback_items,
+                "uses_expert_inputs": feedback_items,
+            }
+        )
+
+    risks = _context_items(context, "deliberation_brief", "expert_risks", 6)
+    for risk in risks:
+        if risk not in plan["potential_problems"]:
+            plan["potential_problems"].append(risk)
+
+    if not plan["result"]:
+        plan["result"] = "Итоговый ответ должен учитывать ограничения, риски, trade-offs и метрики проверки эффекта."
+
+    return plan
+
+
 def develop_plan(query, context=None, depth="detailed", model="deepseek-chat"):
     """
     Создаёт план ответа на запрос.
@@ -295,6 +394,16 @@ Schema:
         plan["json_attempts"] = attempts
         plan["source"] = "model"
         return plan
+
+    repair_plan = _repair_previous_plan_fallback(
+        query,
+        depth=depth,
+        context=context,
+        extra_warnings=warnings,
+        json_attempts=attempts,
+    )
+    if repair_plan is not None:
+        return repair_plan
 
     plan = _parse_legacy_text_plan(raw, query=query, depth=depth, context=context)
     plan["parse_warnings"] = list(plan.get("parse_warnings", [])) + warnings
