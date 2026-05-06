@@ -58,11 +58,12 @@ class ConflictAnalyzerTests(unittest.TestCase):
             "confidence": 0.85,
         }
 
-        with patch("Lib.conflict_analyzer.send_to_AI", return_value=json.dumps(payload)):
+        with patch("Lib.json_retry.send_to_AI", return_value=json.dumps(payload)):
             report = analyze_conflicts({"complexity": "complex"}, _bundle(), {})
 
         self.assertEqual(report["source"], "model")
         self.assertEqual(report["confidence"], 0.85)
+        self.assertEqual(report["json_attempts"], 1)
         self.assertEqual(report["disagreements"][0]["severity"], "high")
         self.assertEqual(report["unresolved_tradeoffs"][0]["tradeoff"], "speed vs safety")
 
@@ -81,7 +82,7 @@ class ConflictAnalyzerTests(unittest.TestCase):
         }
         raw = "```json\n" + json.dumps(payload) + "\n```"
 
-        with patch("Lib.conflict_analyzer.send_to_AI", return_value=raw):
+        with patch("Lib.json_retry.send_to_AI", return_value=raw):
             report = analyze_conflicts({"complexity": "moderate"}, _bundle(), {})
 
         self.assertEqual(report["source"], "model")
@@ -90,16 +91,38 @@ class ConflictAnalyzerTests(unittest.TestCase):
     def test_conflict_analyzer_invalid_json_fallback(self):
         from Lib.conflict_analyzer import analyze_conflicts
 
-        with patch("Lib.conflict_analyzer.send_to_AI", return_value="not json"):
+        with patch("Lib.json_retry.send_to_AI", return_value="not json"):
             report = analyze_conflicts({"complexity": "moderate"}, _bundle(), {})
 
         self.assertEqual(report["source"], "rules")
         self.assertIn("conflict_model_invalid_json", report["parse_warnings"])
+        self.assertEqual(report["json_attempts"], 2)
+
+    def test_conflict_analyzer_retries_invalid_then_valid_json(self):
+        from Lib.conflict_analyzer import analyze_conflicts
+
+        payload = {
+            "agreements": [],
+            "disagreements": [],
+            "unresolved_tradeoffs": [],
+            "premature_consensus_risks": [],
+            "blind_spots": ["Retried blind spot"],
+            "minority_positions": [],
+            "questions_for_next_round": [],
+            "confidence": 0.6,
+        }
+        with patch("Lib.json_retry.send_to_AI", side_effect=["not json", json.dumps(payload)]):
+            report = analyze_conflicts({"complexity": "moderate"}, _bundle(), {})
+
+        self.assertEqual(report["source"], "model")
+        self.assertEqual(report["json_attempts"], 2)
+        self.assertIn("json_retry_after_invalid_json", report["parse_warnings"])
+        self.assertEqual(report["blind_spots"], ["Retried blind spot"])
 
     def test_different_recommendations_create_disagreement_or_tradeoff(self):
         from Lib.conflict_analyzer import analyze_conflicts
 
-        with patch("Lib.conflict_analyzer.send_to_AI", return_value="not json"):
+        with patch("Lib.json_retry.send_to_AI", return_value="not json"):
             report = analyze_conflicts({"complexity": "complex"}, _bundle(), {})
 
         self.assertTrue(report["disagreements"] or report["unresolved_tradeoffs"])
@@ -115,7 +138,7 @@ class ConflictAnalyzerTests(unittest.TestCase):
             },
             risks={},
         )
-        with patch("Lib.conflict_analyzer.send_to_AI", return_value="not json"):
+        with patch("Lib.json_retry.send_to_AI", return_value="not json"):
             report = analyze_conflicts({"complexity": "complex"}, bundle, {})
 
         self.assertTrue(report["premature_consensus_risks"])

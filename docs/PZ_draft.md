@@ -13,8 +13,8 @@ Collective Meta-Moderation — экспериментальный програм
 - Язык: Python.
 - Основной API: `Lib.orchestrator.run_cmm(query, max_iters=2, model="deepseek-chat", route_mode="AUTO", parallel_mode="SEQUENTIAL", max_workers=None)`; старые вызовы без новых optional параметров сохраняются, внутри выполнение делегируется bounded CMM state machine.
 - CLI запуска CMM: `python main.py`.
-- CLI оценки: `python -m cmm.eval --dataset cmm_dataset_v1.csv --mode mock`.
-- CLI real-evaluation: `python -m cmm.eval --dataset cmm_dataset_v1.csv --mode real --judge-mode none|llm`.
+- CLI оценки: `python -m cmm.eval --dataset cmm_dataset_v1.csv --mode mock` или `python -m cmm.eval --dataset cmm_dataset_v2.csv --limit 20 --mode mock`.
+- CLI real-evaluation: `python -m cmm.eval --dataset cmm_dataset_v2.csv --limit 20 --mode real --judge-mode none|llm`.
 - Зависимости: `openai`, `python-dotenv`.
 - Тесты: стандартный `unittest`.
 - Секреты: API-ключи должны храниться локально в `.env`; реальные ключи не должны попадать в репозиторий.
@@ -60,7 +60,9 @@ Collective Meta-Moderation — экспериментальный програм
 }
 ```
 
-`trace_report` содержит исходный и формализованный запрос, router decision, CMM mode, estimated cost class, routing warnings, parallel mode/max workers/parallelized stages, роли экспертов, экспертные раунды, dynamic role reports / roles used, deliberation rounds/revisions, balance reports, conflict reports, meta moderation decisions, plan, critique, moderation reports, revision count, confidence, warnings, state history, final state, transition count, iteration count и errors.
+`trace_report` содержит исходный и формализованный запрос, router decision, CMM mode, estimated cost class, routing warnings, parallel mode/max workers/parallelized stages, raw роли экспертов, `roles_used_unique`, экспертные раунды, dynamic role reports / roles used, deliberation rounds/revisions, balance reports, conflict reports, meta moderation decisions, plan, critique, moderation reports, JSON health diagnostics, approximate telemetry, revision count, confidence, warnings, state history, final state, transition count, iteration count и errors.
+
+Для защиты и отладки есть `Lib.trace_formatter.format_trace_report(trace_report)`: он формирует компактный plain-text summary по маршруту, state path, ролям, balance/conflicts, deliberation, plan critique, answer moderation и warnings/errors без вывода больших raw JSON-структур.
 
 `original_query` является источником истины. `formalized_query` заполняется из `cleaned_query` и используется только как вспомогательный текст; downstream-агенты также получают структурированный `query_intake`.
 
@@ -72,21 +74,23 @@ Collective Meta-Moderation — экспериментальный програм
 - `Lib/router.py`: deterministic routing layer для `DIRECT`, `LIGHT_CMM`, `FULL_CMM`.
 - `Lib/direct_answer.py`: прямой low-cost ответ для простых low-risk задач.
 - `Lib/parallel_utils.py`: bounded helpers для optional ordered thread execution независимых экспертных вызовов.
+- `Lib/trace_formatter.py`: человекочитаемый summary поверх структурированного trace.
 - `Lib/query_intake.py`: безопасный входной слой, который сохраняет `original_query` и извлекает `cleaned_query`, контекст, ограничения, критерии успеха, неизвестные и предпочтения.
-- `Lib/json_retry.py`: общий retry helper для JSON-first model calls; при invalid JSON делает один repair-запрос и фиксирует `json_attempts` / warnings.
+- `Lib/json_retry.py`: общий retry helper для JSON-first model calls; при invalid JSON делает один repair-запрос и фиксирует `json_attempts` / warnings. Он используется intake, expert agents, role generation, planner, conflict analyzer, meta moderator, plan critic и answer moderator.
 - `Lib/role_generator.py`: безопасная rules-first и template-based генерация дополнительных ролей из whitelist без model-generated system prompts.
-- `Lib/expert_*`: роли, выбор ролей, экспертные вклады и панель.
+- `Lib/expert_*`: роли, rules-first выбор ролей, экспертные вклады и панель. Экспертные JSON-вклады retry-ятся один раз, а при повторном сбое возвращают диагностический fallback contribution вместо немого пустого контекста.
 - `Lib/expert_rounds.py`: выбор целевых ролей для второго экспертного раунда, запуск follow-up экспертов и объединение expert bundles.
 - `Lib/balance_analyzer.py`: Balance Analyzer 2.0, который сохраняет tag/count checks и добавляет deterministic quality heuristics.
 - `Lib/conflict_analyzer.py`: смысловой анализ согласий, разногласий, trade-offs, blind spots и рисков преждевременного консенсуса.
 - `Lib/deliberation.py`: синтез экспертного brief.
 - `Lib/deliberation_round.py`: структурированный раунд, где выбранные эксперты отвечают на позиции других ролей и пересматривают рекомендации.
 - `Lib/meta_moderator.py`: управление процессом.
-- `Lib/plan_development.py`: JSON-first планировщик.
+- `Lib/plan_development.py`: JSON-first планировщик с retry, legacy text parser и context-aware fallback plan.
 - `Lib/plan_critic.py`: context-aware JSON-first критик плана.
-- `Lib/agent_moderator.py`: модерация ответа и revision loop.
+- `Lib/agent_moderator.py`: JSON-first модерация ответа и revision loop; финальный `REJECT` явно помечается и не должен восприниматься как обычный принятый ответ.
 - `Lib/json_utils.py`: безопасный разбор JSON-like output.
 - `cmm/eval.py`: evaluation harness.
+- `tools/analyze_eval_routing.py`: построение `routing_analysis.csv` из eval `results.csv`.
 - `tests/`: offline unit tests.
 
 Legacy compatibility модули остаются импортируемыми, но не являются текущим основным pipeline: `Lib/Start_formalization.py` заменён в основном пути на `Lib/query_intake.py`, `Lib/agent_critic.py` и `Lib/critic_decision.py` совместимы со старым API вокруг `Lib/plan_critic.py`, а `Lib/Finish_agent.py` находится вне основного state-machine answer/moderation пути.
@@ -110,6 +114,7 @@ Real judged evaluation является отдельным opt-in режимом
 ## Источники
 
 - Локальный датасет: `cmm_dataset_v1.csv`.
+- Real-eval calibration dataset: `cmm_dataset_v2.csv`, 20 cases with `expected_mode`.
 - Исходный код проекта: модули `Lib/` и `cmm/`.
 - Локальные тесты: `tests/`.
 
@@ -122,6 +127,7 @@ Real judged evaluation является отдельным opt-in режимом
 - Trace разделяет `dynamic_roles_generated`, `dynamic_roles_executed` и `dynamic_roles_rejected`; старое поле `dynamic_roles_used` сохранено как alias к реально выполненным `dynamic_roles_executed`.
 - State machine является bounded MVP-оркестратором, а не бесконечным автономным процессом.
 - Router является deterministic heuristic и может ошибочно выбрать слишком лёгкий или слишком тяжёлый путь; real eval следует анализировать по `cmm_mode` и router complexity.
+- Eval v2 добавляет `expected_mode`, `actual_mode`, `router_mode_match`, `human_review.csv` и `routing_review.csv`; это помогает отделить ошибки маршрутизации от качества ответа.
 - Context-aware plan critic проверяет план по ограничениям, экспертным рискам, unresolved trade-offs, dynamic-role concerns и deliberation revisions, но остаётся heuristic/model-assisted проверкой, а не формальной верификацией корректности.
 - `REPLAN` не перезапускает весь экспертный pipeline; он пересоздаёт только план по последнему контексту и feedback критика.
 - Query intake защищает исходный запрос от перезаписи, но сам по себе не доказывает повышение качества downstream-ответов.

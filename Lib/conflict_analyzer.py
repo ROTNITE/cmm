@@ -6,8 +6,8 @@ import json
 import re
 from typing import Any
 
-from Lib.AI_request import send_to_AI
-from Lib.json_utils import safe_json_loads, to_number, to_string_list
+from Lib.json_retry import call_json_model
+from Lib.json_utils import to_number, to_string_list
 
 
 _SEVERITIES = {"low", "medium", "high"}
@@ -123,7 +123,14 @@ def _normalize_tradeoffs(value: Any) -> list[dict]:
     return out
 
 
-def _empty_report(source: str, warnings: list[str] | None = None, confidence: float = 0.0) -> dict:
+def _empty_report(
+    source: str,
+    warnings: list[str] | None = None,
+    confidence: float = 0.0,
+    *,
+    json_attempts: int = 0,
+    raw: str = "",
+) -> dict:
     return {
         "agreements": [],
         "disagreements": [],
@@ -134,11 +141,20 @@ def _empty_report(source: str, warnings: list[str] | None = None, confidence: fl
         "questions_for_next_round": [],
         "confidence": confidence,
         "parse_warnings": warnings or [],
+        "json_attempts": int(json_attempts or 0),
+        "raw": str(raw or "")[:2000],
         "source": source,
     }
 
 
-def _normalize_report(payload: dict | None, source: str, warnings: list[str] | None = None) -> dict | None:
+def _normalize_report(
+    payload: dict | None,
+    source: str,
+    warnings: list[str] | None = None,
+    *,
+    json_attempts: int = 1,
+    raw: str = "",
+) -> dict | None:
     if not isinstance(payload, dict):
         return None
     return {
@@ -151,6 +167,8 @@ def _normalize_report(payload: dict | None, source: str, warnings: list[str] | N
         "questions_for_next_round": to_string_list(payload.get("questions_for_next_round"), max_items=10),
         "confidence": to_number(payload.get("confidence"), default=0.0, max_value=1.0),
         "parse_warnings": warnings or [],
+        "json_attempts": int(json_attempts or 0),
+        "raw": str(raw or "")[:2000],
         "source": source,
     }
 
@@ -295,9 +313,20 @@ def _rule_based_report(
     query_intake: dict | None,
     expert_bundle: dict | None,
     warning: str | None = None,
+    *,
+    warnings: list[str] | None = None,
+    json_attempts: int = 0,
+    raw: str = "",
 ) -> dict:
     contributions = _contributions(expert_bundle)
-    report = _empty_report("rules", warnings=[warning] if warning else [], confidence=0.45)
+    all_warnings = ([warning] if warning else []) + list(warnings or [])
+    report = _empty_report(
+        "rules",
+        warnings=all_warnings,
+        confidence=0.45,
+        json_attempts=json_attempts,
+        raw=raw,
+    )
 
     if len(contributions) < 2:
         report["blind_spots"].append("Not enough expert contributions to compare perspectives.")
@@ -332,7 +361,7 @@ def _model_conflict_report(
     deliberation_brief: dict,
     *,
     model: str,
-) -> dict | None:
+) -> tuple[dict | None, dict]:
     system_prompt = (
         "You are a semantic conflict analyzer for a Collective Meta-Moderation process. "
         "Analyze expert contributions, not the final answer. Identify agreements, disagreements, "
@@ -367,17 +396,26 @@ def _model_conflict_report(
             "confidence": 0.0,
         },
     }
-    raw = send_to_AI(
+    result = call_json_model(
         user_prompt="Analyze semantic conflicts in this CMM state:\n" + json.dumps(state, ensure_ascii=False),
         system_prompt=system_prompt,
         temp=0.2,
         tokens=800,
         model=model,
+        max_retries=1,
     )
-    if not isinstance(raw, str) or not raw.strip() or raw.strip().lower().startswith("error:"):
-        return None
-    parsed = safe_json_loads(raw)
-    return _normalize_report(parsed, source="model")
+    warnings = result.get("warnings") if isinstance(result, dict) and isinstance(result.get("warnings"), list) else []
+    attempts = result.get("attempts") if isinstance(result, dict) and isinstance(result.get("attempts"), int) else 0
+    raw = result.get("raw") if isinstance(result, dict) and isinstance(result.get("raw"), str) else ""
+    parsed = result.get("payload") if isinstance(result, dict) else None
+    report = _normalize_report(
+        parsed,
+        source="model",
+        warnings=warnings,
+        json_attempts=attempts,
+        raw=raw,
+    )
+    return report, {"warnings": warnings, "attempts": attempts, "raw": raw}
 
 
 def analyze_conflicts(
@@ -389,7 +427,7 @@ def analyze_conflicts(
 ) -> dict:
     """Analyze semantic agreements, disagreements, tradeoffs, and consensus risks."""
     try:
-        model_report = _model_conflict_report(
+        model_report, diagnostics = _model_conflict_report(
             query_intake,
             expert_bundle,
             deliberation_brief,
@@ -397,6 +435,13 @@ def analyze_conflicts(
         )
         if model_report is not None:
             return model_report
-        return _rule_based_report(query_intake, expert_bundle, warning="conflict_model_invalid_json")
+        return _rule_based_report(
+            query_intake,
+            expert_bundle,
+            warning="conflict_model_invalid_json",
+            warnings=diagnostics.get("warnings"),
+            json_attempts=diagnostics.get("attempts", 0),
+            raw=diagnostics.get("raw", ""),
+        )
     except Exception as exc:
         return _rule_based_report(query_intake, expert_bundle, warning=f"conflict_model_failed: {exc}")

@@ -238,9 +238,9 @@ def develop_plan(query, context=None, depth="detailed", model="deepseek-chat"):
 
     # Настройки для разной глубины плана
     settings = {
-        "quick": {"tokens": 400, "temp": 0.3},
-        "detailed": {"tokens": 800, "temp": 0.4},
-        "comprehensive": {"tokens": 1200, "temp": 0.5}
+        "quick": {"tokens": 500, "temp": 0.3},
+        "detailed": {"tokens": 1000, "temp": 0.3},
+        "comprehensive": {"tokens": 1400, "temp": 0.4}
     }
 
     # Берём настройки для нужной глубины, если нет - используем detailed

@@ -96,6 +96,7 @@ The trace report is a structured audit object, not just debug logs. It includes:
 - query fields
 - query intake
 - roles and expert rounds
+- deduplicated `roles_used_unique` with initial/extra round membership
 - dynamic role reports, generated dynamic roles, executed dynamic roles, and rejected suggestions
 - `dynamic_roles_used` is retained as a compatibility alias for `dynamic_roles_executed`
 - deliberation brief
@@ -107,17 +108,24 @@ The trace report is a structured audit object, not just debug logs. It includes:
 - moderation reports
 - router decision, CMM mode, estimated cost class, and routing warnings
 - parallel mode, max workers, and parallelized stages
+- JSON health diagnostics for expert, planner, moderator, conflict, and meta-moderator JSON calls
+- approximate observability telemetry: estimated call count, estimated stage count, answer length, warning count, and error count
 - warnings and revision count
 - state history, final state, transition count, iteration count, plans, plan critiques, and errors
+
+`Lib.trace_formatter.format_trace_report(...)` provides a compact plain-text summary for reviews and demos. It intentionally summarizes the trace instead of dumping raw expert bundles, plans, or model payloads.
 
 ## Failure Handling
 
 The MVP favors explicit fallback structures over crashes:
 
 - missing/invalid query intake falls back to the full original query plus mechanically cleaned helper text
-- expert panel failure falls back to an empty expert bundle
+- expert JSON failure retries once, then falls back to a diagnostic contribution with `invalid_json_from_model`, `json_attempts`, parse warnings, and truncated raw output
+- expert panel execution failure falls back to an empty contribution for that role
 - balance failure falls back to conservative missing-perspective data
-- intake, role suggestion, and plan-critic JSON calls retry once on invalid JSON and record `json_attempts` / parse warnings
+- intake, expert, role suggestion, planner, conflict, meta-moderation, plan-critic, and answer-moderation JSON calls retry once on invalid JSON and record `json_attempts` / parse warnings
+- planner fallback now uses available CMM context instead of returning only generic steps
+- meta moderation applies a deterministic guard when strong rule-based `DEEPEN` / `ADD_EXPERT` signals conflict with optimistic model decisions
 - invalid model JSON still records parse warnings and falls back where applicable
 - weak or context-missing plans return `needs_revision` / `rejected` with structured feedback
 - rejected plans return structured failure instead of continuing blindly
@@ -128,11 +136,13 @@ The MVP favors explicit fallback structures over crashes:
 - Experts can now respond to other roles in one structured deliberation round, but there is no fully free-form debate state machine.
 - The state machine is bounded and MVP-level; it does not implement async, parallel state mutation, or unbounded autonomous control.
 - Router decisions are deterministic heuristics and can misclassify borderline tasks; routing should be evaluated by mode and complexity.
+- Router trace signals include word count, constraints/success-criteria flags, risk/stakeholder/trade-off markers, intake complexity, and risk level. These diagnostics support calibration against datasets with `expected_mode`.
 - Balance Analyzer 2.0 is still heuristic and deterministic; it is not proof of quality.
 - Semantic conflict analysis is support for detecting trade-offs and consensus risks; deliberation is bounded and schema-driven.
 - Query intake preserves source truth but does not guarantee downstream semantic completeness.
 - Context-aware plan critique improves REPLAN feedback, but it remains heuristic/model-assisted rather than formal verification and can still miss semantic failures.
 - Mock evaluation is heuristic and deterministic by default. Real judged evaluation provides limited first evidence, not proof of universal superiority.
+- `cmm_dataset_v2.csv` is the first 20-case real-eval calibration set with expected routing modes. Real eval writes human-review and routing-review CSVs so router errors can be separated from answer-quality losses.
 - Optional thread-based parallelism is limited to independent expert calls; no async/parallel orchestration is implemented.
 - The eval harness remains sequential in this stage; parallel eval execution is a future extension to avoid changing scoring/order semantics.
 - No arbitrary dynamic role generation is implemented; dynamic roles are capped and template-based.

@@ -15,6 +15,7 @@ For the offline evaluation harness:
 
 ```bash
 python -m cmm.eval --dataset cmm_dataset_v1.csv --limit 36 --mode mock --output-dir eval_results
+python -m cmm.eval --dataset cmm_dataset_v2.csv --limit 20 --mode mock --output-dir eval_results_v2_mock
 ```
 
 `mock` mode is offline and deterministic; it checks evaluation mechanics, not answer quality. Use `--mode real` only when you intentionally want real model/CMM calls. Real judged evaluation can export blind packets for human review or call an LLM judge explicitly:
@@ -22,6 +23,8 @@ python -m cmm.eval --dataset cmm_dataset_v1.csv --limit 36 --mode mock --output-
 ```bash
 python -m cmm.eval --dataset cmm_dataset_v1.csv --limit 10 --mode real --judge-mode none --output-dir eval_real_10
 python -m cmm.eval --dataset cmm_dataset_v1.csv --limit 10 --mode real --judge-mode llm --output-dir eval_real_10
+python -m cmm.eval --dataset cmm_dataset_v2.csv --limit 20 --mode real --judge-mode none --output-dir eval_real_20
+python tools/analyze_eval_routing.py --input eval_real_20/results.csv --output eval_real_20/routing_analysis.csv
 ```
 
 ## Environment
@@ -133,6 +136,7 @@ Optional parallelism is deliberately narrow. The default `parallel_mode="SEQUENT
 - `router_decision`, `cmm_mode`, `estimated_cost_class`, and `routing_warnings`
 - `parallel_mode`, `max_workers`, and `parallelized_stages`
 - `roles_used` and `expert_rounds`
+- `roles_used_unique`, a deduplicated human/eval view with rounds and dynamic-role flags
 - `dynamic_role_reports`, `dynamic_roles_generated`, `dynamic_roles_executed`, `dynamic_roles_rejected`
 - `dynamic_roles_used` is retained as a compatibility alias for `dynamic_roles_executed`
 - `deliberation_brief`
@@ -148,18 +152,24 @@ Optional parallelism is deliberately narrow. The default `parallel_mode="SEQUENT
 - `warnings`
 - `state_history`, `final_state`, `transition_count`, `iteration_count`
 - `plans`, `plan_critiques`, and `errors`
+- `json_health`, a compact summary of JSON attempts, fallbacks, and invalid-output warnings across experts, planning, moderation, conflict analysis, and meta moderation
+- observability telemetry: `estimated_call_count`, `estimated_stage_count`, `answer_chars`, `warnings_count`, and `errors_count`
+
+For defense/debugging, `Lib.trace_formatter.format_trace_report(trace_report)` returns a compact text summary with routing, state path, roles, balance, conflicts, deliberation, plan critique, moderation, warnings, and errors. It is a human-readable view over the trace, not a replacement for the structured trace.
 
 ## JSON Contracts
 
 The project uses JSON-first contracts where downstream code depends on structured model output:
 
 - Query intake requests JSON extraction and falls back to rule-based/fallback structure while preserving the full original query.
-- Query intake, dynamic role model suggestions, and plan critique use a shared JSON retry helper. If the first model response is invalid JSON, CMM asks once for JSON repair and records `json_attempts` / parse warnings.
+- Query intake, expert agents, dynamic role model suggestions, the planner, conflict analyzer, meta moderator, plan critic, and answer moderator use the shared JSON retry helper. If the first model response is invalid JSON, CMM asks once for JSON repair and records `json_attempts` / parse warnings.
 - Router decisions are deterministic and offline-first; they fall back to `FULL_CMM` if routing fails.
-- Planner requests a JSON plan and falls back to legacy text parsing or a safe fallback plan.
+- Expert agents fall back to diagnostic empty contributions with `invalid_json_from_model`, `json_attempts`, `parse_warnings`, and truncated raw output when both JSON attempts fail.
+- Planner requests a JSON plan and falls back to legacy text parsing or a context-aware safe fallback plan built from intake constraints, success criteria, must-address items, expert risks, and conflict blind spots.
 - Plan critic requests JSON critique and falls back to conservative rule checks against constraints, expert risks, trade-offs, dynamic roles, and deliberation revisions.
-- Expert agents and selector parse markdown-wrapped JSON through shared helpers.
-- Moderator requests JSON evaluation with expert coverage, balance handling, unresolved questions, issues, and improvements.
+- Expert selector is rules-first for obvious domains and uses model selection only as an optional fallback for complex queries.
+- Moderator requests JSON evaluation with expert coverage, balance handling, unresolved questions, issues, and improvements; a final `REJECT` is surfaced explicitly rather than treated as a normal final answer.
+- Meta moderation applies a deterministic guard so a strong rule-based `DEEPEN` / `ADD_EXPERT` signal cannot be silently overridden by an optimistic model `SYNTHESIZE` / `FINALIZE`.
 - Invalid model output is treated as untrusted input and produces explicit fallback data with parse warnings.
 
 ## Meta Moderation
@@ -172,7 +182,7 @@ If the decision is still `DEEPEN` or `ADD_EXPERT`, the MVP may also run the exis
 
 ## Evaluation Harness
 
-The dataset `cmm_dataset_v1.csv` contains 36 cases with queries, constraints, expected perspectives, rubrics, reference outlines, and expected single-model failure modes.
+The dataset `cmm_dataset_v1.csv` contains 36 broad benchmark cases. `cmm_dataset_v2.csv` is the first real-eval calibration set with 20 cases and explicit `expected_mode` labels for `DIRECT`, `LIGHT_CMM`, and `FULL_CMM`.
 
 The mock evaluation harness compares:
 
@@ -182,6 +192,8 @@ The mock evaluation harness compares:
 Mock mode scores deterministic outputs without network/API calls. It is a mechanical regression aid, not proof that CMM is better.
 
 Real judged mode is explicit and may call external APIs. It generates baseline and CMM answers, preserves the CMM trace, creates blind Answer A/B packets, and either exports human-review artifacts (`--judge-mode none`) or calls an LLM judge (`--judge-mode llm`). Rubrics and expected perspectives are used as judge criteria, not hidden answer content.
+
+`--judge-mode none` writes `human_review.jsonl`, `human_review.csv`, and `routing_review.csv`. The CSV files are intended for manual blind review and router calibration before trusting any LLM judge. `tools/analyze_eval_routing.py` converts `results.csv` into a compact `routing_analysis.csv` with technical failures, router mismatches, and baseline wins.
 
 The eval harness remains sequential in this stage to preserve row ordering and scoring semantics; parallel eval execution is a future extension.
 
@@ -193,6 +205,9 @@ Results are exported to CSV and JSON with:
 - coverage deltas
 - `winner`
 - `notes`
+- CMM diagnostics such as `cmm_final_state`, warning/error counts, JSON fallback counts, expert valid/invalid contribution counts, planner raw format/attempts, plan critique statuses, and answer-moderation final decision
+- Observability fields such as unique roles used, estimated call/stage counts, answer length, and warning/error counts
+- Router calibration fields such as `expected_mode`, `actual_mode`, `router_mode_match`, mode distributions, technical failures by mode, and average estimated cost score
 
 The scoring is a lightweight deterministic heuristic, not a paper-grade experimental result.
 

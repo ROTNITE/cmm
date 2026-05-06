@@ -157,7 +157,7 @@ class DeliberationFlowTests(unittest.TestCase):
             _sample_balance_report(),
         )
 
-        with patch("Lib.agent_moderator.send_to_AI", side_effect=fake_send_to_ai):
+        with patch("Lib.json_retry.send_to_AI", side_effect=fake_send_to_ai):
             report = moderate_answer(
                 original_query="query",
                 plan={"main_idea": "idea", "steps": []},
@@ -202,6 +202,27 @@ class DeliberationFlowTests(unittest.TestCase):
         self.assertTrue(result["trace"]["expert_bundle_used"])
         self.assertTrue(result["trace"]["balance_report_used"])
         self.assertEqual(result["trace"]["deliberation_brief"], brief)
+
+    def test_run_moderated_loop_marks_rejected_answer(self):
+        from Lib.agent_moderator import run_moderated_loop
+
+        with patch(
+            "Lib.agent_moderator.improve_plan_to_answer",
+            return_value={"answer": "unsafe answer"},
+        ), patch(
+            "Lib.agent_moderator.moderate_answer",
+            return_value={"decision": "REJECT", "critical_issues": ["unsafe"], "improvements": []},
+        ):
+            result = run_moderated_loop(
+                original_query="query",
+                plan={"main_idea": "idea", "steps": []},
+            )
+
+        self.assertEqual(result["final_answer"], "")
+        self.assertEqual(result["rejected_answer"], "unsafe answer")
+        self.assertEqual(result["final_decision"], "REJECT")
+        self.assertTrue(result["rejected"])
+        self.assertEqual(result["critical_issues"], ["unsafe"])
 
 
 if __name__ == "__main__":

@@ -24,6 +24,7 @@ class ImportAndHelperTests(unittest.TestCase):
             "Lib.router",
             "Lib.direct_answer",
             "Lib.parallel_utils",
+            "Lib.trace_formatter",
             "Lib.role_generator",
             "Lib.meta_moderator",
             "Lib.agent_improver",
@@ -81,6 +82,17 @@ class ImportAndHelperTests(unittest.TestCase):
         self.assertEqual(bundle["roles"][0]["key"], "strategist")
         self.assertEqual(bundle["contributions"][0]["risks"], ["expert_execution_failed"])
         self.assertIn("synthesis", bundle)
+
+    def test_expert_selector_rules_first_domain_avoids_model_call(self):
+        from Lib.expert_selector import determine_expert_roles
+
+        with patch("Lib.json_retry.send_to_AI", side_effect=AssertionError("rules should avoid model call")):
+            roles = determine_expert_roles(
+                "Нужно разработать программу для студентов регионального вуза.",
+                max_roles=5,
+            )
+
+        self.assertIn("domain_expert_education", [role.key for role in roles])
 
 
 if __name__ == "__main__":

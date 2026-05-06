@@ -5,10 +5,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from Lib.AI_request import send_to_AI
 from Lib.agent_improver import improve_plan_to_answer
 from Lib.deliberation import build_deliberation_brief
+from Lib.json_retry import call_json_model
 from Lib.json_utils import safe_json_loads, to_number, to_string_list
+from Lib.quality_gates import normalize_moderated_result
 
 
 def _safe_json_loads(s: str) -> Optional[Dict[str, Any]]:
@@ -197,29 +198,38 @@ def moderate_answer(
         "перечисли это в unresolved_questions.\n"
     )
 
-    raw = send_to_AI(
+    result = call_json_model(
         user_prompt="\n\n".join(user_prompt_parts),
         system_prompt=system_prompt,
         temp=0.25,
         tokens=650,
-        model=model
+        model=model,
+        max_retries=1,
     )
 
-    parsed = _safe_json_loads(raw.strip() if raw else "")
+    parsed = result.get("payload") if isinstance(result, dict) else None
+    retry_warnings = result.get("warnings") if isinstance(result, dict) and isinstance(result.get("warnings"), list) else []
+    attempts = result.get("attempts") if isinstance(result, dict) and isinstance(result.get("attempts"), int) else 0
+    raw = result.get("raw") if isinstance(result, dict) and isinstance(result.get("raw"), str) else ""
     if not parsed:
         # Фолбэк: если модель не вернула JSON — не ломаем пайплайн
         return {
             "decision": "REVISE",
             "scores": {},
             "balance": {"dominant_perspective_found": False, "missing_perspectives": []},
-            "critical_issues": ["Модератор не смог разобрать JSON-оценку (формат ответа модели)."],
-            "improvements": ["Повтори модерацию или снизь сложность ответа."],
+            "critical_issues": ["Moderator JSON output could not be parsed after retry."],
+            "improvements": [
+                "Regenerate answer with stricter structure and shorter sections.",
+                "Ensure constraints, metrics, risks, and trade-offs are explicit.",
+            ],
             "ignored_expert_risks": [],
             "ignored_expert_recommendations": [],
             "unresolved_questions": [],
-            "parse_warnings": ["moderation_json_parse_failed"],
+            "parse_warnings": retry_warnings + ["moderation_json_parse_failed"],
+            "json_attempts": attempts,
             "timestamp": str(datetime.now()),
             "raw": (raw or ""),
+            "source": "fallback",
             "meta": {
                 "expert_bundle_used": isinstance(expert_bundle, dict),
                 "balance_report_used": isinstance(balance_report, dict),
@@ -254,7 +264,9 @@ def moderate_answer(
     parsed["avg_score"] = avg
     parsed["timestamp"] = str(datetime.now())
     parsed["raw"] = (raw or "")
-    parsed["parse_warnings"] = []
+    parsed["parse_warnings"] = retry_warnings
+    parsed["json_attempts"] = attempts
+    parsed["source"] = "model"
     parsed["meta"] = {
         "expert_bundle_used": isinstance(expert_bundle, dict),
         "balance_report_used": isinstance(balance_report, dict),
@@ -275,10 +287,17 @@ def run_moderated_loop(
         model: str = "deepseek-chat"
 ) -> Dict[str, Any]:
     """
-    Полный цикл для связки Агент4->Агент5:
-      - делаем ответ улучшатором
-      - модерируем
-      - при REVISE: даём фидбек улучшатору и повторяем
+    Full answer generation + moderation loop.
+
+    Explicit Phase 6 contract:
+    {
+      "final_answer": str,
+      "reports": [...],
+      "final_decision": "ACCEPT|REVISE|REJECT",
+      "critical_issues": [],
+      "revision_count": int,
+      "source": ...
+    }
     """
     if deliberation_brief is None and (expert_bundle is not None or balance_report is not None):
         deliberation_brief = build_deliberation_brief(
@@ -295,11 +314,13 @@ def run_moderated_loop(
         balance_report=balance_report,
         deliberation_brief=deliberation_brief,
         depth="standard",
-        model=model
+        model=model,
     )
     answer = improver_out["answer"]
 
     reports: List[Dict[str, Any]] = []
+    revision_count = 0
+
     for _ in range(max_iters + 1):
         report = moderate_answer(
             original_query=original_query,
@@ -309,18 +330,20 @@ def run_moderated_loop(
             expert_bundle=expert_bundle,
             balance_report=balance_report,
             deliberation_brief=deliberation_brief,
-            model=model
+            model=model,
         )
         reports.append(report)
 
-        if report.get("decision") == "ACCEPT":
+        decision = str(report.get("decision") or "").upper()
+
+        if decision == "ACCEPT":
             break
 
-        if report.get("decision") == "REJECT":
-            # При REJECT лучше пересоздать план/ответ заново (в вашей схеме — откат к генератору)
+        if decision == "REJECT":
             break
 
-        # REVISE -> повторяем улучшение по фидбеку модератора
+        revision_count += 1
+
         feedback = (report.get("improvements") or [])[:10]
         improver_out = improve_plan_to_answer(
             original_query=original_query,
@@ -332,17 +355,36 @@ def run_moderated_loop(
             previous_answer=answer,
             feedback=feedback,
             depth="thorough",
-            model=model
+            model=model,
         )
         answer = improver_out["answer"]
 
-    return {
-        "final_answer": answer,
+    final_report = reports[-1] if reports else {}
+    final_decision = str(final_report.get("decision") or "").upper()
+    if final_decision not in {"ACCEPT", "REVISE", "REJECT"}:
+        final_decision = "REVISE" if reports else "REJECT"
+
+    critical_issues = final_report.get("critical_issues") if isinstance(final_report, dict) else []
+    if not isinstance(critical_issues, list):
+        critical_issues = []
+
+    rejected = final_decision == "REJECT"
+
+    result = {
+        "final_answer": "" if rejected else answer,
+        "rejected_answer": answer if rejected else "",
+        "final_decision": final_decision,
+        "rejected": bool(rejected),
+        "critical_issues": critical_issues,
+        "revision_count": revision_count,
+        "source": final_report.get("source") if isinstance(final_report, dict) else "moderated_loop",
         "reports": reports,
         "trace": {
             "expert_bundle_used": isinstance(expert_bundle, dict),
             "balance_report_used": isinstance(balance_report, dict),
             "deliberation_brief": deliberation_brief,
         },
-        "timestamp": str(datetime.now())
+        "timestamp": str(datetime.now()),
     }
+
+    return normalize_moderated_result(result)

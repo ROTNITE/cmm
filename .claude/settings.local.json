@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import json; data = json.load\\(open\\('results.json', encoding='utf-8'\\)\\); print\\('Keys:', list\\(data.keys\\(\\)\\)[:10]\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(python -m unittest tests.test_orchestrator tests.test_context_manager)",
+      "Bash(python -m unittest tests.test_context_manager.ContextManagerTests.test_build_compact_planner_context_preserves_legacy_keys -v)",
+      "Bash(python -m unittest tests.test_orchestrator tests.test_context_manager -v)",
+      "Bash(python -m unittest tests.test_orchestrator.OrchestratorTests.test_planner_context_contains_conflict_report -v)",
+      "Bash(python -m unittest tests.test_context_manager.TestContextManager.test_planner_context_contains_conflict_report -v)",
+      "Bash(python -m unittest tests.test_context_manager -v)",
+      "Bash(python -m unittest tests.test_orchestrator -v)",
+      "Bash(python -m unittest tests.test_orchestrator.OrchestratorTests.test_planner_context_contains_conflict_report)",
+      "Bash(python -m pytest tests/ -v --tb=short)",
+      "Bash(python -m unittest discover -s tests -p \"test_*.py\")",
+      "Bash(python -m cmm.eval --dataset cmm_dataset_v1.csv --limit 1 --mode real --judge-mode none --output-dir eval_real_context_fix)"
+    ]
+  }
+}

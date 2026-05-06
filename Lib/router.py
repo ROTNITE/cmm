@@ -73,6 +73,49 @@ _LIGHT_MARKERS = (
     "метрик",
     "внедр",
 )
+_DIRECT_MARKERS = (
+    "what is",
+    "define",
+    "explain",
+    "briefly",
+    "short answer",
+    "что такое",
+    "объясни",
+    "кратко",
+    "дай определение",
+)
+_STAKEHOLDER_MARKERS = (
+    "stakeholder",
+    "multi-stakeholder",
+    "governance",
+    "team",
+    "organization",
+    "university",
+    "students",
+    "users",
+    "residents",
+    "стейкхолдер",
+    "заинтересован",
+    "управлен",
+    "организац",
+    "университет",
+    "студент",
+    "жител",
+    "пользовател",
+)
+_TRADEOFF_MARKERS = (
+    "tradeoff",
+    "trade-off",
+    "trade off",
+    "compromise",
+    "tension",
+    "conflict",
+    "balance between",
+    "компромисс",
+    "конфликт",
+    "баланс между",
+    "противореч",
+)
 
 
 def _safe_dict(value: Any) -> dict:
@@ -152,23 +195,32 @@ def route_query(query_intake: dict, *, original_query: str = "") -> dict:
 
     signals = {
         "risk_level": risk_level or "unknown",
+        "intake_complexity": str(intake.get("complexity") or "").strip().lower() or "unknown",
         "word_count": word_count,
         "constraints_count": len(constraints),
         "success_criteria_count": len(success_criteria),
         "context_count": len(context),
         "unknowns_count": len(unknowns),
         "preferences_count": len(preferences),
+        "has_constraints": bool(constraints),
+        "has_success_criteria": bool(success_criteria),
         "should_use_cmm": bool(should_use_cmm) if isinstance(should_use_cmm, bool) else None,
         "has_high_risk_markers": _contains_any(text, _HIGH_RISK_MARKERS),
+        "has_risk_markers": _contains_any(text, _HIGH_RISK_MARKERS) or "risk" in text or "рис" in text,
+        "has_stakeholder_markers": _contains_any(text, _STAKEHOLDER_MARKERS),
+        "has_tradeoff_markers": _contains_any(text, _TRADEOFF_MARKERS),
         "has_full_markers": _contains_any(text, _FULL_MARKERS),
         "has_light_markers": _contains_any(text, _LIGHT_MARKERS),
+        "has_direct_markers": _contains_any(text, _DIRECT_MARKERS),
         "needs_second_round": False,
     }
 
     high_risk = risk_level == "high" or signals["has_high_risk_markers"]
     many_constraints = len(constraints) >= 3 or len(success_criteria) >= 3
-    multi_stakeholder = len(context) >= 2 or "stakeholder" in text or "стейкхолдер" in text
-    full_signals = high_risk or complexity == "high" or many_constraints or multi_stakeholder or signals["has_full_markers"]
+    constrained_plan = len(constraints) >= 2 and len(success_criteria) >= 1
+    multi_stakeholder = len(context) >= 2 or signals["has_stakeholder_markers"]
+    conflict_heavy = signals["has_tradeoff_markers"] or signals["has_full_markers"]
+    full_signals = high_risk or complexity == "high" or many_constraints or multi_stakeholder or conflict_heavy
     if full_signals:
         signals["needs_second_round"] = high_risk or complexity == "high" or many_constraints or multi_stakeholder
         return _normalize_decision("FULL_CMM", "Complex, high-risk, or multi-stakeholder signals require full CMM.", complexity, signals, warnings)
@@ -176,7 +228,7 @@ def route_query(query_intake: dict, *, original_query: str = "") -> dict:
     simple_direct = (
         complexity == "low"
         and risk_level in {"", "low", "unknown"}
-        and should_use_cmm is False
+        and (should_use_cmm is False or signals["has_direct_markers"])
         and not constraints
         and not success_criteria
         and not context
@@ -190,6 +242,9 @@ def route_query(query_intake: dict, *, original_query: str = "") -> dict:
 
     if should_use_cmm is False and not high_risk and complexity == "low" and not constraints and not success_criteria:
         return _normalize_decision("DIRECT", "Intake indicates CMM is unnecessary and no risk markers were found.", complexity, signals, warnings)
+
+    if constrained_plan:
+        return _normalize_decision("LIGHT_CMM", "Constrained request with success criteria needs a light CMM pass.", complexity, signals, warnings)
 
     return _normalize_decision("LIGHT_CMM", "Moderate or mildly constrained request benefits from a light CMM pass.", complexity, signals, warnings)
 

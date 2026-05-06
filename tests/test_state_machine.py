@@ -264,6 +264,117 @@ class StateMachineTests(unittest.TestCase):
         self.assertIn("PLAN", states)
         self.assertIn("ANSWER", states)
 
+    def test_rebalance_runs_meta_recheck_then_plan_when_conflicts_clear(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        first_conflict = _conflict(
+            tradeoffs=[
+                {
+                    "tradeoff": "speed vs safety",
+                    "why_it_matters": "needs resolution",
+                    "roles_involved": ["strategist", "risk_manager"],
+                }
+            ]
+        )
+        cleared_conflict = _conflict()
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["run_meta_moderator"].side_effect = [_meta("DEEPEN")]
+            mocks["analyze_conflicts"].side_effect = [first_conflict, cleared_conflict]
+            mocks["run_deliberation_round"].return_value = _deliberation_bundle()
+            mocks["merge_deliberation_into_bundle"].return_value = _deliberated_bundle()
+
+            result = run_cmm_state_machine("raw query")
+
+        trace = result["trace_report"]
+        transitions = [(item["from"], item["to"]) for item in trace["state_history"]]
+
+        self.assertIn(("REBALANCE", "META_RECHECK"), transitions)
+        self.assertIn(("META_RECHECK", "PLAN"), transitions)
+        self.assertEqual(trace["meta_recheck_count"], 1)
+        self.assertEqual(trace["meta_recheck_decisions"][0]["decision"], "SYNTHESIZE")
+        self.assertEqual(trace["final_state"], "FINALIZE")
+
+    def test_meta_recheck_can_request_extra_panel_for_remaining_gap(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        first_conflict = _conflict(
+            tradeoffs=[
+                {
+                    "tradeoff": "speed vs safety",
+                    "why_it_matters": "needs resolution",
+                    "roles_involved": ["strategist", "risk_manager"],
+                }
+            ]
+        )
+        recheck_conflict = _conflict(blind_spots=["Critical legal/privacy blind spot remains."])
+
+        extra_bundle = {
+            "roles": [
+                {
+                    "key": "legal_reviewer",
+                    "name": "Legal Reviewer",
+                    "perspective_tag": "legal",
+                    "dynamic": True,
+                }
+            ],
+            "contributions": [],
+            "synthesis": {"recommendations": [], "risks": [], "questions": [], "perspective_counts": {}},
+        }
+        merged_bundle = _expert_bundle()
+        merged_bundle["roles"] = list(merged_bundle["roles"]) + list(extra_bundle["roles"])
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["run_meta_moderator"].side_effect = [_meta("DEEPEN"), _meta("ADD_EXPERT")]
+            mocks["analyze_conflicts"].side_effect = [first_conflict, recheck_conflict, _conflict()]
+            mocks["run_deliberation_round"].return_value = _deliberation_bundle()
+            mocks["merge_deliberation_into_bundle"].return_value = _deliberated_bundle()
+            mocks["run_targeted_expert_round"].return_value = extra_bundle
+            mocks["merge_expert_bundles"].return_value = merged_bundle
+
+            result = run_cmm_state_machine("raw query")
+
+        trace = result["trace_report"]
+        transitions = [(item["from"], item["to"]) for item in trace["state_history"]]
+
+        self.assertIn(("REBALANCE", "META_RECHECK"), transitions)
+        self.assertIn(("META_RECHECK", "PANEL_ROUND_EXTRA"), transitions)
+        self.assertEqual(trace["meta_recheck_count"], 1)
+        self.assertEqual(trace["meta_recheck_decisions"][0]["decision"], "ADD_EXPERT")
+        mocks["run_targeted_expert_round"].assert_called()
+
+    def test_meta_recheck_limit_prevents_infinite_loop(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        persistent_conflict = _conflict(
+            tradeoffs=[
+                {
+                    "tradeoff": "critical safety vs speed",
+                    "why_it_matters": "critical safety risk remains",
+                    "roles_involved": ["strategist", "risk_manager"],
+                    "severity": "high",
+                }
+            ]
+        )
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["run_meta_moderator"].side_effect = [_meta("DEEPEN"), _meta("DEEPEN")]
+            mocks["analyze_conflicts"].side_effect = [persistent_conflict, persistent_conflict]
+            mocks["run_deliberation_round"].return_value = _deliberation_bundle()
+            mocks["merge_deliberation_into_bundle"].return_value = _deliberated_bundle()
+
+            result = run_cmm_state_machine("raw query", max_transitions=40)
+
+        trace = result["trace_report"]
+        transitions = [(item["from"], item["to"]) for item in trace["state_history"]]
+
+        self.assertEqual(trace["meta_recheck_count"], 1)
+        self.assertEqual(transitions.count(("REBALANCE", "META_RECHECK")), 1)
+        self.assertNotIn("max_transitions_exceeded", trace["errors"])
+
     def test_direct_mode_skips_full_cmm_stages(self):
         from Lib.state_machine import run_cmm_state_machine
 
@@ -417,6 +528,23 @@ class StateMachineTests(unittest.TestCase):
         self.assertEqual(trace["answer_moderation_final_decision"], "REVISE")
         self.assertTrue(trace["answer_moderation_best_effort"])
         self.assertIn("answer_moderation_revise_best_effort", trace["warnings"])
+
+    def test_trace_contains_context_compression(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            result = run_cmm_state_machine("raw query")
+
+        compression = result["trace_report"]["context_compression"]
+        self.assertIn("planner_context_chars", compression)
+        self.assertIn("critic_context_chars", compression)
+        self.assertIn("answer_context_chars", compression)
+        self.assertIn("meta_context_chars", compression)
+        self.assertGreaterEqual(compression["planner_context_chars"], 0)
+        self.assertGreaterEqual(compression["critic_context_chars"], 0)
+        self.assertGreaterEqual(compression["answer_context_chars"], 0)
+        self.assertGreaterEqual(compression["meta_context_chars"], 0)
 
     def test_answer_moderation_reject_with_answer_fails(self):
         from Lib.state_machine import run_cmm_state_machine
@@ -594,6 +722,59 @@ class StateMachineTests(unittest.TestCase):
         self.assertEqual(trace["dynamic_roles_used"], [])
         self.assertEqual(captured["dynamic_roles_used"], [])
 
+    def test_roles_used_unique_dedupes_rounds_and_marks_dynamic_roles(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        extra_bundle = {
+            "roles": [
+                {"key": "strategist", "name": "Strategist", "perspective_tag": "strategy"},
+                {
+                    "key": "legal_reviewer",
+                    "name": "Legal Reviewer",
+                    "perspective_tag": "legal",
+                    "dynamic": True,
+                },
+            ],
+            "contributions": [],
+            "synthesis": {"recommendations": [], "risks": [], "questions": [], "perspective_counts": {}},
+        }
+        merged_bundle = _expert_bundle()
+        merged_bundle["roles"] = list(merged_bundle["roles"]) + list(extra_bundle["roles"])
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["run_meta_moderator"].return_value = _meta("ADD_EXPERT")
+            mocks["run_targeted_expert_round"].return_value = extra_bundle
+            mocks["merge_expert_bundles"].return_value = merged_bundle
+            result = run_cmm_state_machine("raw query")
+
+        roles = {role["key"]: role for role in result["trace_report"]["roles_used_unique"]}
+        self.assertEqual(roles["strategist"]["rounds"], ["initial", "extra"])
+        self.assertFalse(roles["strategist"]["dynamic"])
+        self.assertEqual(roles["legal_reviewer"]["rounds"], ["extra"])
+        self.assertTrue(roles["legal_reviewer"]["dynamic"])
+
+    def test_trace_includes_observability_telemetry(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["develop_plan"].return_value = {
+                "main_idea": "plan",
+                "steps": [{"number": "1", "title": "step", "substeps": []}],
+                "json_attempts": 2,
+                "source": "model",
+            }
+            result = run_cmm_state_machine("raw query")
+
+        trace = result["trace_report"]
+        self.assertIsInstance(trace["estimated_call_count"], int)
+        self.assertGreaterEqual(trace["estimated_call_count"], 2)
+        self.assertEqual(trace["estimated_stage_count"], len(trace["state_history"]))
+        self.assertEqual(trace["answer_chars"], len(result["final_answer"]))
+        self.assertEqual(trace["warnings_count"], len(trace["warnings"]))
+        self.assertEqual(trace["errors_count"], len(trace["errors"]))
+
     def test_plan_rejected_fails_after_max_iters(self):
         from Lib.state_machine import run_cmm_state_machine
 
@@ -762,6 +943,13 @@ class StateMachineTests(unittest.TestCase):
             "plan",
             "plan_critique",
             "moderation_reports",
+            "json_health",
+            "roles_used_unique",
+            "estimated_call_count",
+            "estimated_stage_count",
+            "answer_chars",
+            "warnings_count",
+            "errors_count",
         ):
             self.assertIn(key, trace)
 

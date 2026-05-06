@@ -23,9 +23,13 @@ OPTIONAL_COLUMNS = [
     "rubric_should_cover",
     "reference_outline",
     "expected_single_model_failure_modes",
+    "expected_mode",
 ]
 RESULT_FIELDS = [
     "case_id",
+    "expected_mode",
+    "actual_mode",
+    "router_mode_match",
     "baseline_score",
     "cmm_score",
     "rubric_coverage_delta",
@@ -34,6 +38,26 @@ RESULT_FIELDS = [
     "cmm_mode",
     "router_complexity",
     "estimated_cost_class",
+    "cmm_final_state",
+    "cmm_warning_count",
+    "cmm_error_count",
+    "cmm_warnings",
+    "cmm_errors",
+    "cmm_json_warnings",
+    "cmm_json_fallback_count",
+    "expert_valid_contributions",
+    "expert_invalid_json_contributions",
+    "planner_raw_format",
+    "planner_json_attempts",
+    "plan_critique_statuses",
+    "answer_moderation_final_decision",
+    "answer_moderation_best_effort",
+    "roles_used_unique",
+    "estimated_call_count",
+    "estimated_stage_count",
+    "answer_chars",
+    "warnings_count",
+    "errors_count",
     "winner",
     "notes",
 ]
@@ -47,6 +71,9 @@ JUDGE_SCORE_KEYS = [
 ]
 JUDGED_RESULT_FIELDS = [
     "case_id",
+    "expected_mode",
+    "actual_mode",
+    "router_mode_match",
     "winner",
     "baseline_overall",
     "cmm_overall",
@@ -70,6 +97,52 @@ JUDGED_RESULT_FIELDS = [
     "cmm_mode",
     "router_complexity",
     "estimated_cost_class",
+    "cmm_final_state",
+    "cmm_warning_count",
+    "cmm_error_count",
+    "cmm_warnings",
+    "cmm_errors",
+    "cmm_json_warnings",
+    "cmm_json_fallback_count",
+    "expert_valid_contributions",
+    "expert_invalid_json_contributions",
+    "planner_raw_format",
+    "planner_json_attempts",
+    "plan_critique_statuses",
+    "answer_moderation_final_decision",
+    "answer_moderation_best_effort",
+    "roles_used_unique",
+    "estimated_call_count",
+    "estimated_stage_count",
+    "answer_chars",
+    "warnings_count",
+    "errors_count",
+]
+HUMAN_REVIEW_FIELDS = [
+    "case_id",
+    "query",
+    "context",
+    "constraints",
+    "expected_mode",
+    "answer_a",
+    "answer_b",
+    "manual_winner",
+    "review_notes",
+    "price_justified",
+    "lost_constraints",
+    "too_many_agents",
+    "too_long",
+]
+ROUTING_REVIEW_FIELDS = [
+    "case_id",
+    "expected_mode",
+    "actual_mode",
+    "router_mode_match",
+    "estimated_cost_class",
+    "answer_chars",
+    "warnings",
+    "errors",
+    "cmm_final_state",
 ]
 _TIE_DELTA = 0.5
 
@@ -81,6 +154,11 @@ def parse_pipe_list(value: Any) -> list[str]:
     if not text:
         return []
     return [part.strip() for part in text.split("|") if part.strip()]
+
+
+def _expected_mode(case: dict) -> str:
+    value = str(case.get("expected_mode") or "").strip().upper()
+    return value if value in {"DIRECT", "LIGHT_CMM", "FULL_CMM"} else ""
 
 
 def _normalize_text(value: Any) -> str:
@@ -217,6 +295,8 @@ def _mock_cmm(case: dict) -> dict:
     perspectives = parse_pipe_list(case.get("expected_perspectives"))
     rubric = parse_pipe_list(case.get("rubric_must_cover"))
     failure_modes = parse_pipe_list(case.get("expected_single_model_failure_modes"))
+    mode = _expected_mode(case) or "LIGHT_CMM"
+    cost = {"DIRECT": "S", "LIGHT_CMM": "M", "FULL_CMM": "L"}[mode]
     answer = " ".join(
         [
             str(case.get("query", "")),
@@ -236,13 +316,13 @@ def _mock_cmm(case: dict) -> dict:
         "trace_report": {
             "roles_used": roles,
             "mode": "mock_cmm",
-            "cmm_mode": "LIGHT_CMM",
+            "cmm_mode": mode,
             "router_decision": {
-                "mode": "LIGHT_CMM",
-                "complexity": "medium",
-                "estimated_cost_class": "M",
+                "mode": mode,
+                "complexity": {"DIRECT": "low", "LIGHT_CMM": "medium", "FULL_CMM": "high"}[mode],
+                "estimated_cost_class": cost,
             },
-            "estimated_cost_class": "M",
+            "estimated_cost_class": cost,
         },
     }
 
@@ -296,6 +376,62 @@ def _routing_fields(run_output: dict) -> dict:
         "cmm_mode": trace.get("cmm_mode") or router.get("mode") or "",
         "router_complexity": router.get("complexity") or "",
         "estimated_cost_class": trace.get("estimated_cost_class") or router.get("estimated_cost_class") or "",
+    }
+
+
+def _mode_fields(case: dict, run_output: dict) -> dict:
+    expected = _expected_mode(case)
+    actual = _routing_fields(run_output).get("cmm_mode") or ""
+    if not expected:
+        match: str | bool = ""
+    else:
+        match = actual == expected
+    return {
+        "expected_mode": expected,
+        "actual_mode": actual,
+        "router_mode_match": match,
+    }
+
+
+def _cmm_diagnostic_fields(run_output: dict) -> dict:
+    trace = run_output.get("trace_report") if isinstance(run_output, dict) else {}
+    trace = trace if isinstance(trace, dict) else {}
+    warnings = [str(item) for item in trace.get("warnings", []) or []]
+    errors = [str(item) for item in trace.get("errors", []) or []]
+    json_warnings = [item for item in warnings if "json" in item.lower()]
+    json_health = trace.get("json_health") if isinstance(trace.get("json_health"), dict) else {}
+    expert_health = json_health.get("expert_agent") if isinstance(json_health.get("expert_agent"), dict) else {}
+    planner_health = json_health.get("planner") if isinstance(json_health.get("planner"), dict) else {}
+    moderator_health = json_health.get("moderator") if isinstance(json_health.get("moderator"), dict) else {}
+    conflict_health = json_health.get("conflict_analyzer") if isinstance(json_health.get("conflict_analyzer"), dict) else {}
+    meta_health = json_health.get("meta_moderator") if isinstance(json_health.get("meta_moderator"), dict) else {}
+    fallback_count = int(expert_health.get("fallbacks") or 0)
+    if planner_health.get("called") and not planner_health.get("success"):
+        fallback_count += 1
+    fallback_count += int(moderator_health.get("invalid_json_count") or 0)
+    fallback_count += int(conflict_health.get("invalid_json_count") or 0)
+    fallback_count += int(meta_health.get("invalid_json_count") or 0)
+    return {
+        "cmm_final_state": trace.get("final_state") or "",
+        "cmm_warning_count": len(warnings),
+        "cmm_error_count": len(errors),
+        "cmm_warnings": " | ".join(warnings[:20]),
+        "cmm_errors": " | ".join(errors[:20]),
+        "cmm_json_warnings": " | ".join(json_warnings[:20]),
+        "cmm_json_fallback_count": fallback_count,
+        "expert_valid_contributions": int(expert_health.get("success") or 0),
+        "expert_invalid_json_contributions": int(expert_health.get("invalid_json_count") or 0),
+        "planner_raw_format": planner_health.get("raw_format") or "",
+        "planner_json_attempts": int(planner_health.get("json_attempts") or 0),
+        "plan_critique_statuses": " | ".join(str(item) for item in trace.get("plan_critique_statuses", []) or []),
+        "answer_moderation_final_decision": trace.get("answer_moderation_final_decision") or "",
+        "answer_moderation_best_effort": bool(trace.get("answer_moderation_best_effort")),
+        "roles_used_unique": json.dumps(trace.get("roles_used_unique") or [], ensure_ascii=False),
+        "estimated_call_count": int(trace.get("estimated_call_count") or 0),
+        "estimated_stage_count": int(trace.get("estimated_stage_count") or 0),
+        "answer_chars": int(trace.get("answer_chars") or len(_answer_text(run_output))),
+        "warnings_count": int(trace.get("warnings_count") if isinstance(trace.get("warnings_count"), int) else len(warnings)),
+        "errors_count": int(trace.get("errors_count") if isinstance(trace.get("errors_count"), int) else len(errors)),
     }
 
 
@@ -503,8 +639,11 @@ def _judged_result_row(case: dict, baseline: dict, cmm: dict, judge_result: dict
     cmm_answer = _answer_text(cmm)
     trace = cmm.get("trace_report") if isinstance(cmm, dict) else None
     routing = _routing_fields(cmm)
+    diagnostics = _cmm_diagnostic_fields(cmm)
+    mode_fields = _mode_fields(case, cmm)
     return {
         "case_id": case.get("case_id") or case.get("id") or "",
+        **mode_fields,
         "winner": judge_result.get("winner", "TIE"),
         "baseline_overall": baseline_scores.get("overall", 0.0),
         "cmm_overall": cmm_scores.get("overall", 0.0),
@@ -526,6 +665,7 @@ def _judged_result_row(case: dict, baseline: dict, cmm: dict, judge_result: dict
         "cmm_answer_chars": len(cmm_answer),
         "cmm_trace_available": isinstance(trace, dict) and bool(trace),
         **routing,
+        **diagnostics,
     }
 
 
@@ -593,18 +733,161 @@ def score_case(case: dict, baseline: dict, cmm: dict) -> dict:
     if not notes:
         notes.append("ok")
     routing = _routing_fields(cmm)
+    diagnostics = _cmm_diagnostic_fields(cmm)
+    mode_fields = _mode_fields(case, cmm)
 
     return {
         "case_id": case.get("case_id") or case.get("id") or "",
+        **mode_fields,
         "baseline_score": baseline_total,
         "cmm_score": cmm_total,
         "rubric_coverage_delta": round(cmm_scores["rubric"] - baseline_scores["rubric"], 4),
         "perspective_coverage_delta": round(cmm_scores["perspective"] - baseline_scores["perspective"], 4),
         "risk_coverage_delta": round(cmm_scores["risk"] - baseline_scores["risk"], 4),
         **routing,
+        **diagnostics,
         "winner": winner,
         "notes": "; ".join(notes),
     }
+
+
+def _print_case_diagnostics(case: dict, cmm_output: dict, judge_mode: str) -> None:
+    diag = _cmm_diagnostic_fields(cmm_output)
+    routing = _routing_fields(cmm_output)
+    case_id = case.get("case_id") or case.get("id") or ""
+    print(f"Case {case_id}")
+    print(f"Mode: {routing.get('cmm_mode')}")
+    if _expected_mode(case):
+        print(f"Expected mode: {_expected_mode(case)}")
+    print(f"Final state: {diag.get('cmm_final_state')}")
+    print(
+        "Expert contributions: "
+        f"{diag.get('expert_valid_contributions')}/"
+        f"{int(diag.get('expert_valid_contributions') or 0) + int(diag.get('expert_invalid_json_contributions') or 0)} valid"
+    )
+    print(f"Planner: {diag.get('planner_raw_format') or 'unknown'}")
+    print(f"Plan critique: {diag.get('plan_critique_statuses') or 'none'}")
+    print(
+        "Moderation: "
+        f"{diag.get('answer_moderation_final_decision') or 'unknown'}"
+        + (" best-effort" if diag.get("answer_moderation_best_effort") else "")
+    )
+    print(f"Judge: {judge_mode}")
+
+
+def _boolish(value: Any) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    text = str(value or "").strip().lower()
+    if text in {"true", "1", "yes"}:
+        return True
+    if text in {"false", "0", "no"}:
+        return False
+    return None
+
+
+def _cost_score(value: Any) -> int:
+    return {"S": 1, "M": 2, "L": 3}.get(str(value or "").strip().upper(), 0)
+
+
+def _mode_distribution(results: list[dict], key: str) -> dict:
+    out: dict[str, int] = {}
+    for item in results:
+        mode = str(item.get(key) or "").strip() or "unknown"
+        out[mode] = out.get(mode, 0) + 1
+    return out
+
+
+def _technical_failure(row: dict) -> bool:
+    final_state = str(row.get("cmm_final_state") or "").strip().upper()
+    errors = str(row.get("cmm_errors") or "").strip()
+    error_count = int(row.get("cmm_error_count") or row.get("errors_count") or 0)
+    return bool((final_state and final_state != "FINALIZE") or errors or error_count)
+
+
+def _diagnostic_summary(results: list[dict]) -> dict:
+    cases = len(results)
+    router_rows = [item for item in results if item.get("expected_mode")]
+    matches = [item for item in router_rows if _boolish(item.get("router_mode_match")) is True]
+    technical_by_mode: dict[str, int] = {}
+    cost_distribution: dict[str, int] = {}
+    answer_lengths: list[int] = []
+    cost_scores: list[int] = []
+    for item in results:
+        mode = str(item.get("actual_mode") or item.get("cmm_mode") or "").strip() or "unknown"
+        cost = str(item.get("estimated_cost_class") or "").strip().upper() or "unknown"
+        cost_distribution[cost] = cost_distribution.get(cost, 0) + 1
+        if _technical_failure(item):
+            technical_by_mode[mode] = technical_by_mode.get(mode, 0) + 1
+        answer_lengths.append(int(item.get("answer_chars") or item.get("cmm_answer_chars") or 0))
+        score = _cost_score(cost)
+        if score:
+            cost_scores.append(score)
+    return {
+        "expected_mode_distribution": _mode_distribution(results, "expected_mode"),
+        "actual_mode_distribution": _mode_distribution(results, "actual_mode"),
+        "router_expected_cases": len(router_rows),
+        "router_mode_matches": len(matches),
+        "router_mode_accuracy": round(len(matches) / len(router_rows), 4) if router_rows else None,
+        "technical_failures_by_mode": technical_by_mode,
+        "direct_failures": technical_by_mode.get("DIRECT", 0),
+        "light_failures": technical_by_mode.get("LIGHT_CMM", 0),
+        "full_failures": technical_by_mode.get("FULL_CMM", 0),
+        "average_cmm_answer_length": round(sum(answer_lengths) / cases, 2) if cases else 0.0,
+        "average_estimated_cost_score": round(sum(cost_scores) / len(cost_scores), 4) if cost_scores else 0.0,
+        "estimated_cost_class_distribution": cost_distribution,
+    }
+
+
+def _routing_review_row(row: dict) -> dict:
+    return {
+        "case_id": row.get("case_id") or "",
+        "expected_mode": row.get("expected_mode") or "",
+        "actual_mode": row.get("actual_mode") or row.get("cmm_mode") or "",
+        "router_mode_match": row.get("router_mode_match"),
+        "estimated_cost_class": row.get("estimated_cost_class") or "",
+        "answer_chars": row.get("answer_chars") or row.get("cmm_answer_chars") or "",
+        "warnings": row.get("cmm_warnings") or "",
+        "errors": row.get("cmm_errors") or "",
+        "cmm_final_state": row.get("cmm_final_state") or "",
+    }
+
+
+def _write_routing_review(results: list[dict], out_dir: Path) -> str:
+    path = out_dir / "routing_review.csv"
+    with path.open("w", encoding="utf-8", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=ROUTING_REVIEW_FIELDS)
+        writer.writeheader()
+        for row in results:
+            writer.writerow(_routing_review_row(row))
+    return str(path)
+
+
+def _write_human_review_csv(human_packets: list[dict], out_dir: Path) -> str:
+    path = out_dir / "human_review.csv"
+    with path.open("w", encoding="utf-8", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=HUMAN_REVIEW_FIELDS)
+        writer.writeheader()
+        for packet in human_packets:
+            case = packet.get("case") if isinstance(packet.get("case"), dict) else {}
+            writer.writerow(
+                {
+                    "case_id": packet.get("case_id") or "",
+                    "query": case.get("query") or "",
+                    "context": case.get("context") or "",
+                    "constraints": case.get("constraints") or "",
+                    "expected_mode": _expected_mode(case),
+                    "answer_a": packet.get("answer_a") or "",
+                    "answer_b": packet.get("answer_b") or "",
+                    "manual_winner": "",
+                    "review_notes": "",
+                    "price_justified": "",
+                    "lost_constraints": "",
+                    "too_many_agents": "",
+                    "too_long": "",
+                }
+            )
+    return str(path)
 
 
 def _write_results(results: list[dict], schema_report: dict, output_dir: str) -> dict:
@@ -612,6 +895,7 @@ def _write_results(results: list[dict], schema_report: dict, output_dir: str) ->
     out_dir.mkdir(parents=True, exist_ok=True)
     csv_path = out_dir / "results.csv"
     json_path = out_dir / "results.json"
+    routing_review_path = _write_routing_review(results, out_dir)
 
     with csv_path.open("w", encoding="utf-8", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=RESULT_FIELDS)
@@ -624,14 +908,14 @@ def _write_results(results: list[dict], schema_report: dict, output_dir: str) ->
     }
     json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    return {"csv": str(csv_path), "json": str(json_path)}
+    return {"csv": str(csv_path), "json": str(json_path), "routing_review_csv": routing_review_path}
 
 
 def _summary_from_judged_results(results: list[dict], judge_mode: str, output_paths: dict) -> dict:
     cmm_overalls = [float(item.get("cmm_overall", 0.0) or 0.0) for item in results]
     baseline_overalls = [float(item.get("baseline_overall", 0.0) or 0.0) for item in results]
     cases = len(results)
-    return {
+    summary = {
         "cases": cases,
         "cmm_wins": sum(1 for item in results if item.get("winner") == "CMM"),
         "baseline_wins": sum(1 for item in results if item.get("winner") == "BASELINE"),
@@ -651,6 +935,8 @@ def _summary_from_judged_results(results: list[dict], judge_mode: str, output_pa
         ),
         "output_paths": output_paths,
     }
+    summary.update(_diagnostic_summary(results))
+    return summary
 
 
 def _write_judged_results(
@@ -669,6 +955,7 @@ def _write_judged_results(
     json_path = out_dir / "results.json"
     summary_path = out_dir / "summary.json"
     cases_path = out_dir / "cases.jsonl"
+    routing_review_path = _write_routing_review(results, out_dir)
 
     with csv_path.open("w", encoding="utf-8", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=JUDGED_RESULT_FIELDS)
@@ -692,6 +979,7 @@ def _write_judged_results(
         "json": str(json_path),
         "summary": str(summary_path),
         "cases_jsonl": str(cases_path),
+        "routing_review_csv": routing_review_path,
     }
 
     if judge_mode == "none":
@@ -700,6 +988,7 @@ def _write_judged_results(
             for packet in human_packets or []:
                 file.write(json.dumps(packet, ensure_ascii=False) + "\n")
         output_paths["human_review_jsonl"] = str(human_path)
+        output_paths["human_review_csv"] = _write_human_review_csv(human_packets or [], out_dir)
 
     summary = _summary_from_judged_results(results, judge_mode=judge_mode, output_paths=output_paths)
     summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -728,6 +1017,7 @@ def _run_real_judged_eval(
             judge_mode=judge_mode,
             judge_model=judge_model,
         )
+        _print_case_diagnostics(case, cmm_output, judge_mode)
         results.append(scored["row"])
         artifacts.append(scored["artifact"])
         if scored.get("human_packet"):
@@ -796,6 +1086,7 @@ def run_eval(
         "judge_mode": "not_applicable",
         "output_paths": output_paths,
     }
+    summary.update(_diagnostic_summary(results))
     return {
         "summary": summary,
         "schema_report": schema_report,

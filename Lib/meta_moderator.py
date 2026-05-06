@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from Lib.AI_request import send_to_AI
-from Lib.json_utils import safe_json_loads, to_number, to_string_list
+from Lib.json_retry import call_json_model
+from Lib.json_utils import to_number, to_string_list
 
 
 _ALLOWED_DECISIONS = {"SYNTHESIZE", "ADD_EXPERT", "DEEPEN", "REPLAN", "FINALIZE"}
@@ -16,7 +16,14 @@ def _as_dict(value: Any) -> dict:
     return value if isinstance(value, dict) else {}
 
 
-def _normalize_decision(payload: dict | None, fallback: dict) -> dict:
+def _normalize_decision(
+    payload: dict | None,
+    fallback: dict,
+    *,
+    warnings: list[str] | None = None,
+    json_attempts: int = 1,
+    raw: str = "",
+) -> dict:
     if not isinstance(payload, dict):
         return fallback
 
@@ -41,7 +48,9 @@ def _normalize_decision(payload: dict | None, fallback: dict) -> dict:
         "questions_to_answer": to_string_list(payload.get("questions_to_answer"), max_items=10),
         "next_actions": to_string_list(payload.get("next_actions"), max_items=10),
         "confidence": to_number(payload.get("confidence"), default=fallback["confidence"], max_value=1.0),
-        "parse_warnings": [],
+        "parse_warnings": warnings or [],
+        "json_attempts": int(json_attempts or 0),
+        "raw": str(raw or "")[:2000],
         "source": "model",
     }
 
@@ -250,6 +259,47 @@ def _rule_based_decision(
     }
 
 
+def _all_expert_contributions_empty(expert_bundle: dict | None) -> bool:
+    bundle = _as_dict(expert_bundle)
+    contributions = bundle.get("contributions") if isinstance(bundle.get("contributions"), list) else []
+    if not contributions:
+        return False
+    for contribution in contributions:
+        if not isinstance(contribution, dict):
+            continue
+        for key in ("insights", "risks", "questions", "recommendations"):
+            values = contribution.get(key)
+            if isinstance(values, list) and any(str(item).strip() for item in values):
+                if values != ["invalid_json_from_model"]:
+                    return False
+    return True
+
+
+def _guard_should_override_model(
+    *,
+    fallback: dict,
+    model_decision: dict,
+    expert_bundle: dict | None,
+    balance_report: dict | None,
+    conflict_report: dict | None,
+) -> bool:
+    fallback_decision = fallback.get("decision")
+    model_choice = model_decision.get("decision")
+    if fallback_decision not in {"ADD_EXPERT", "DEEPEN"} or model_choice not in {"SYNTHESIZE", "FINALIZE"}:
+        return False
+    if float(fallback.get("confidence") or 0.0) >= 0.65:
+        return True
+    balance = _as_dict(balance_report)
+    conflict = _as_dict(conflict_report)
+    if balance.get("recommended_action") in {"ADD_EXPERT", "DEEPEN"}:
+        return True
+    if conflict.get("premature_consensus_risks") or conflict.get("blind_spots"):
+        return True
+    if _all_expert_contributions_empty(expert_bundle):
+        return True
+    return False
+
+
 def run_meta_moderator(
     query: str,
     expert_bundle: dict | None,
@@ -295,20 +345,47 @@ def run_meta_moderator(
         "moderation_reports": moderation_reports or [],
     }
 
-    raw = send_to_AI(
+    result = call_json_model(
         user_prompt="Оцени состояние CMM процесса:\n" + json.dumps(state, ensure_ascii=False),
         system_prompt=system_prompt,
         temp=0.2,
         tokens=550,
         model=model,
+        max_retries=1,
     )
 
-    parsed = safe_json_loads(raw)
-    decision = _normalize_decision(parsed, fallback=fallback)
+    parsed = result.get("payload") if isinstance(result, dict) else None
+    retry_warnings = result.get("warnings") if isinstance(result, dict) and isinstance(result.get("warnings"), list) else []
+    attempts = result.get("attempts") if isinstance(result, dict) and isinstance(result.get("attempts"), int) else 0
+    raw = result.get("raw") if isinstance(result, dict) and isinstance(result.get("raw"), str) else ""
+    decision = _normalize_decision(
+        parsed,
+        fallback=fallback,
+        warnings=retry_warnings,
+        json_attempts=attempts,
+        raw=raw,
+    )
     if decision is fallback:
         decision = dict(fallback)
+        decision["parse_warnings"] = list(decision.get("parse_warnings", [])) + retry_warnings + [
+            "meta_moderator_model_invalid_json"
+        ]
+        decision["json_attempts"] = attempts
         decision["raw"] = raw or ""
     else:
-        decision["raw"] = raw or ""
+        if _guard_should_override_model(
+            fallback=fallback,
+            model_decision=decision,
+            expert_bundle=expert_bundle,
+            balance_report=balance_report,
+            conflict_report=conflict_report,
+        ):
+            guarded = dict(fallback)
+            guarded["parse_warnings"] = list(guarded.get("parse_warnings", [])) + retry_warnings + [
+                "model_decision_overridden_by_rule_guard"
+            ]
+            guarded["json_attempts"] = attempts
+            guarded["raw"] = raw or ""
+            return guarded
 
     return decision

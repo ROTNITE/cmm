@@ -6,7 +6,7 @@
 - При явном доменном запросе добавить +1 доменного эксперта.
 
 Подход к надёжности:
-- Домен определяется через короткий AI-вызов со строгим JSON-форматом.
+- Домен сначала определяется rules-first, AI-вызов используется только для сложных неочевидных случаев.
 - Любая ошибка/мусорный ответ => graceful fallback на базовые роли.
 """
 
@@ -14,8 +14,8 @@ from __future__ import annotations
 
 import re
 
-from Lib.AI_request import send_to_AI
 from Lib.expert_roles import BASE_EXPERT_ROLES, ExpertRole
+from Lib.json_retry import call_json_model
 from Lib.json_utils import safe_json_loads
 
 
@@ -86,8 +86,47 @@ def _build_domain_expert(domain_name: str) -> ExpertRole:
     )
 
 
+def _detect_domain_by_rules(query: str) -> str | None:
+    text = str(query or "").lower()
+    rules = (
+        ("Education", ("вуз", "студент", "университет", "обучен", "education", "student", "university", "school")),
+        ("Law", ("закон", "право", "договор", "legal", "law", "contract", "compliance", "regulation")),
+        ("Medicine", ("медиц", "здоров", "medical", "medicine", "health", "clinic")),
+        ("Finance", ("финанс", "бюджет", "инвест", "finance", "financial", "investment", "budget")),
+        ("Security", ("безопас", "кибер", "privacy", "security", "cybersecurity", "threat")),
+    )
+    for domain, markers in rules:
+        if any(marker in text for marker in markers):
+            return domain
+    return None
+
+
+def _query_is_complex_for_domain_selector(query: str) -> bool:
+    text = str(query or "").lower()
+    return len(text.split()) > 40 or any(
+        marker in text
+        for marker in (
+            "стратег",
+            "риски",
+            "огранич",
+            "критер",
+            "trade-off",
+            "architecture",
+            "strategy",
+            "governance",
+            "multi-stakeholder",
+        )
+    )
+
+
 def _detect_domain_need(query: str) -> tuple[bool, str | None]:
     """Определяет, нужен ли доменный эксперт для конкретного запроса."""
+    rule_domain = _detect_domain_by_rules(query)
+    if rule_domain:
+        return True, rule_domain
+    if not _query_is_complex_for_domain_selector(query):
+        return False, None
+
     system_prompt = (
         "Ты классификатор запроса. "
         "Верни строго JSON без markdown и без пояснений. "
@@ -98,15 +137,16 @@ def _detect_domain_need(query: str) -> tuple[bool, str | None]:
 
     user_prompt = f"Определи необходимость доменного эксперта для запроса:\n{query}"
 
-    raw = send_to_AI(
+    result = call_json_model(
         user_prompt=user_prompt,
         system_prompt=system_prompt,
         temp=0.25,
         tokens=180,
         model="deepseek-chat",
+        max_retries=1,
     )
 
-    parsed = _safe_json_loads(raw if isinstance(raw, str) else "")
+    parsed = result.get("payload") if isinstance(result, dict) else None
     if not parsed:
         return False, None
 
