@@ -337,33 +337,51 @@ def develop_plan(query, context=None, depth="detailed", model="deepseek-chat"):
 
     # Настройки для разной глубины плана
     settings = {
-        "quick": {"tokens": 500, "temp": 0.3},
-        "detailed": {"tokens": 1000, "temp": 0.3},
-        "comprehensive": {"tokens": 1400, "temp": 0.4}
+        "quick": {"tokens": 800, "temp": 0.3},
+        "detailed": {"tokens": 1500, "temp": 0.3},
+        "comprehensive": {"tokens": 2000, "temp": 0.4}
     }
 
     # Берём настройки для нужной глубины, если нет - используем detailed
     current = settings.get(depth, settings["detailed"])
 
-    system_prompt = """Ты планировщик. Создай план ответа.
+    system_prompt = """You are an expert planning assistant for a Collective Meta-Moderation system.
+Your task is to create a high-quality, actionable plan for answering the user's query.
+
 Original query is authoritative. Cleaned/formalized query is helper text only. Do not ignore constraints from original_query.
+
+Plan quality standards:
+- SPECIFIC: concrete steps, not generic advice
+- ACTIONABLE: clear what to do at each step
+- COMPREHENSIVE: cover all important aspects and perspectives
+- RISK-AWARE: identify potential problems and how to address them
+- EXPERT-DRIVEN: specify which expert inputs are needed for each step
+
+For each step:
+1. Give it a clear, specific title
+2. Break it down into concrete substeps
+3. Identify which expert perspectives are needed (e.g., "technical expert", "user advocate", "risk analyst")
+4. Consider what could go wrong and how to mitigate it
+
 CRITICAL: Return ONLY valid JSON. No markdown blocks. No comments. No extra text.
 CRITICAL: Close all brackets and braces properly.
+CRITICAL: Ensure all string values are properly quoted and escaped.
+
 Schema:
 {
-  "main_idea": "string",
-  "preparation": ["string"],
+  "main_idea": "string - the core approach or strategy for answering this query",
+  "preparation": ["string - what information or context is needed before starting"],
   "steps": [
     {
       "number": "1",
-      "title": "string",
-      "substeps": ["string"],
-      "uses_expert_inputs": ["string"]
+      "title": "string - specific, actionable step title",
+      "substeps": ["string - concrete substeps with clear actions"],
+      "uses_expert_inputs": ["string - which expert perspectives are needed"]
     }
   ],
-  "nuances": ["string"],
-  "potential_problems": ["string"],
-  "result": "string"
+  "nuances": ["string - important considerations, edge cases, or trade-offs"],
+  "potential_problems": ["string - specific risks and how to address them"],
+  "result": "string - what the final answer should achieve"
 }
 """
 

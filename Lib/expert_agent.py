@@ -69,7 +69,7 @@ def _normalize_output(role: ExpertRole, payload: dict) -> dict:
     """Приводит ответ модели к жёсткому контракту run_expert.
 
     Enforces exact counts: insights=3, risks=2, questions=2, recommendations=3.
-    Truncates each string to 120 chars max.
+    Truncates each string to 200 chars max.
     """
     confidence_raw = payload.get("confidence", 0.0)
     try:
@@ -82,7 +82,7 @@ def _normalize_output(role: ExpertRole, payload: dict) -> dict:
     elif confidence > 1.0:
         confidence = 1.0
 
-    def truncate_items(items: list[str], max_items: int, max_chars: int = 120) -> list[str]:
+    def truncate_items(items: list[str], max_items: int, max_chars: int = 200) -> list[str]:
         result = []
         for item in items[:max_items]:
             if isinstance(item, str):
@@ -117,10 +117,25 @@ def run_expert(
         f"{role.system_prompt}\n\n"
         "Original query is authoritative. Cleaned/formalized query is helper text only. "
         "Do not ignore constraints from original_query.\n"
-        "Ты формируешь экспертный вклад, а не финальный ответ пользователю.\n"
+        "\n"
+        "You are providing expert input, not a final answer to the user.\n"
+        "\n"
+        "Quality standards for your contribution:\n"
+        "- SPECIFIC: provide concrete, actionable insights, not generic statements\n"
+        "- EVIDENCE-BASED: ground your insights in facts, examples, or clear reasoning\n"
+        "- RISK-AWARE: identify real, specific risks with clear implications\n"
+        "- ACTIONABLE: recommendations should be clear and implementable\n"
+        "- PERSPECTIVE-DRIVEN: bring your unique expert viewpoint\n"
+        "\n"
+        "For insights: provide concrete observations or analysis from your perspective\n"
+        "For risks: identify specific potential problems and their implications\n"
+        "For questions: ask clarifying questions that would improve the answer\n"
+        "For recommendations: suggest specific, actionable next steps\n"
+        "\n"
         "CRITICAL: Return ONLY valid JSON. No markdown. No comments. No extra text.\n"
-        "CRITICAL: Each item must be ONE SHORT SENTENCE (max 100 chars).\n"
+        "CRITICAL: Each item should be 1-2 sentences (max 200 chars per item).\n"
         "CRITICAL: Use EXACT counts below. Do not add more items.\n"
+        "\n"
         "Schema:\n"
         "{\n"
         "  \"insights\": [\"string\", \"string\", \"string\"],\n"
@@ -129,7 +144,9 @@ def run_expert(
         "  \"recommendations\": [\"string\", \"string\", \"string\"],\n"
         "  \"confidence\": 0.8\n"
         "}\n"
-        "EXACT counts: insights=3, risks=2, questions=2, recommendations=3."
+        "\n"
+        "EXACT counts: insights=3, risks=2, questions=2, recommendations=3.\n"
+        "Each item: 1-2 sentences, max 200 chars, specific and actionable."
     )
 
     context_text = ""
@@ -149,17 +166,17 @@ def run_expert(
         user_prompt_parts.append(f"Контекст:\n{context_text}")
 
     user_prompt_parts.append(
-        "Сформируй экспертный вклад в JSON по схеме.\n"
-        "СТРОГО: insights=3, risks=2, questions=2, recommendations=3.\n"
-        "Каждый элемент — одно короткое предложение (макс 100 символов).\n"
-        "Верни ТОЛЬКО валидный JSON объект, без markdown блоков."
+        "Provide your expert contribution in JSON format following the schema.\n"
+        "STRICT: insights=3, risks=2, questions=2, recommendations=3.\n"
+        "Each item: 1-2 sentences (max 200 chars), specific and actionable.\n"
+        "Return ONLY valid JSON object, no markdown blocks."
     )
 
     result = call_json_model(
         user_prompt="\n\n".join(user_prompt_parts),
         system_prompt=system_prompt,
         temp=0.2,
-        tokens=500,
+        tokens=800,
         model=model,
         max_retries=1,
     )
