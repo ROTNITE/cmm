@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any, Callable
 
 from Lib.AI_request import send_to_AI
@@ -10,6 +11,29 @@ from Lib.json_utils import safe_json_loads
 
 def _is_model_error(value: Any) -> bool:
     return isinstance(value, str) and value.strip().lower().startswith("error:")
+
+
+def _strip_markdown_json(text: str) -> str:
+    """Aggressively strip markdown code blocks from JSON output."""
+    if not isinstance(text, str):
+        return ""
+
+    # Remove ```json ... ``` blocks
+    text = re.sub(r'```json\s*', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'```\s*$', '', text)
+    text = re.sub(r'^```\s*', '', text)
+
+    # Remove leading/trailing whitespace
+    text = text.strip()
+
+    # Find first { and last }
+    first_brace = text.find('{')
+    last_brace = text.rfind('}')
+
+    if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+        text = text[first_brace:last_brace + 1]
+
+    return text
 
 
 def call_json_model(
@@ -47,7 +71,9 @@ def call_json_model(
 
         raw = response if isinstance(response, str) else ""
         if raw.strip() and not _is_model_error(raw):
-            payload = parser(raw)
+            # Try aggressive markdown stripping
+            cleaned = _strip_markdown_json(raw)
+            payload = parser(cleaned)
             if isinstance(payload, dict):
                 return {"payload": payload, "raw": raw, "attempts": attempts, "warnings": warnings}
             warnings.append(f"json_parse_failed_attempt_{attempt_index}")
@@ -58,17 +84,24 @@ def call_json_model(
             warnings.append("json_retry_after_invalid_json")
             current_system_prompt = (
                 f"{system_prompt}\n\n"
-                "Your previous output was invalid JSON. Return only valid JSON matching the schema. "
-                "No markdown. No prose."
+                "CRITICAL: Your previous output was INVALID JSON.\n"
+                "Return ONLY a valid JSON object. Start with { and end with }.\n"
+                "Do NOT use markdown code blocks (```json).\n"
+                "Do NOT add explanations before or after the JSON.\n"
+                "Close ALL brackets and braces properly."
             )
             current_user_prompt = (
-                "Your previous output was invalid JSON.\n"
-                "Return only valid JSON matching the schema.\n"
-                "No markdown. No prose.\n\n"
+                "Your previous output was INVALID JSON and could not be parsed.\n\n"
+                "CRITICAL REQUIREMENTS:\n"
+                "1. Return ONLY valid JSON\n"
+                "2. Start with { and end with }\n"
+                "3. NO markdown blocks\n"
+                "4. NO text before or after JSON\n"
+                "5. Close all brackets properly\n\n"
                 "Original request:\n"
                 f"{user_prompt}\n\n"
-                "Previous invalid output:\n"
-                f"{raw[:4000]}"
+                "Your previous invalid output (first 1000 chars):\n"
+                f"{raw[:1000]}"
             )
 
     warnings.append("json_retry_exhausted")

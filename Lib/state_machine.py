@@ -14,6 +14,21 @@ from Lib.deliberation import (
     apply_meta_decision_to_brief,
     build_deliberation_brief,
 )
+from Lib.quality_gates import (
+    can_best_effort_finalize,
+    has_critical_answer_blockers,
+    has_critical_plan_blockers,
+    normalize_moderated_result,
+    plan_blockers,
+)
+from Lib.context_manager import (
+    build_compact_answer_context,
+    build_compact_critic_context,
+    build_compact_meta_context,
+    build_compact_planner_context,
+    build_context_compression_report,
+    record_context_size,
+)
 from Lib.deliberation_round import merge_deliberation_into_bundle, run_deliberation_round
 from Lib.expert_panel import run_expert_panel
 from Lib.expert_rounds import merge_expert_bundles, run_targeted_expert_round, select_targeted_roles
@@ -35,6 +50,7 @@ CONFLICT_ANALYSIS = "CONFLICT_ANALYSIS"
 META_DECISION = "META_DECISION"
 DELIBERATION_ROUND = "DELIBERATION_ROUND"
 REBALANCE = "REBALANCE"
+META_RECHECK = "META_RECHECK"
 PANEL_ROUND_EXTRA = "PANEL_ROUND_EXTRA"
 PLAN = "PLAN"
 PLAN_CRITIQUE = "PLAN_CRITIQUE"
@@ -200,17 +216,8 @@ def _enrich_brief_with_intake(deliberation_brief: dict, query_intake: dict) -> d
 
 
 def _build_planner_context(state: dict) -> dict:
-    context = {
-        "query_intake": state.get("query_intake", {}),
-        "deliberation_brief": state.get("deliberation_brief", {}),
-        "conflict_report": state.get("conflict_report", {}),
-        "original_query_is_authoritative": True,
-        "instruction": _AUTHORITATIVE_QUERY_INSTRUCTION,
-    }
-    replan_context = _safe_dict(state.get("replan_context"))
-    if replan_context:
-        context["replan_context"] = replan_context
-    return context
+    context = build_compact_planner_context(state)
+    return record_context_size(state, "planner", context)
 
 
 def _flatten_meta_field(meta_decisions: list | None, key: str) -> list[str]:
@@ -411,6 +418,52 @@ def _flatten_dynamic_roles_used(dynamic_role_reports: list | None) -> list[dict]
     return _flatten_dynamic_roles_generated(dynamic_role_reports)
 
 
+def _round_name_for_bundle(index: int) -> str:
+    return "initial" if index == 0 else "extra"
+
+
+def _roles_used_unique(expert_rounds: list | None, raw_roles: list | None) -> list[dict]:
+    """Return a compact, deduplicated human/eval view of roles used."""
+    by_key: dict[str, dict] = {}
+
+    def add_role(view: dict, round_name: str) -> None:
+        if not isinstance(view, dict):
+            return
+        key = str(view.get("key") or "").strip()
+        if not key:
+            return
+        item = by_key.setdefault(
+            key,
+            {
+                "key": key,
+                "name": view.get("name") or "",
+                "perspective_tag": view.get("perspective_tag") or "",
+                "rounds": [],
+                "dynamic": False,
+            },
+        )
+        if not item.get("name") and view.get("name"):
+            item["name"] = view.get("name")
+        if not item.get("perspective_tag") and view.get("perspective_tag"):
+            item["perspective_tag"] = view.get("perspective_tag")
+        if round_name not in item["rounds"]:
+            item["rounds"].append(round_name)
+        item["dynamic"] = bool(item.get("dynamic") or view.get("dynamic"))
+
+    rounds = _safe_list(expert_rounds)
+    for index, bundle in enumerate(rounds):
+        if not isinstance(bundle, dict):
+            continue
+        for view in _safe_list(bundle.get("roles")):
+            add_role(view, _round_name_for_bundle(index))
+
+    if not by_key:
+        for view in _safe_list(raw_roles):
+            add_role(view, "unknown")
+
+    return list(by_key.values())
+
+
 def _record_dynamic_role_report(state: dict, report: dict, round_name: str) -> list:
     safe_report = dict(report) if isinstance(report, dict) else {
         "roles": [],
@@ -440,6 +493,118 @@ def _extract_final_confidence(moderation_reports: list) -> float | None:
     if not isinstance(score, (int, float)):
         return None
     return float(score) / 10
+
+
+def _has_warning(items: list | None, marker: str) -> bool:
+    return any(marker in str(item) for item in _safe_list(items))
+
+
+def _collect_json_health(trace_report: dict) -> dict:
+    expert_contributions: list[dict] = []
+    for bundle in _safe_list(trace_report.get("expert_rounds")):
+        if isinstance(bundle, dict):
+            expert_contributions.extend(
+                item for item in _safe_list(bundle.get("contributions")) if isinstance(item, dict)
+            )
+    expert_invalid = [
+        item
+        for item in expert_contributions
+        if item.get("source") == "fallback"
+        or "invalid_json_from_model" in _safe_list(item.get("risks"))
+        or _has_warning(item.get("parse_warnings"), "expert_json_parse_failed")
+    ]
+    expert_success = [
+        item
+        for item in expert_contributions
+        if item.get("source") == "model" and item not in expert_invalid
+    ]
+
+    plans = _safe_list(trace_report.get("plans"))
+    latest_plan = plans[-1] if plans and isinstance(plans[-1], dict) else _safe_dict(trace_report.get("plan"))
+    moderation_reports = _safe_list(trace_report.get("moderation_reports"))
+    conflict_reports = _safe_list(trace_report.get("conflict_reports"))
+    meta_decisions = (
+            _safe_list(trace_report.get("meta_moderation_decisions"))
+            + _safe_list(trace_report.get("meta_recheck_decisions"))
+    )
+
+    return {
+        "expert_agent": {
+            "calls": len(expert_contributions),
+            "success": len(expert_success),
+            "fallbacks": len(expert_invalid),
+            "retry_attempts": sum(max(0, int(item.get("json_attempts") or 0) - 1) for item in expert_contributions),
+            "invalid_json_count": len(expert_invalid),
+        },
+        "planner": {
+            "called": bool(latest_plan),
+            "success": latest_plan.get("raw_format") == "json" or latest_plan.get("source") == "model",
+            "raw_format": latest_plan.get("raw_format") or "",
+            "source": latest_plan.get("source") or "",
+            "json_attempts": int(latest_plan.get("json_attempts") or 0),
+        },
+        "moderator": {
+            "invalid_json_count": sum(
+                1 for item in moderation_reports if _has_warning(item.get("parse_warnings"), "moderation_json_parse_failed")
+            ),
+            "retry_attempts": sum(max(0, int(item.get("json_attempts") or 0) - 1) for item in moderation_reports if isinstance(item, dict)),
+            "final_decision": trace_report.get("answer_moderation_final_decision") or "",
+        },
+        "conflict_analyzer": {
+            "invalid_json_count": sum(
+                1 for item in conflict_reports if _has_warning(item.get("parse_warnings"), "conflict_model_invalid_json")
+            ),
+            "retry_attempts": sum(max(0, int(item.get("json_attempts") or 0) - 1) for item in conflict_reports if isinstance(item, dict)),
+        },
+        "meta_moderator": {
+            "invalid_json_count": sum(
+                1 for item in meta_decisions if _has_warning(item.get("parse_warnings"), "meta_moderator_model_invalid_json")
+            ),
+            "retry_attempts": sum(max(0, int(item.get("json_attempts") or 0) - 1) for item in meta_decisions if isinstance(item, dict)),
+        },
+    }
+
+
+def _int_attempts(value: Any) -> int:
+    if isinstance(value, dict):
+        attempts = value.get("json_attempts")
+        if isinstance(attempts, int):
+            return max(0, attempts)
+        if value.get("source") == "model":
+            return 1
+    return 0
+
+
+def _estimate_call_count(trace_report: dict) -> int:
+    """Approximate model-call attempts from visible stage diagnostics."""
+    total = _int_attempts(_safe_dict(trace_report.get("query_intake")))
+
+    for report in _safe_list(trace_report.get("dynamic_role_reports")):
+        total += _int_attempts(report)
+    for bundle in _safe_list(trace_report.get("expert_rounds")):
+        if not isinstance(bundle, dict):
+            continue
+        for contribution in _safe_list(bundle.get("contributions")):
+            total += _int_attempts(contribution)
+    for item in _safe_list(trace_report.get("conflict_reports")):
+        total += _int_attempts(item)
+    for item in _safe_list(trace_report.get("meta_moderation_decisions")):
+        total += _int_attempts(item)
+    for item in _safe_list(trace_report.get("plans")):
+        total += _int_attempts(item)
+    for item in _safe_list(trace_report.get("plan_critiques")):
+        total += _int_attempts(item)
+        total += _int_attempts(_safe_dict(item.get("critique")) if isinstance(item, dict) else {})
+    for item in _safe_list(trace_report.get("moderation_reports")):
+        total += _int_attempts(item)
+
+    states = [item.get("from") for item in _safe_list(trace_report.get("state_history")) if isinstance(item, dict)]
+    if DIRECT_ANSWER in states and total == _int_attempts(_safe_dict(trace_report.get("query_intake"))):
+        total += 1
+    if ANSWER in states:
+        total += 1 + int(trace_report.get("revision_count") or 0)
+
+    return int(total)
 
 
 def _deliberation_needed(conflict_report: dict | None, meta_decision: dict | None) -> bool:
@@ -484,6 +649,174 @@ def _targeted_followup_still_useful(
         )
     )
 
+_CRITICAL_META_MARKERS = (
+    "critical",
+    "severe",
+    "high severity",
+    "safety",
+    "security",
+    "privacy",
+    "legal",
+    "compliance",
+    "harm",
+    "unsafe",
+    "liability",
+    "medical",
+    "financial",
+    "высок",
+    "критическ",
+    "безопас",
+    "приват",
+    "персональн",
+    "закон",
+    "юрид",
+    "вред",
+)
+
+
+def _text_blob(value: Any) -> str:
+    try:
+        import json
+
+        return json.dumps(value, ensure_ascii=False, sort_keys=True).lower()
+    except Exception:
+        return str(value or "").lower()
+
+
+def _has_critical_marker(value: Any) -> bool:
+    text = _text_blob(value)
+    return any(marker in text for marker in _CRITICAL_META_MARKERS)
+
+
+def _conflicts_cleared(conflict_report: dict | None, balance_report: dict | None = None) -> bool:
+    """Return True when the rebalance pass leaves no process-level issues."""
+    conflict = _safe_dict(conflict_report)
+    balance = _safe_dict(balance_report)
+
+    if conflict.get("source") == "fallback":
+        return False
+
+    conflict_keys = (
+        "disagreements",
+        "unresolved_tradeoffs",
+        "premature_consensus_risks",
+        "blind_spots",
+        "questions_for_next_round",
+    )
+    if any(_safe_list(conflict.get(key)) for key in conflict_keys):
+        return False
+
+    if _safe_list(balance.get("missing_perspectives")):
+        return False
+    if _safe_list(balance.get("blind_spots")):
+        return False
+    if balance.get("recommended_action") in {"ADD_EXPERT", "DEEPEN"}:
+        return False
+
+    return True
+
+
+def _new_or_critical_blind_spots_after_rebalance(state: dict) -> list[str]:
+    """Find blind spots that justify ADD_EXPERT after REBALANCE.
+
+    Prefer newly introduced blind spots, but still return critical existing ones
+    if they remain after rebalance.
+    """
+    previous = _safe_dict(state.get("pre_rebalance_conflict_report"))
+    current_conflict = _safe_dict(state.get("conflict_report"))
+    current_balance = _safe_dict(state.get("balance_report"))
+
+    previous_spots = {str(item).strip() for item in _safe_list(previous.get("blind_spots")) if str(item).strip()}
+
+    current_spots: list[str] = []
+    for item in _safe_list(current_conflict.get("blind_spots")):
+        text = str(item).strip()
+        if text:
+            current_spots.append(text)
+    for item in _safe_list(current_balance.get("blind_spots")):
+        text = str(item).strip()
+        if text:
+            current_spots.append(text)
+
+    missing = [str(item).strip() for item in _safe_list(current_balance.get("missing_perspectives")) if str(item).strip()]
+    if missing:
+        current_spots.extend(f"Missing perspective after rebalance: {item}" for item in missing)
+
+    new_spots = [item for item in current_spots if item not in previous_spots]
+    critical_spots = [item for item in current_spots if _has_critical_marker(item)]
+
+    out: list[str] = []
+    for item in new_spots + critical_spots:
+        if item and item not in out:
+            out.append(item)
+    return out[:8]
+
+
+def _has_high_severity_tradeoff(conflict_report: dict | None) -> bool:
+    conflict = _safe_dict(conflict_report)
+
+    for item in _safe_list(conflict.get("unresolved_tradeoffs")):
+        if isinstance(item, dict):
+            severity = str(item.get("severity") or "").lower()
+            if severity == "high":
+                return True
+            if _has_critical_marker(item):
+                return True
+        elif _has_critical_marker(item):
+            return True
+
+    for item in _safe_list(conflict.get("disagreements")):
+        if isinstance(item, dict):
+            severity = str(item.get("severity") or "").lower()
+            if severity == "high":
+                return True
+            if _has_critical_marker(item):
+                return True
+        elif _has_critical_marker(item):
+            return True
+
+    return False
+
+
+def _run_meta_decision_with_context(state: dict, *, phase: str) -> dict:
+    """Run meta moderator with compact context and stable fallback."""
+    try:
+        meta_context = build_compact_meta_context(state)
+        context_name = "meta" if phase == "initial" else "meta_recheck"
+        record_context_size(state, context_name, meta_context)
+
+        meta_decision = run_meta_moderator(
+            query=meta_context.get("query") or state["original_query"],
+            expert_bundle=meta_context.get("expert_bundle", {}),
+            balance_report=meta_context.get("balance_report", {}),
+            deliberation_brief=meta_context.get("deliberation_brief", {}),
+            plan=meta_context.get("plan", {}),
+            answer=meta_context.get("answer", ""),
+            moderation_reports=meta_context.get("moderation_reports", []),
+            conflict_report=meta_context.get("conflict_report", {}),
+            model=state["model"],
+        )
+        if not isinstance(meta_decision, dict):
+            state["warnings"].append(f"{phase}_meta_moderator_invalid; continuing without process decision")
+            meta_decision = _fallback_meta_decision(
+                "Meta moderator returned invalid output.",
+                f"{phase}_meta_moderator_invalid",
+            )
+    except Exception as exc:
+        state["warnings"].append(f"{phase}_meta_moderator_failed; continuing with synthesis: {exc}")
+        meta_decision = _fallback_meta_decision(
+            "Meta moderator failed; proceed with existing deliberation brief.",
+            f"{phase}_meta_moderator_failed",
+        )
+
+    state["meta_decision"] = meta_decision
+
+    if phase == "recheck":
+        state.setdefault("meta_recheck_decisions", []).append(meta_decision)
+    else:
+        state.setdefault("meta_decisions", []).append(meta_decision)
+
+    return meta_decision
 
 def init_cmm_state(
     query: str,
@@ -527,6 +860,10 @@ def init_cmm_state(
         "deliberation_rounds": [],
         "meta_decisions": [],
         "meta_decision": {},
+        "meta_recheck_count": 0,
+        "max_meta_rechecks": 1,
+        "meta_recheck_decisions": [],
+        "pre_rebalance_conflict_report": {},
         "plans": [],
         "plan": {},
         "plan_critiques": [],
@@ -536,6 +873,9 @@ def init_cmm_state(
         "moderation_reports": [],
         "answer_moderation_final_decision": "",
         "answer_moderation_critical_issues": [],
+        "answer_moderation_revision_count": 0,
+        "quality_gate_decisions": [],
+        "context_compression": {},
         "answer_moderation_best_effort": False,
         "warnings": [],
         "errors": [],
@@ -696,6 +1036,23 @@ def handle_panel_round_1(state: dict) -> tuple[str, str]:
     except Exception as exc:
         state["warnings"].append(f"expert_panel_failed; using empty expert bundle: {exc}")
         expert_bundle = _empty_expert_bundle()
+
+    # Check for catastrophic JSON failure: all experts returned fallback
+    contributions = _safe_list(expert_bundle.get("contributions"))
+    valid_contributions = [c for c in contributions if isinstance(c, dict) and c.get("source") == "model"]
+    fallback_contributions = [c for c in contributions if isinstance(c, dict) and c.get("source") == "fallback"]
+
+    if contributions and len(valid_contributions) == 0 and len(fallback_contributions) >= 5:
+        state["warnings"].append(
+            f"expert_panel_catastrophic_json_failure: {len(fallback_contributions)}/{len(contributions)} experts failed JSON parsing"
+        )
+        state["expert_panel_degraded"] = True
+        # Mark CMM mode as degraded
+        original_mode = state.get("cmm_mode", "")
+        if original_mode and not original_mode.endswith("_DEGRADED"):
+            state["cmm_mode"] = f"{original_mode}_DEGRADED"
+            state["warnings"].append(f"cmm_mode_degraded: {original_mode} -> {state['cmm_mode']}")
+
     state["expert_bundle"] = expert_bundle
     state["expert_rounds"].append(expert_bundle)
     if state.get("parallel_mode") == "THREADS":
@@ -783,44 +1140,24 @@ def handle_conflict_analysis(state: dict) -> tuple[str, str]:
 
 
 def handle_meta_decision(state: dict) -> tuple[str, str]:
-    try:
-        meta_decision = run_meta_moderator(
-            query=state["original_query"],
-            expert_bundle=state.get("expert_bundle", {}),
-            balance_report=state.get("balance_report", {}),
-            deliberation_brief=state.get("deliberation_brief", {}),
-            conflict_report=state.get("conflict_report", {}),
-            model=state["model"],
-        )
-        if not isinstance(meta_decision, dict):
-            state["warnings"].append("meta_moderator_invalid; continuing without process decision")
-            meta_decision = _fallback_meta_decision(
-                "Meta moderator returned invalid output.",
-                "meta_moderator_invalid",
-            )
-    except Exception as exc:
-        state["warnings"].append(f"meta_moderator_failed; continuing with synthesis: {exc}")
-        meta_decision = _fallback_meta_decision(
-            "Meta moderator failed; proceed with existing deliberation brief.",
-            "meta_moderator_failed",
-        )
-
-    state["meta_decision"] = meta_decision
-    state["meta_decisions"].append(meta_decision)
+    meta_decision = _run_meta_decision_with_context(state, phase="initial")
     decision = str(meta_decision.get("decision") or "SYNTHESIZE").upper()
 
     if decision == "FINALIZE":
         if not state.get("final_answer"):
             state["warnings"].append("meta_finalize_before_answer")
         return FINALIZE, "meta moderator requested finalize"
+
     if decision == "REPLAN":
         return PLAN, "meta moderator requested replan"
+
     if decision == "DEEPEN":
         if not state.get("deliberation_round_done") and _deliberation_needed(
             state.get("conflict_report"),
             meta_decision,
         ):
             return DELIBERATION_ROUND, "meta moderator requested deeper deliberation"
+
         if not state.get("extra_panel_done") and _targeted_followup_still_useful(
             meta_decision=meta_decision,
             balance_report=state.get("balance_report"),
@@ -828,6 +1165,7 @@ def handle_meta_decision(state: dict) -> tuple[str, str]:
             conflict_report=state.get("conflict_report"),
         ):
             return PANEL_ROUND_EXTRA, "meta moderator requested targeted follow-up"
+
     if decision == "ADD_EXPERT":
         if not state.get("extra_panel_done") and _targeted_followup_still_useful(
             meta_decision=meta_decision,
@@ -836,6 +1174,7 @@ def handle_meta_decision(state: dict) -> tuple[str, str]:
             conflict_report=state.get("conflict_report"),
         ):
             return PANEL_ROUND_EXTRA, "meta moderator requested additional expert"
+
     return PLAN, "ready to plan"
 
 
@@ -940,24 +1279,102 @@ def handle_panel_round_extra(state: dict) -> tuple[str, str]:
 
 
 def handle_rebalance(state: dict) -> tuple[str, str]:
+    state["pre_rebalance_conflict_report"] = dict(_safe_dict(state.get("conflict_report")))
+
     _run_balance(state, "rebalance")
     _rebuild_brief(state, "rebalance_brief")
+
     if state.get("meta_decision"):
         state["deliberation_brief"] = apply_meta_decision_to_brief(
             state.get("deliberation_brief", {}),
             state.get("meta_decision", {}),
         )
+
     _run_conflict_analysis(state, "rebalance_conflict_analysis")
 
-    if not state.get("extra_panel_done") and _targeted_followup_still_useful(
-        meta_decision=state.get("meta_decision", {}),
-        balance_report=state.get("balance_report", {}),
-        deliberation_brief=state.get("deliberation_brief", {}),
-        conflict_report=state.get("conflict_report", {}),
-    ):
-        return PANEL_ROUND_EXTRA, "targeted follow-up still useful after rebalance"
-    return PLAN, "rebalance complete"
+    if int(state.get("meta_recheck_count", 0)) >= int(state.get("max_meta_rechecks", 1)):
+        state["warnings"].append("meta_recheck_limit_reached_after_rebalance")
+        return PLAN, "rebalance complete; meta recheck limit already reached"
 
+    return META_RECHECK, "rebalance complete; meta recheck required"
+
+def handle_meta_recheck(state: dict) -> tuple[str, str]:
+    """Bounded process recheck after REBALANCE.
+
+    This is intentionally one-shot. It makes the meta moderator accompany the
+    process after deliberation/extra-panel changes without creating an
+    unbounded autonomous loop.
+    """
+    current_count = int(state.get("meta_recheck_count", 0))
+    max_count = int(state.get("max_meta_rechecks", 1))
+
+    if current_count >= max_count:
+        state["warnings"].append("meta_recheck_limit_reached")
+        return PLAN, "meta recheck limit reached; proceeding to planning"
+
+    state["meta_recheck_count"] = current_count + 1
+
+    if _conflicts_cleared(state.get("conflict_report"), state.get("balance_report")):
+        state.setdefault("meta_recheck_decisions", []).append(
+            {
+                "decision": "SYNTHESIZE",
+                "reason": "Rebalance cleared conflicts and balance gaps; planning can proceed.",
+                "missing_perspectives": [],
+                "conflicts_to_resolve": [],
+                "risks_to_address": [],
+                "questions_to_answer": [],
+                "next_actions": ["Proceed to planning."],
+                "confidence": 0.8,
+                "parse_warnings": ["meta_recheck_rules"],
+                "source": "rules",
+            }
+        )
+        return PLAN, "meta recheck found no remaining process gaps"
+
+    meta_decision = _run_meta_decision_with_context(state, phase="recheck")
+    decision = str(meta_decision.get("decision") or "SYNTHESIZE").upper()
+
+    if decision == "FINALIZE":
+        if not state.get("final_answer"):
+            state["warnings"].append("meta_recheck_finalize_before_answer")
+        return FINALIZE, "meta recheck requested finalize"
+
+    if decision == "REPLAN":
+        return PLAN, "meta recheck requested planning"
+
+    critical_blind_spots = _new_or_critical_blind_spots_after_rebalance(state)
+
+    if decision == "ADD_EXPERT":
+        if not state.get("extra_panel_done") and (
+            critical_blind_spots
+            or _targeted_followup_still_useful(
+                meta_decision=meta_decision,
+                balance_report=state.get("balance_report"),
+                deliberation_brief=state.get("deliberation_brief"),
+                conflict_report=state.get("conflict_report"),
+            )
+        ):
+            return PANEL_ROUND_EXTRA, "meta recheck requested additional expert"
+
+    if decision == "DEEPEN":
+        if (
+            not state.get("deliberation_round_done")
+            and (
+                _has_high_severity_tradeoff(state.get("conflict_report"))
+                or _deliberation_needed(state.get("conflict_report"), meta_decision)
+            )
+        ):
+            return DELIBERATION_ROUND, "meta recheck requested deeper deliberation"
+
+        if not state.get("extra_panel_done") and _targeted_followup_still_useful(
+            meta_decision=meta_decision,
+            balance_report=state.get("balance_report"),
+            deliberation_brief=state.get("deliberation_brief"),
+            conflict_report=state.get("conflict_report"),
+        ):
+            return PANEL_ROUND_EXTRA, "meta recheck requested targeted follow-up"
+
+    return PLAN, "meta recheck complete; ready to plan"
 
 def handle_plan(state: dict) -> tuple[str, str]:
     try:
@@ -990,40 +1407,64 @@ def handle_plan(state: dict) -> tuple[str, str]:
 
 def handle_plan_critique(state: dict) -> tuple[str, str]:
     try:
+        critic_context = build_compact_critic_context(state)
+        record_context_size(state, "critic", critic_context)
         critique_result = check_plan_and_act(
             state.get("plan", {}),
             state["original_query"],
             min_score=0.7,
-            query_intake=state.get("query_intake", {}),
-            deliberation_brief=state.get("deliberation_brief", {}),
-            conflict_report=state.get("conflict_report", {}),
-            dynamic_roles_used=_flatten_dynamic_roles_executed(
-                state.get("expert_rounds"),
-                state.get("dynamic_role_reports"),
-            ),
-            deliberation_revisions=_flatten_deliberation_revisions(state.get("deliberation_rounds")),
-            meta_decision=state.get("meta_decision", {}),
-            state_history=state.get("history", []),
-            replan_context=state.get("replan_context", {}),
+            query_intake=critic_context.get("query_intake", {}),
+            deliberation_brief=critic_context.get("deliberation_brief", {}),
+            conflict_report=critic_context.get("conflict_report", {}),
+            dynamic_roles_used=critic_context.get("dynamic_roles_used", []),
+            deliberation_revisions=critic_context.get("deliberation_revisions", []),
+            meta_decision=critic_context.get("meta_decision", {}),
+            state_history=critic_context.get("state_history", []),
+            replan_context=critic_context.get("replan_context", {}),
             model=state["model"],
         )
         if not isinstance(critique_result, dict):
             state["warnings"].append("plan_critique_invalid; continuing with empty critique")
-            critique_result = {"status": "ready", "critique": {}}
+            critique_result = {"status": "ready", "decision": "ACCEPT", "critique": {}}
     except Exception as exc:
         state["warnings"].append(f"plan_critique_failed; continuing with empty critique: {exc}")
-        critique_result = {"status": "ready", "critique": {}}
+        critique_result = {"status": "ready", "decision": "ACCEPT", "critique": {}}
 
     state["plan_critiques"].append(critique_result)
     state["plan_critique"] = (
         critique_result.get("critique") if isinstance(critique_result.get("critique"), dict) else {}
     )
-    status = critique_result.get("status")
-    if status == "ready":
+
+    status = str(critique_result.get("status") or "").lower()
+    decision = str(critique_result.get("decision") or "").upper()
+    critical_blockers = plan_blockers(critique_result)
+
+    if status == "ready" and has_critical_plan_blockers(critique_result):
+        state.setdefault("quality_gate_decisions", []).append(
+            {
+                "gate": "plan_critique",
+                "decision": "BLOCK",
+                "reason": "ready_plan_contains_critical_blockers",
+                "critical_blockers": critical_blockers,
+            }
+        )
+        state["warnings"].append("critical_plan_blockers_detected_after_ready_status")
+        state["errors"].append("critical_plan_blockers")
+        return FAILED, "quality gate blocked ready plan with critical blockers"
+
+    if status == "ready" or decision == "ACCEPT":
+        state.setdefault("quality_gate_decisions", []).append(
+            {
+                "gate": "plan_critique",
+                "decision": "ALLOW",
+                "reason": "plan accepted",
+                "critical_blockers": [],
+            }
+        )
         state["replan_context"] = {}
         return ANSWER, "plan critique accepted plan"
 
-    if status in {"needs_revision", "rejected"}:
+    if status in {"needs_revision", "rejected"} or decision in {"REVISE", "REJECT"}:
         if int(state.get("iteration_count", 0)) < int(state.get("max_iters", 0)):
             reason = critique_result.get("reason") or "plan needs revision"
             state["replan_context"] = {
@@ -1033,18 +1474,53 @@ def handle_plan_critique(state: dict) -> tuple[str, str]:
                 "reason": reason,
                 "instruction": "Regenerate the plan and address the critique feedback.",
             }
-            return REPLAN, f"plan critique requested {status}"
-        message = f"plan_{status}_after_max_iters"
-        critical_blockers = _safe_list(state.get("plan_critique", {}).get("critical_blockers"))
-        critical_issues = _safe_list(state.get("plan_critique", {}).get("critical_issues"))
-        if status == "needs_revision" and not critical_blockers and not critical_issues:
+            state.setdefault("quality_gate_decisions", []).append(
+                {
+                    "gate": "plan_critique",
+                    "decision": "REPLAN",
+                    "reason": reason,
+                    "critical_blockers": critical_blockers,
+                }
+            )
+            return REPLAN, f"plan critique requested {status or decision}"
+
+        message = f"plan_{status or decision.lower()}_after_max_iters"
+
+        if status == "needs_revision" and can_best_effort_finalize(critique_result=critique_result):
             state["warnings"].append(f"{message}; proceeding_with_best_effort_plan")
+            state.setdefault("quality_gate_decisions", []).append(
+                {
+                    "gate": "plan_critique",
+                    "decision": "BEST_EFFORT",
+                    "reason": "non-critical plan revision exhausted",
+                    "critical_blockers": [],
+                }
+            )
             state["replan_context"] = {}
             return ANSWER, "plan critique exhausted non-critical revisions; proceeding best effort"
+
         state["warnings"].append(message)
         state["errors"].append(message)
-        return FAILED, "plan critique exhausted replan iterations"
+        if critical_blockers and "critical_plan_blockers" not in state["errors"]:
+            state["errors"].append("critical_plan_blockers")
+        state.setdefault("quality_gate_decisions", []).append(
+            {
+                "gate": "plan_critique",
+                "decision": "BLOCK",
+                "reason": message,
+                "critical_blockers": critical_blockers,
+            }
+        )
+        return FAILED, "plan quality gate blocked answer generation"
 
+    state.setdefault("quality_gate_decisions", []).append(
+        {
+            "gate": "plan_critique",
+            "decision": "BEST_EFFORT",
+            "reason": "unknown critique status treated as non-critical",
+            "critical_blockers": critical_blockers,
+        }
+    )
     return ANSWER, "plan critique status treated as ready"
 
 
@@ -1055,13 +1531,15 @@ def handle_replan(state: dict) -> tuple[str, str]:
 
 def handle_answer(state: dict) -> tuple[str, str]:
     try:
+        answer_context = build_compact_answer_context(state)
+        record_context_size(state, "answer", answer_context)
         moderated_result = run_moderated_loop(
             state["original_query"],
             state.get("plan", {}),
             state.get("plan_critique", {}),
-            expert_bundle=state.get("expert_bundle", {}),
-            balance_report=state.get("balance_report", {}),
-            deliberation_brief=state.get("deliberation_brief", {}),
+            expert_bundle=answer_context.get("expert_bundle", {}),
+            balance_report=answer_context.get("balance_report", {}),
+            deliberation_brief=answer_context.get("deliberation_brief", {}),
             max_iters=state.get("max_iters", 2),
             model=state["model"],
         )
@@ -1072,50 +1550,118 @@ def handle_answer(state: dict) -> tuple[str, str]:
         state["warnings"].append(f"moderated_loop_failed; returning empty final_answer: {exc}")
         moderated_result = {}
 
+    moderated_result = normalize_moderated_result(moderated_result)
+
     state["moderated_result"] = moderated_result
     state["moderation_reports"] = _safe_list(moderated_result.get("reports"))
+    state["answer_moderation_final_decision"] = moderated_result.get("final_decision") or ""
+    state["answer_moderation_critical_issues"] = _safe_list(moderated_result.get("critical_issues"))
+    state["answer_moderation_revision_count"] = int(moderated_result.get("revision_count") or 0)
+    state["answer_moderation_best_effort"] = False
+
     final_answer = moderated_result.get("final_answer") if isinstance(moderated_result, dict) else ""
     state["final_answer"] = final_answer if isinstance(final_answer, str) else ""
     if state["final_answer"]:
         state["answers"].append(state["final_answer"])
+
     return ANSWER_MODERATION, "answer moderation component completed"
 
 
 def handle_answer_moderation(state: dict) -> tuple[str, str]:
+    moderated_result = normalize_moderated_result(state.get("moderated_result", {}))
+    state["moderated_result"] = moderated_result
+
+    decision = str(moderated_result.get("final_decision") or "").upper()
+    critical_issues = _safe_list(moderated_result.get("critical_issues"))
+
+    state["answer_moderation_final_decision"] = decision
+    state["answer_moderation_critical_issues"] = critical_issues
+    state["answer_moderation_revision_count"] = int(moderated_result.get("revision_count") or 0)
+    state["answer_moderation_best_effort"] = False
+
+    if decision == "REJECT" or moderated_result.get("rejected"):
+        state["errors"].append("answer_moderation_rejected")
+        state.setdefault("quality_gate_decisions", []).append(
+            {
+                "gate": "answer_moderation",
+                "decision": "BLOCK",
+                "reason": "answer moderation rejected final answer",
+                "critical_issues": critical_issues,
+            }
+        )
+        return FAILED, "answer moderation rejected final answer"
+
+    if has_critical_answer_blockers(moderated_result):
+        state["errors"].append("critical_answer_moderation_issues")
+        state.setdefault("quality_gate_decisions", []).append(
+            {
+                "gate": "answer_moderation",
+                "decision": "BLOCK",
+                "reason": "critical answer moderation issues",
+                "critical_issues": critical_issues,
+            }
+        )
+        return FAILED, "answer moderation found critical blockers"
+
     final_answer = state.get("final_answer")
     if not isinstance(final_answer, str) or not final_answer.strip():
         state["errors"].append("moderated_loop_returned_empty_final_answer")
+        state.setdefault("quality_gate_decisions", []).append(
+            {
+                "gate": "answer_moderation",
+                "decision": "BLOCK",
+                "reason": "empty final answer",
+                "critical_issues": critical_issues,
+            }
+        )
         return FAILED, "answer moderation failed to produce final answer"
 
-    reports = _safe_list(state.get("moderation_reports"))
-    last_report = reports[-1] if reports and isinstance(reports[-1], dict) else {}
-    decision = str(last_report.get("decision") or "").upper()
-    critical_issues = [str(item).strip() for item in _safe_list(last_report.get("critical_issues")) if str(item).strip()]
-    state["answer_moderation_final_decision"] = decision
-    state["answer_moderation_critical_issues"] = critical_issues
-    state["answer_moderation_best_effort"] = False
-
     if decision == "ACCEPT":
+        state.setdefault("quality_gate_decisions", []).append(
+            {
+                "gate": "answer_moderation",
+                "decision": "ALLOW",
+                "reason": "answer accepted",
+                "critical_issues": [],
+            }
+        )
         return FINALIZE, "answer moderation accepted final answer"
 
     if decision == "REVISE":
-        if critical_issues:
-            state["errors"].append("answer_moderation_revise_critical_issues")
-            return FAILED, "answer moderation requested revision with critical issues"
-        state["warnings"].append("answer_moderation_revise_best_effort")
-        state["answer_moderation_best_effort"] = True
-        return FINALIZE, "answer moderation requested non-critical revision; finalized best effort"
+        if can_best_effort_finalize(moderated_result=moderated_result):
+            state["warnings"].append("answer_moderation_revise_best_effort")
+            state["answer_moderation_best_effort"] = True
+            state.setdefault("quality_gate_decisions", []).append(
+                {
+                    "gate": "answer_moderation",
+                    "decision": "BEST_EFFORT",
+                    "reason": "non-critical answer revision exhausted",
+                    "critical_issues": [],
+                }
+            )
+            return FINALIZE, "answer moderation requested non-critical revision; finalized best effort"
 
-    if decision == "REJECT":
-        state["errors"].append("answer_moderation_rejected")
-        return FAILED, "answer moderation rejected final answer"
-
-    if critical_issues:
-        state["errors"].append("answer_moderation_unknown_decision_with_critical_issues")
-        return FAILED, "answer moderation returned critical issues without accept decision"
+        state["errors"].append("answer_moderation_revise_critical_issues")
+        state.setdefault("quality_gate_decisions", []).append(
+            {
+                "gate": "answer_moderation",
+                "decision": "BLOCK",
+                "reason": "revision contains critical blockers",
+                "critical_issues": critical_issues,
+            }
+        )
+        return FAILED, "answer moderation requested revision with critical issues"
 
     state["warnings"].append("answer_moderation_missing_decision_best_effort")
     state["answer_moderation_best_effort"] = True
+    state.setdefault("quality_gate_decisions", []).append(
+        {
+            "gate": "answer_moderation",
+            "decision": "BEST_EFFORT",
+            "reason": "missing moderation decision without critical blockers",
+            "critical_issues": [],
+        }
+    )
     return FINALIZE, "answer moderation decision missing; finalized best effort"
 
 
@@ -1129,7 +1675,10 @@ def _build_trace_report(state: dict) -> dict:
     dynamic_roles_generated = _flatten_dynamic_roles_generated(dynamic_role_reports)
     dynamic_roles_executed = _flatten_dynamic_roles_executed(state.get("expert_rounds"), dynamic_role_reports)
     expert_bundle = _safe_dict(state.get("expert_bundle"))
-    return {
+    raw_roles = _safe_list(expert_bundle.get("roles"))
+    warnings = _safe_list(state.get("warnings"))
+    errors = _safe_list(state.get("errors"))
+    trace = {
         "original_query": state.get("original_query", ""),
         "formalized_query": state.get("formalized_query", ""),
         "query_intake": state.get("query_intake", {}),
@@ -1140,7 +1689,8 @@ def _build_trace_report(state: dict) -> dict:
         "parallel_mode": state.get("parallel_mode") or "SEQUENTIAL",
         "max_workers": state.get("max_workers"),
         "parallelized_stages": _safe_list(state.get("parallelized_stages")),
-        "roles_used": _safe_list(expert_bundle.get("roles")),
+        "roles_used": raw_roles,
+        "roles_used_unique": _roles_used_unique(state.get("expert_rounds"), raw_roles),
         "expert_rounds": _safe_list(state.get("expert_rounds")),
         "deliberation_brief": state.get("deliberation_brief", {}),
         "balance_reports": _safe_list(state.get("balance_reports")),
@@ -1160,13 +1710,18 @@ def _build_trace_report(state: dict) -> dict:
         "moderation_reports": moderation_reports,
         "answer_moderation_final_decision": state.get("answer_moderation_final_decision") or "",
         "answer_moderation_critical_issues": _safe_list(state.get("answer_moderation_critical_issues")),
+        "answer_moderation_revision_count": int(state.get("answer_moderation_revision_count") or 0),
         "answer_moderation_best_effort": bool(state.get("answer_moderation_best_effort")),
+        "quality_gate_decisions": _safe_list(state.get("quality_gate_decisions")),
+        "context_compression": build_context_compression_report(state),
         "revision_count": max(0, len(moderation_reports) - 1),
         "final_confidence": _extract_final_confidence(moderation_reports),
         "meta_moderation_decisions": meta_decisions,
+        "meta_recheck_count": int(state.get("meta_recheck_count", 0)),
+        "meta_recheck_decisions": _safe_list(state.get("meta_recheck_decisions")),
         "conflicts_to_resolve": _flatten_meta_field(meta_decisions, "conflicts_to_resolve"),
         "risks_to_address": _flatten_meta_field(meta_decisions, "risks_to_address"),
-        "warnings": _safe_list(state.get("warnings")),
+        "warnings": warnings,
         "state_history": _safe_list(state.get("history")),
         "final_state": state.get("current_state"),
         "transition_count": state.get("transition_count", 0),
@@ -1184,8 +1739,16 @@ def _build_trace_report(state: dict) -> dict:
         "ignored_must_address": _flatten_plan_critique_field(plan_critiques, "ignored_must_address"),
         "ignored_risks": _flatten_plan_critique_field(plan_critiques, "ignored_risks"),
         "ignored_tradeoffs": _flatten_plan_critique_field(plan_critiques, "ignored_tradeoffs"),
-        "errors": _safe_list(state.get("errors")),
+        "errors": errors,
     }
+    trace["json_health"] = _collect_json_health(trace)
+    trace["estimated_call_count"] = _estimate_call_count(trace)
+    trace["estimated_stage_count"] = len(_safe_list(trace.get("state_history")))
+    final_answer = state.get("final_answer")
+    trace["answer_chars"] = len(final_answer) if isinstance(final_answer, str) else 0
+    trace["warnings_count"] = len(warnings)
+    trace["errors_count"] = len(errors)
+    return trace
 
 
 def _compact_raw_state(state: dict) -> dict:
@@ -1197,6 +1760,7 @@ def _compact_raw_state(state: dict) -> dict:
         "max_workers": state.get("max_workers"),
         "transition_count": state.get("transition_count", 0),
         "iteration_count": state.get("iteration_count", 0),
+        "meta_recheck_count": int(state.get("meta_recheck_count", 0)),
         "warnings": _safe_list(state.get("warnings")),
         "errors": _safe_list(state.get("errors")),
         "history": _safe_list(state.get("history")),
@@ -1229,6 +1793,7 @@ _HANDLERS = {
     DELIBERATION_ROUND: handle_deliberation_round,
     PANEL_ROUND_EXTRA: handle_panel_round_extra,
     REBALANCE: handle_rebalance,
+    META_RECHECK: handle_meta_recheck,
     PLAN: handle_plan,
     PLAN_CRITIQUE: handle_plan_critique,
     REPLAN: handle_replan,

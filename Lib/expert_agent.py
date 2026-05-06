@@ -16,21 +16,30 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from Lib.AI_request import send_to_AI
 from Lib.expert_roles import ExpertRole
+from Lib.json_retry import call_json_model
 from Lib.json_utils import safe_json_loads
 
 
-def _fallback_output(role: ExpertRole) -> dict:
-    """Фолбэк на случай ошибок модели/парсинга."""
+def _fallback_output(role: ExpertRole, *, warnings: list[str] | None = None, attempts: int = 0, raw: str = "") -> dict:
+    """Фолбэк на случай ошибок модели/парсинга.
+
+    IMPORTANT: Do NOT put technical errors like "invalid_json_from_model" into risks.
+    Technical failures belong in parse_warnings, not expert_risks.
+    Empty contributions signal JSON failure to downstream stages via source="fallback".
+    """
     return {
         "role_key": role.key,
         "perspective_tag": role.perspective_tag,
         "insights": [],
-        "risks": ["invalid_json_from_model"],
+        "risks": [],
         "questions": [],
         "recommendations": [],
         "confidence": 0.0,
+        "parse_warnings": list(warnings or []) + ["expert_json_parse_failed"],
+        "json_attempts": int(attempts or 0),
+        "raw": str(raw or "")[:2000],
+        "source": "fallback",
     }
 
 
@@ -57,7 +66,11 @@ def _to_string_list(value: Any, max_items: int) -> list[str]:
 
 
 def _normalize_output(role: ExpertRole, payload: dict) -> dict:
-    """Приводит ответ модели к жёсткому контракту run_expert."""
+    """Приводит ответ модели к жёсткому контракту run_expert.
+
+    Enforces exact counts: insights=3, risks=2, questions=2, recommendations=3.
+    Truncates each string to 120 chars max.
+    """
     confidence_raw = payload.get("confidence", 0.0)
     try:
         confidence = float(confidence_raw)
@@ -69,13 +82,22 @@ def _normalize_output(role: ExpertRole, payload: dict) -> dict:
     elif confidence > 1.0:
         confidence = 1.0
 
+    def truncate_items(items: list[str], max_items: int, max_chars: int = 120) -> list[str]:
+        result = []
+        for item in items[:max_items]:
+            if isinstance(item, str):
+                truncated = item.strip()[:max_chars]
+                if truncated:
+                    result.append(truncated)
+        return result
+
     return {
         "role_key": role.key,
         "perspective_tag": role.perspective_tag,
-        "insights": _to_string_list(payload.get("insights"), max_items=7),
-        "risks": _to_string_list(payload.get("risks"), max_items=6),
-        "questions": _to_string_list(payload.get("questions"), max_items=6),
-        "recommendations": _to_string_list(payload.get("recommendations"), max_items=7),
+        "insights": truncate_items(_to_string_list(payload.get("insights"), max_items=3), 3),
+        "risks": truncate_items(_to_string_list(payload.get("risks"), max_items=2), 2),
+        "questions": truncate_items(_to_string_list(payload.get("questions"), max_items=2), 2),
+        "recommendations": truncate_items(_to_string_list(payload.get("recommendations"), max_items=3), 3),
         "confidence": confidence,
     }
 
@@ -96,15 +118,18 @@ def run_expert(
         "Original query is authoritative. Cleaned/formalized query is helper text only. "
         "Do not ignore constraints from original_query.\n"
         "Ты формируешь экспертный вклад, а не финальный ответ пользователю.\n"
-        "Верни только JSON, без markdown, без комментариев, без лишнего текста.\n"
-        "Строго соблюдай схему:\n"
+        "CRITICAL: Return ONLY valid JSON. No markdown. No comments. No extra text.\n"
+        "CRITICAL: Each item must be ONE SHORT SENTENCE (max 100 chars).\n"
+        "CRITICAL: Use EXACT counts below. Do not add more items.\n"
+        "Schema:\n"
         "{\n"
-        "  \"insights\": [string,...],\n"
-        "  \"risks\": [string,...],\n"
-        "  \"questions\": [string,...],\n"
-        "  \"recommendations\": [string,...],\n"
-        "  \"confidence\": 0.0-1.0\n"
-        "}"
+        "  \"insights\": [\"string\", \"string\", \"string\"],\n"
+        "  \"risks\": [\"string\", \"string\"],\n"
+        "  \"questions\": [\"string\", \"string\"],\n"
+        "  \"recommendations\": [\"string\", \"string\", \"string\"],\n"
+        "  \"confidence\": 0.8\n"
+        "}\n"
+        "EXACT counts: insights=3, risks=2, questions=2, recommendations=3."
     )
 
     context_text = ""
@@ -124,20 +149,31 @@ def run_expert(
         user_prompt_parts.append(f"Контекст:\n{context_text}")
 
     user_prompt_parts.append(
-        "Сформируй экспертный вклад в JSON по схеме. "
-        "Количество элементов: insights 3-7, risks 2-6, questions 2-6, recommendations 3-7."
+        "Сформируй экспертный вклад в JSON по схеме.\n"
+        "СТРОГО: insights=3, risks=2, questions=2, recommendations=3.\n"
+        "Каждый элемент — одно короткое предложение (макс 100 символов).\n"
+        "Верни ТОЛЬКО валидный JSON объект, без markdown блоков."
     )
 
-    raw = send_to_AI(
+    result = call_json_model(
         user_prompt="\n\n".join(user_prompt_parts),
         system_prompt=system_prompt,
-        temp=0.25,
-        tokens=220,
+        temp=0.2,
+        tokens=500,
         model=model,
+        max_retries=1,
     )
 
-    parsed = _safe_json_loads(raw if isinstance(raw, str) else "")
+    parsed = result.get("payload") if isinstance(result, dict) else None
+    warnings = result.get("warnings") if isinstance(result, dict) and isinstance(result.get("warnings"), list) else []
+    attempts = result.get("attempts") if isinstance(result, dict) and isinstance(result.get("attempts"), int) else 0
+    raw = result.get("raw") if isinstance(result, dict) and isinstance(result.get("raw"), str) else ""
     if not parsed:
-        return _fallback_output(role)
+        return _fallback_output(role, warnings=warnings, attempts=attempts, raw=raw)
 
-    return _normalize_output(role, parsed)
+    normalized = _normalize_output(role, parsed)
+    normalized["parse_warnings"] = warnings
+    normalized["json_attempts"] = attempts
+    normalized["raw"] = raw[:2000]
+    normalized["source"] = "model"
+    return normalized
