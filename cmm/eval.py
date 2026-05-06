@@ -539,12 +539,21 @@ def normalize_judge_payload(payload: dict | None, mapping: dict, raw: str = "", 
         parse_warnings.append(warning)
     if not isinstance(payload, dict):
         parse_warnings.append("judge_json_parse_failed")
+
+        # Distinguish between human_review_required (judge-mode none) and actual parse failure
+        if warning == "human_review_required":
+            winner = "UNJUDGED"
+            reason = "judge_mode=none; exported for human review"
+        else:
+            winner = "TIE"
+            reason = "Judge output could not be parsed; marked as tie for review."
+
         return {
             "case_id": mapping.get("case_id", ""),
             "baseline_scores": _zero_scores(),
             "cmm_scores": _zero_scores(),
-            "winner": "TIE",
-            "reason": "Judge output could not be parsed; marked as tie for review.",
+            "winner": winner,
+            "reason": reason,
             "cmm_failure_modes": [],
             "baseline_failure_modes": [],
             "parse_warnings": parse_warnings,
@@ -920,6 +929,7 @@ def _summary_from_judged_results(results: list[dict], judge_mode: str, output_pa
         "cmm_wins": sum(1 for item in results if item.get("winner") == "CMM"),
         "baseline_wins": sum(1 for item in results if item.get("winner") == "BASELINE"),
         "ties": sum(1 for item in results if item.get("winner") == "TIE"),
+        "unjudged": sum(1 for item in results if item.get("winner") == "UNJUDGED"),
         "mode": "real",
         "judge_mode": judge_mode,
         "mean_cmm_overall": round(sum(cmm_overalls) / cases, 4) if cases else 0.0,
@@ -1118,7 +1128,8 @@ def main(argv: list[str] | None = None) -> int:
         f"cases={summary['cases']}, "
         f"cmm_wins={summary['cmm_wins']}, "
         f"baseline_wins={summary['baseline_wins']}, "
-            f"ties={summary['ties']}"
+        f"ties={summary['ties']}, "
+        f"unjudged={summary.get('unjudged', 0)}"
     )
     if "judge_mode" in summary:
         print(f"Judge mode: {summary['judge_mode']}")
