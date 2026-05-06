@@ -88,8 +88,8 @@ def _count_words(value) -> int:
 
 def _auto_token_count(word_count: int) -> int:
     auto_k = 1.17
-    auto_min = 50
-    auto_max = 1000
+    auto_min = 500
+    auto_max = 2000
     return int(min(auto_max, max(auto_min, int(auto_k * word_count)))) + 1
 
 
@@ -99,7 +99,7 @@ def send_to_AI(
     history: list | None = None,
     temp: float = 0.65,
     top_p: float = 0.9,
-    tokens: int = DEFAULT_TOKEN_LIMIT,
+    tokens: int | None = None,
     model: str = DEFAULT_MODEL,
     stream: bool = False,
     api_key: str | None = None,
@@ -128,7 +128,7 @@ def send_to_AI(
             messages.extend(history)
         messages.append({"role": "user", "content": user_prompt})
 
-        if tokens == DEFAULT_TOKEN_LIMIT:
+        if tokens is None:
             tokens = _auto_token_count(_count_words(messages))
 
         response = client.chat.completions.create(
