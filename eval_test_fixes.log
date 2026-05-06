@@ -1,0 +1,149 @@
+[96mStarting evaluation: 3 cases[0m
+[96mJudge mode: llm[0m
+[96mModel: kr/claude-sonnet-4.5[0m
+[96m[0m
+[1m================================================================================[0m
+[1m[*] CASE: V2-001[0m
+[96mQuery: ??? ????? ???????????? ??????????????[0m
+
+[94m[>] Stage: BASELINE[0m
+  [93m[AI] AI Call #1 [unknown][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 16 prompt + 51 completion = 67 total[0m
+    [96mRunning total: 67 tokens[0m
+[92m[OK] BASELINE complete[0m
+
+[94m[>] Stage: CMM[0m
+  [93m[AI] AI Call #2 [answer_moderator][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 216 prompt + 22 completion = 238 total[0m
+    [96mRunning total: 305 tokens[0m
+  [93m[AI] AI Call #3 [unknown][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 226 prompt + 60 completion = 286 total[0m
+    [96mRunning total: 591 tokens[0m
+  [94m[R] Router: DIRECT (complexity: low)[0m
+[92m[OK] CMM complete[0m
+
+[94m[>] Stage: JUDGE[0m
+  [93m[AI] AI Call #4 [judge][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 231 prompt + 102 completion = 333 total[0m
+    [96mRunning total: 924 tokens[0m
+[92m[OK] JUDGE complete[0m
+
+Case V2-001
+Mode: DIRECT
+Expected mode: DIRECT
+Final state: FINALIZE
+Expert contributions: 0/0 valid
+Planner: unknown
+Plan critique: none
+Moderation: unknown
+Judge: llm
+
+[93m[+] Winner: TIE[0m
+[96mTime: 24.01s[0m
+[1m================================================================================[0m
+
+[1m================================================================================[0m
+[1m[*] CASE: V2-002[0m
+[96mQuery: ?????? ??????? ??????? ????? ???????? ? KPI.[0m
+
+[94m[>] Stage: BASELINE[0m
+  [93m[AI] AI Call #5 [unknown][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 18 prompt + 50 completion = 68 total[0m
+    [96mRunning total: 992 tokens[0m
+[92m[OK] BASELINE complete[0m
+
+[94m[>] Stage: CMM[0m
+  [93m[AI] AI Call #6 [answer_moderator][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 219 prompt + 24 completion = 243 total[0m
+    [96mRunning total: 1235 tokens[0m
+  [93m[AI] AI Call #7 [unknown][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 230 prompt + 82 completion = 312 total[0m
+    [96mRunning total: 1547 tokens[0m
+  [94m[R] Router: DIRECT (complexity: low)[0m
+[92m[OK] CMM complete[0m
+
+[94m[>] Stage: JUDGE[0m
+  [93m[AI] AI Call #8 [judge][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 225 prompt + 129 completion = 354 total[0m
+    [96mRunning total: 1901 tokens[0m
+[92m[OK] JUDGE complete[0m
+
+Case V2-002
+Mode: DIRECT
+Expected mode: DIRECT
+Final state: FINALIZE
+Expert contributions: 0/0 valid
+Planner: unknown
+Plan critique: none
+Moderation: unknown
+Judge: llm
+
+[93m[+] Winner: BASELINE[0m
+[96mTime: 24.04s[0m
+[1m================================================================================[0m
+
+[1m================================================================================[0m
+[1m[*] CASE: V2-003[0m
+[96mQuery: What is a trade-off in product design?[0m
+
+[94m[>] Stage: BASELINE[0m
+  [93m[AI] AI Call #9 [unknown][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 15 prompt + 51 completion = 66 total[0m
+    [96mRunning total: 1967 tokens[0m
+[92m[OK] BASELINE complete[0m
+
+[94m[>] Stage: CMM[0m
+  [93m[AI] AI Call #10 [answer_moderator][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 214 prompt + 23 completion = 237 total[0m
+    [96mRunning total: 2204 tokens[0m
+  [93m[AI] AI Call #11 [unknown][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 226 prompt + 92 completion = 318 total[0m
+    [96mRunning total: 2522 tokens[0m
+  [94m[R] Router: DIRECT (complexity: low)[0m
+[92m[OK] CMM complete[0m
+
+[94m[>] Stage: JUDGE[0m
+  [93m[AI] AI Call #12 [judge][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 210 prompt + 112 completion = 322 total[0m
+    [96mRunning total: 2844 tokens[0m
+[92m[OK] JUDGE complete[0m
+
+Case V2-003
+Mode: DIRECT
+Expected mode: DIRECT
+Final state: FINALIZE
+Expert contributions: 0/0 valid
+Planner: unknown
+Plan critique: none
+Moderation: unknown
+Judge: llm
+
+[93m[+] Winner: BASELINE[0m
+[96mTime: 22.17s[0m
+[1m================================================================================[0m
+
+
+[1m================================================================================[0m
+[1m[#] EVALUATION SUMMARY[0m
+[96mTotal AI calls: 12[0m
+[96mTotal tokens used: 2,844[0m
+[92mEstimated cost: $0.0006[0m
+[1m================================================================================[0m
+Evaluation complete: cases=3, cmm_wins=0, baseline_wins=2, ties=1, unjudged=0
+Judge mode: llm
+CSV: eval_test_fixes\results.csv
+JSON: eval_test_fixes\results.json
+Summary: eval_test_fixes\summary.json
+Cases: eval_test_fixes\cases.jsonl

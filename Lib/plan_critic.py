@@ -504,6 +504,30 @@ def _status_from_critique(critique: dict, min_score: float, *, empty_plan: bool 
     score = float(critique.get("overall_score") or 0.0)
     threshold = max(0.0, min(1.0, float(min_score))) * 10.0
 
+    # Check if critique explicitly says plan is ready for finalization
+    feedback_text = " ".join(
+        str(item) for item in
+        _safe_list(critique.get("feedback")) +
+        _safe_list(critique.get("recommendations")) +
+        [critique.get("reason", "")]
+    ).lower()
+
+    finalize_markers = (
+        "ready for final answer",
+        "ready for answer generation",
+        "proceed with answer generation",
+        "plan is ready",
+        "готов к финализации",
+        "готов к генерации ответа",
+        "можно переходить к ответу",
+    )
+
+    explicitly_ready = any(marker in feedback_text for marker in finalize_markers)
+
+    # If critique says FINALIZE and no critical blockers, trust it
+    if explicitly_ready and not critical_blockers and not critical:
+        return "ready", "Plan satisfies the context-aware critique threshold."
+
     if critical_blockers:
         scores = _safe_dict(critique.get("scores"))
         weak_structure = (

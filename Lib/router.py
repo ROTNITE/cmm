@@ -73,6 +73,49 @@ _LIGHT_MARKERS = (
     "метрик",
     "внедр",
 )
+_OPERATIONAL_PLAN_MARKERS = (
+    "launch",
+    "rollout",
+    "deploy",
+    "setup",
+    "implement",
+    "tool",
+    "platform",
+    "service",
+    "knowledge base",
+    "wiki",
+    "documentation",
+    "internal",
+    "team",
+    "small team",
+    "запуск",
+    "внедрен",
+    "развертыван",
+    "настройк",
+    "инструмент",
+    "платформ",
+    "сервис",
+    "база знаний",
+    "вики",
+    "документац",
+    "внутренн",
+    "команд",
+    "небольш",
+)
+_SMALL_SCOPE_MARKERS = (
+    "small",
+    "quick",
+    "simple",
+    "lightweight",
+    "недорого",
+    "быстро",
+    "просто",
+    "легк",
+    "небольш",
+    "за месяц",
+    "за неделю",
+    "в течение месяца",
+)
 _DIRECT_MARKERS = (
     "what is",
     "define",
@@ -256,6 +299,8 @@ def route_query(query_intake: dict, *, original_query: str = "") -> dict:
         "has_full_markers": _contains_any(text, _FULL_MARKERS),
         "has_light_markers": _contains_any(text, _LIGHT_MARKERS),
         "has_direct_markers": _contains_any(text, _DIRECT_MARKERS),
+        "has_operational_plan_markers": _contains_any(text, _OPERATIONAL_PLAN_MARKERS),
+        "has_small_scope_markers": _contains_any(text, _SMALL_SCOPE_MARKERS),
         "needs_second_round": False,
     }
 
@@ -298,8 +343,40 @@ def route_query(query_intake: dict, *, original_query: str = "") -> dict:
     many_constraints = len(constraints) >= 3 or len(success_criteria) >= 3
     constrained_plan = len(constraints) >= 2 and len(success_criteria) >= 1
 
+    # Define multi_stakeholder early for use in operational_plan check
+    # For operational plans, "team" alone doesn't mean multi-stakeholder governance
+    # Multi-stakeholder means multiple conflicting groups, not just "a team"
+    has_multi_stakeholder_markers = (
+        signals["has_stakeholder_markers"]
+        and not (
+            # Single team operational plans are not multi-stakeholder
+            signals["has_operational_plan_markers"]
+            and signals["has_small_scope_markers"]
+            and len(context) < 2
+        )
+    )
+    multi_stakeholder = (len(context) >= 2 or has_multi_stakeholder_markers) and not is_definition_question
+
+    # Check for operational plan: implementation/tool/process for small team
+    # These should go LIGHT_CMM, not FULL_CMM, unless they have true high-risk or multi-stakeholder governance
+    is_operational_plan = (
+        signals["has_operational_plan_markers"]
+        and (signals["has_small_scope_markers"] or len(constraints) >= 1)
+        and not high_risk
+        and not multi_stakeholder
+        and complexity in {"low", "medium"}
+    )
+
+    if is_operational_plan:
+        return _normalize_decision(
+            "LIGHT_CMM",
+            "Operational plan for small team without high-risk or multi-stakeholder governance.",
+            complexity,
+            signals,
+            warnings,
+        )
+
     # Only consider stakeholder/tradeoff markers if NOT a definition question
-    multi_stakeholder = (len(context) >= 2 or signals["has_stakeholder_markers"]) and not is_definition_question
     conflict_heavy = (signals["has_tradeoff_markers"] or signals["has_full_markers"]) and not is_definition_question
     full_signals = high_risk or complexity == "high" or many_constraints or multi_stakeholder or conflict_heavy
     if full_signals:

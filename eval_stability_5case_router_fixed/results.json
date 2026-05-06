@@ -44,7 +44,7 @@
       "reason": "Judge output could not be parsed; marked as tie for review.",
       "baseline_failure_modes": "",
       "cmm_failure_modes": "",
-      "baseline_answer_chars": 124,
+      "baseline_answer_chars": 143,
       "cmm_answer_chars": 373,
       "cmm_trace_available": true,
       "cmm_mode": "DIRECT",
@@ -93,7 +93,7 @@
       "reason": "Judge output could not be parsed; marked as tie for review.",
       "baseline_failure_modes": "",
       "cmm_failure_modes": "",
-      "baseline_answer_chars": 124,
+      "baseline_answer_chars": 143,
       "cmm_answer_chars": 371,
       "cmm_trace_available": true,
       "cmm_mode": "DIRECT",
@@ -142,7 +142,7 @@
       "reason": "Judge output could not be parsed; marked as tie for review.",
       "baseline_failure_modes": "",
       "cmm_failure_modes": "",
-      "baseline_answer_chars": 124,
+      "baseline_answer_chars": 143,
       "cmm_answer_chars": 339,
       "cmm_trace_available": true,
       "cmm_mode": "DIRECT",
@@ -191,7 +191,7 @@
       "reason": "Judge output could not be parsed; marked as tie for review.",
       "baseline_failure_modes": "",
       "cmm_failure_modes": "",
-      "baseline_answer_chars": 124,
+      "baseline_answer_chars": 143,
       "cmm_answer_chars": 711,
       "cmm_trace_available": true,
       "cmm_mode": "LIGHT_CMM",
@@ -240,7 +240,7 @@
       "reason": "Judge output could not be parsed; marked as tie for review.",
       "baseline_failure_modes": "",
       "cmm_failure_modes": "",
-      "baseline_answer_chars": 124,
+      "baseline_answer_chars": 143,
       "cmm_answer_chars": 705,
       "cmm_trace_available": true,
       "cmm_mode": "LIGHT_CMM",
@@ -285,7 +285,7 @@
         "schema_warnings": []
       },
       "baseline": {
-        "answer": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+        "answer": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
         "trace_report": {
           "mode": "real_baseline"
         }
@@ -646,8 +646,8 @@
       },
       "answer_a_source": "BASELINE",
       "answer_b_source": "CMM",
-      "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-001\", \"query\": \"Что такое коллективная метамодерация?\", \"context\": \"Пользователь просит короткое объяснение термина.\", \"constraints\": \"Ответ кратко до 5 предложений.\", \"rubric_must_cover\": [\"простое определение\", \"отличие от обычной модерации\", \"упоминание нескольких перспектив\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"слишком длинное объяснение\", \"уход в абстракции\"], \"answer_a\": \"Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.\", \"answer_b\": \"Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\\\"LIGHT_CMM\\\")`.\"}",
-      "raw_judge_output": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+      "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-001\", \"query\": \"Что такое коллективная метамодерация?\", \"context\": \"Пользователь просит короткое объяснение термина.\", \"constraints\": \"Ответ кратко до 5 предложений.\", \"rubric_must_cover\": [\"простое определение\", \"отличие от обычной модерации\", \"упоминание нескольких перспектив\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"слишком длинное объяснение\", \"уход в абстракции\"], \"answer_a\": \"Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}\", \"answer_b\": \"Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\\\"LIGHT_CMM\\\")`.\"}",
+      "raw_judge_output": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
       "normalized_judge_result": {
         "case_id": "V2-001",
         "baseline_scores": {
@@ -673,8 +673,8 @@
         "parse_warnings": [
           "judge_json_parse_failed"
         ],
-        "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
-        "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-001\", \"query\": \"Что такое коллективная метамодерация?\", \"context\": \"Пользователь просит короткое объяснение термина.\", \"constraints\": \"Ответ кратко до 5 предложений.\", \"rubric_must_cover\": [\"простое определение\", \"отличие от обычной модерации\", \"упоминание нескольких перспектив\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"слишком длинное объяснение\", \"уход в абстракции\"], \"answer_a\": \"Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.\", \"answer_b\": \"Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\\\"LIGHT_CMM\\\")`.\"}",
+        "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
+        "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-001\", \"query\": \"Что такое коллективная метамодерация?\", \"context\": \"Пользователь просит короткое объяснение термина.\", \"constraints\": \"Ответ кратко до 5 предложений.\", \"rubric_must_cover\": [\"простое определение\", \"отличие от обычной модерации\", \"упоминание нескольких перспектив\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"слишком длинное объяснение\", \"уход в абстракции\"], \"answer_a\": \"Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}\", \"answer_b\": \"Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\\\"LIGHT_CMM\\\")`.\"}",
         "blind_mapping": {
           "answer_a_source": "BASELINE",
           "answer_b_source": "CMM"
@@ -697,7 +697,7 @@
         "schema_warnings": []
       },
       "baseline": {
-        "answer": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+        "answer": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
         "trace_report": {
           "mode": "real_baseline"
         }
@@ -1062,8 +1062,8 @@
       },
       "answer_a_source": "CMM",
       "answer_b_source": "BASELINE",
-      "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-002\", \"query\": \"Кратко объясни разницу между метрикой и KPI.\", \"context\": \"Общий образовательный вопрос без высокого риска.\", \"constraints\": \"Ответ простым языком.\", \"rubric_must_cover\": [\"разница между метрикой и KPI\", \"короткий пример\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"избыточный консалтинг\", \"нет примера\"], \"answer_a\": \"Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: Кратко объясни разницу между метрикой и KPI. Контекст: Общий образовательный вопрос без высокого риска. Ограничения: Ответ простым языком.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\\\"LIGHT_CMM\\\")`.\", \"answer_b\": \"Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.\"}",
-      "raw_judge_output": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+      "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-002\", \"query\": \"Кратко объясни разницу между метрикой и KPI.\", \"context\": \"Общий образовательный вопрос без высокого риска.\", \"constraints\": \"Ответ простым языком.\", \"rubric_must_cover\": [\"разница между метрикой и KPI\", \"короткий пример\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"избыточный консалтинг\", \"нет примера\"], \"answer_a\": \"Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: Кратко объясни разницу между метрикой и KPI. Контекст: Общий образовательный вопрос без высокого риска. Ограничения: Ответ простым языком.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\\\"LIGHT_CMM\\\")`.\", \"answer_b\": \"Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}\"}",
+      "raw_judge_output": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
       "normalized_judge_result": {
         "case_id": "V2-002",
         "baseline_scores": {
@@ -1089,8 +1089,8 @@
         "parse_warnings": [
           "judge_json_parse_failed"
         ],
-        "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
-        "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-002\", \"query\": \"Кратко объясни разницу между метрикой и KPI.\", \"context\": \"Общий образовательный вопрос без высокого риска.\", \"constraints\": \"Ответ простым языком.\", \"rubric_must_cover\": [\"разница между метрикой и KPI\", \"короткий пример\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"избыточный консалтинг\", \"нет примера\"], \"answer_a\": \"Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: Кратко объясни разницу между метрикой и KPI. Контекст: Общий образовательный вопрос без высокого риска. Ограничения: Ответ простым языком.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\\\"LIGHT_CMM\\\")`.\", \"answer_b\": \"Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.\"}",
+        "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
+        "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-002\", \"query\": \"Кратко объясни разницу между метрикой и KPI.\", \"context\": \"Общий образовательный вопрос без высокого риска.\", \"constraints\": \"Ответ простым языком.\", \"rubric_must_cover\": [\"разница между метрикой и KPI\", \"короткий пример\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"избыточный консалтинг\", \"нет примера\"], \"answer_a\": \"Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: Кратко объясни разницу между метрикой и KPI. Контекст: Общий образовательный вопрос без высокого риска. Ограничения: Ответ простым языком.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\\\"LIGHT_CMM\\\")`.\", \"answer_b\": \"Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}\"}",
         "blind_mapping": {
           "answer_a_source": "CMM",
           "answer_b_source": "BASELINE"
@@ -1113,7 +1113,7 @@
         "schema_warnings": []
       },
       "baseline": {
-        "answer": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+        "answer": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
         "trace_report": {
           "mode": "real_baseline"
         }
@@ -1474,8 +1474,8 @@
       },
       "answer_a_source": "BASELINE",
       "answer_b_source": "CMM",
-      "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-003\", \"query\": \"What is a trade-off in product design?\", \"context\": \"Simple explanation request.\", \"constraints\": \"Keep it concise.\", \"rubric_must_cover\": [\"plain definition\", \"product design example\", \"mention competing goals\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"too broad\", \"no product example\"], \"answer_a\": \"Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.\", \"answer_b\": \"Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: What is a trade-off in product design? Контекст: Simple explanation request. Ограничения: Keep it concise.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\\\"LIGHT_CMM\\\")`.\"}",
-      "raw_judge_output": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+      "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-003\", \"query\": \"What is a trade-off in product design?\", \"context\": \"Simple explanation request.\", \"constraints\": \"Keep it concise.\", \"rubric_must_cover\": [\"plain definition\", \"product design example\", \"mention competing goals\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"too broad\", \"no product example\"], \"answer_a\": \"Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}\", \"answer_b\": \"Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: What is a trade-off in product design? Контекст: Simple explanation request. Ограничения: Keep it concise.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\\\"LIGHT_CMM\\\")`.\"}",
+      "raw_judge_output": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
       "normalized_judge_result": {
         "case_id": "V2-003",
         "baseline_scores": {
@@ -1501,8 +1501,8 @@
         "parse_warnings": [
           "judge_json_parse_failed"
         ],
-        "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
-        "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-003\", \"query\": \"What is a trade-off in product design?\", \"context\": \"Simple explanation request.\", \"constraints\": \"Keep it concise.\", \"rubric_must_cover\": [\"plain definition\", \"product design example\", \"mention competing goals\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"too broad\", \"no product example\"], \"answer_a\": \"Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.\", \"answer_b\": \"Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: What is a trade-off in product design? Контекст: Simple explanation request. Ограничения: Keep it concise.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\\\"LIGHT_CMM\\\")`.\"}",
+        "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
+        "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-003\", \"query\": \"What is a trade-off in product design?\", \"context\": \"Simple explanation request.\", \"constraints\": \"Keep it concise.\", \"rubric_must_cover\": [\"plain definition\", \"product design example\", \"mention competing goals\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"too broad\", \"no product example\"], \"answer_a\": \"Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}\", \"answer_b\": \"Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: What is a trade-off in product design? Контекст: Simple explanation request. Ограничения: Keep it concise.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\\\"LIGHT_CMM\\\")`.\"}",
         "blind_mapping": {
           "answer_a_source": "BASELINE",
           "answer_b_source": "CMM"
@@ -1525,7 +1525,7 @@
         "schema_warnings": []
       },
       "baseline": {
-        "answer": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+        "answer": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
         "trace_report": {
           "mode": "real_baseline"
         }
@@ -1703,7 +1703,7 @@
                     "expert_json_parse_failed"
                   ],
                   "json_attempts": 2,
-                  "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                  "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
                   "source": "fallback"
                 },
                 {
@@ -1722,7 +1722,7 @@
                     "expert_json_parse_failed"
                   ],
                   "json_attempts": 2,
-                  "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                  "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
                   "source": "fallback"
                 },
                 {
@@ -1741,7 +1741,7 @@
                     "expert_json_parse_failed"
                   ],
                   "json_attempts": 2,
-                  "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                  "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
                   "source": "fallback"
                 },
                 {
@@ -1760,7 +1760,7 @@
                     "expert_json_parse_failed"
                   ],
                   "json_attempts": 2,
-                  "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                  "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
                   "source": "fallback"
                 }
               ],
@@ -1923,7 +1923,7 @@
             "nuances": [],
             "potential_problems": [],
             "result": "",
-            "timestamp": "2026-05-06 08:14:39.313981",
+            "timestamp": "2026-05-06 10:40:23.399315",
             "depth": "detailed",
             "parse_warnings": [
               "json_and_legacy_plan_parse_failed",
@@ -2009,8 +2009,8 @@
                 "moderation_json_parse_failed"
               ],
               "json_attempts": 2,
-              "timestamp": "2026-05-06 08:14:39.316430",
-              "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+              "timestamp": "2026-05-06 10:40:24.233580",
+              "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
               "source": "fallback",
               "meta": {
                 "expert_bundle_used": true,
@@ -2043,8 +2043,8 @@
                 "moderation_json_parse_failed"
               ],
               "json_attempts": 2,
-              "timestamp": "2026-05-06 08:14:39.317463",
-              "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+              "timestamp": "2026-05-06 10:40:24.733733",
+              "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
               "source": "fallback",
               "meta": {
                 "expert_bundle_used": true,
@@ -2077,8 +2077,8 @@
                 "moderation_json_parse_failed"
               ],
               "json_attempts": 2,
-              "timestamp": "2026-05-06 08:14:39.318425",
-              "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+              "timestamp": "2026-05-06 10:40:25.288901",
+              "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
               "source": "fallback",
               "meta": {
                 "expert_bundle_used": true,
@@ -2203,7 +2203,7 @@
               "nuances": [],
               "potential_problems": [],
               "result": "",
-              "timestamp": "2026-05-06 08:14:39.313981",
+              "timestamp": "2026-05-06 10:40:23.399315",
               "depth": "detailed",
               "parse_warnings": [
                 "json_and_legacy_plan_parse_failed",
@@ -2252,7 +2252,7 @@
                 "nuances": [],
                 "potential_problems": [],
                 "result": "",
-                "timestamp": "2026-05-06 08:14:39.313981",
+                "timestamp": "2026-05-06 10:40:23.399315",
                 "depth": "detailed",
                 "parse_warnings": [
                   "json_and_legacy_plan_parse_failed",
@@ -2538,7 +2538,7 @@
                   "expert_json_parse_failed"
                 ],
                 "json_attempts": 2,
-                "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
                 "source": "fallback"
               },
               {
@@ -2557,7 +2557,7 @@
                   "expert_json_parse_failed"
                 ],
                 "json_attempts": 2,
-                "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
                 "source": "fallback"
               },
               {
@@ -2576,7 +2576,7 @@
                   "expert_json_parse_failed"
                 ],
                 "json_attempts": 2,
-                "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
                 "source": "fallback"
               },
               {
@@ -2595,7 +2595,7 @@
                   "expert_json_parse_failed"
                 ],
                 "json_attempts": 2,
-                "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
                 "source": "fallback"
               }
             ],
@@ -2758,7 +2758,7 @@
           "nuances": [],
           "potential_problems": [],
           "result": "",
-          "timestamp": "2026-05-06 08:14:39.313981",
+          "timestamp": "2026-05-06 10:40:23.399315",
           "depth": "detailed",
           "parse_warnings": [
             "json_and_legacy_plan_parse_failed",
@@ -2844,8 +2844,8 @@
               "moderation_json_parse_failed"
             ],
             "json_attempts": 2,
-            "timestamp": "2026-05-06 08:14:39.316430",
-            "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+            "timestamp": "2026-05-06 10:40:24.233580",
+            "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
             "source": "fallback",
             "meta": {
               "expert_bundle_used": true,
@@ -2878,8 +2878,8 @@
               "moderation_json_parse_failed"
             ],
             "json_attempts": 2,
-            "timestamp": "2026-05-06 08:14:39.317463",
-            "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+            "timestamp": "2026-05-06 10:40:24.733733",
+            "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
             "source": "fallback",
             "meta": {
               "expert_bundle_used": true,
@@ -2912,8 +2912,8 @@
               "moderation_json_parse_failed"
             ],
             "json_attempts": 2,
-            "timestamp": "2026-05-06 08:14:39.318425",
-            "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+            "timestamp": "2026-05-06 10:40:25.288901",
+            "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
             "source": "fallback",
             "meta": {
               "expert_bundle_used": true,
@@ -3038,7 +3038,7 @@
             "nuances": [],
             "potential_problems": [],
             "result": "",
-            "timestamp": "2026-05-06 08:14:39.313981",
+            "timestamp": "2026-05-06 10:40:23.399315",
             "depth": "detailed",
             "parse_warnings": [
               "json_and_legacy_plan_parse_failed",
@@ -3087,7 +3087,7 @@
               "nuances": [],
               "potential_problems": [],
               "result": "",
-              "timestamp": "2026-05-06 08:14:39.313981",
+              "timestamp": "2026-05-06 10:40:23.399315",
               "depth": "detailed",
               "parse_warnings": [
                 "json_and_legacy_plan_parse_failed",
@@ -3204,8 +3204,8 @@
       },
       "answer_a_source": "CMM",
       "answer_b_source": "BASELINE",
-      "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-004\", \"query\": \"Помоги выбрать формат еженедельной встречи команды.\", \"context\": \"Небольшая команда разработки устала от длинных созвонов.\", \"constraints\": \"Встреча не дольше 30 минут | нужно сохранить синхронизацию\", \"rubric_must_cover\": [\"2-3 формата встречи\", \"критерии выбора\", \"учёт ограничения 30 минут\"], \"expected_perspectives\": [\"strategy\", \"user\"], \"possible_failure_modes\": [\"общие советы\", \"игнорирование ограничения времени\"], \"answer_a\": \"Не удалось получить стабильный ответ от модели. Ниже — краткий fallback на основе уже построенного плана.\\n\\nЗапрос: Помоги выбрать формат еженедельной встречи команды.\\nКонтекст: Небольшая команда разработки устала от длинных созвонов.\\nОграничения: Встреча не дольше 30 минут | нужно сохранить синхронизацию\\nОсновная идея: Ответить на: Помоги выбрать формат еженедельной встречи команды.\\nКонтекст: Небольшая команда разработки устала от длинных созвонов.\\nОграничения: Встреча не дольше 30 минут | нужно сохранить синхронизацию\\nКлючевые шаги:\\n1. Сформулировать цель и рабочий контекст запроса\\n2. Закрыть обязательные риски, blind spots и trade-offs\\n3. Подготовить итоговый ответ с реалистичными шагами и оговорками\", \"answer_b\": \"Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.\"}",
-      "raw_judge_output": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+      "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-004\", \"query\": \"Помоги выбрать формат еженедельной встречи команды.\", \"context\": \"Небольшая команда разработки устала от длинных созвонов.\", \"constraints\": \"Встреча не дольше 30 минут | нужно сохранить синхронизацию\", \"rubric_must_cover\": [\"2-3 формата встречи\", \"критерии выбора\", \"учёт ограничения 30 минут\"], \"expected_perspectives\": [\"strategy\", \"user\"], \"possible_failure_modes\": [\"общие советы\", \"игнорирование ограничения времени\"], \"answer_a\": \"Не удалось получить стабильный ответ от модели. Ниже — краткий fallback на основе уже построенного плана.\\n\\nЗапрос: Помоги выбрать формат еженедельной встречи команды.\\nКонтекст: Небольшая команда разработки устала от длинных созвонов.\\nОграничения: Встреча не дольше 30 минут | нужно сохранить синхронизацию\\nОсновная идея: Ответить на: Помоги выбрать формат еженедельной встречи команды.\\nКонтекст: Небольшая команда разработки устала от длинных созвонов.\\nОграничения: Встреча не дольше 30 минут | нужно сохранить синхронизацию\\nКлючевые шаги:\\n1. Сформулировать цель и рабочий контекст запроса\\n2. Закрыть обязательные риски, blind spots и trade-offs\\n3. Подготовить итоговый ответ с реалистичными шагами и оговорками\", \"answer_b\": \"Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}\"}",
+      "raw_judge_output": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
       "normalized_judge_result": {
         "case_id": "V2-004",
         "baseline_scores": {
@@ -3231,8 +3231,8 @@
         "parse_warnings": [
           "judge_json_parse_failed"
         ],
-        "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
-        "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-004\", \"query\": \"Помоги выбрать формат еженедельной встречи команды.\", \"context\": \"Небольшая команда разработки устала от длинных созвонов.\", \"constraints\": \"Встреча не дольше 30 минут | нужно сохранить синхронизацию\", \"rubric_must_cover\": [\"2-3 формата встречи\", \"критерии выбора\", \"учёт ограничения 30 минут\"], \"expected_perspectives\": [\"strategy\", \"user\"], \"possible_failure_modes\": [\"общие советы\", \"игнорирование ограничения времени\"], \"answer_a\": \"Не удалось получить стабильный ответ от модели. Ниже — краткий fallback на основе уже построенного плана.\\n\\nЗапрос: Помоги выбрать формат еженедельной встречи команды.\\nКонтекст: Небольшая команда разработки устала от длинных созвонов.\\nОграничения: Встреча не дольше 30 минут | нужно сохранить синхронизацию\\nОсновная идея: Ответить на: Помоги выбрать формат еженедельной встречи команды.\\nКонтекст: Небольшая команда разработки устала от длинных созвонов.\\nОграничения: Встреча не дольше 30 минут | нужно сохранить синхронизацию\\nКлючевые шаги:\\n1. Сформулировать цель и рабочий контекст запроса\\n2. Закрыть обязательные риски, blind spots и trade-offs\\n3. Подготовить итоговый ответ с реалистичными шагами и оговорками\", \"answer_b\": \"Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.\"}",
+        "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
+        "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-004\", \"query\": \"Помоги выбрать формат еженедельной встречи команды.\", \"context\": \"Небольшая команда разработки устала от длинных созвонов.\", \"constraints\": \"Встреча не дольше 30 минут | нужно сохранить синхронизацию\", \"rubric_must_cover\": [\"2-3 формата встречи\", \"критерии выбора\", \"учёт ограничения 30 минут\"], \"expected_perspectives\": [\"strategy\", \"user\"], \"possible_failure_modes\": [\"общие советы\", \"игнорирование ограничения времени\"], \"answer_a\": \"Не удалось получить стабильный ответ от модели. Ниже — краткий fallback на основе уже построенного плана.\\n\\nЗапрос: Помоги выбрать формат еженедельной встречи команды.\\nКонтекст: Небольшая команда разработки устала от длинных созвонов.\\nОграничения: Встреча не дольше 30 минут | нужно сохранить синхронизацию\\nОсновная идея: Ответить на: Помоги выбрать формат еженедельной встречи команды.\\nКонтекст: Небольшая команда разработки устала от длинных созвонов.\\nОграничения: Встреча не дольше 30 минут | нужно сохранить синхронизацию\\nКлючевые шаги:\\n1. Сформулировать цель и рабочий контекст запроса\\n2. Закрыть обязательные риски, blind spots и trade-offs\\n3. Подготовить итоговый ответ с реалистичными шагами и оговорками\", \"answer_b\": \"Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}\"}",
         "blind_mapping": {
           "answer_a_source": "CMM",
           "answer_b_source": "BASELINE"
@@ -3255,7 +3255,7 @@
         "schema_warnings": []
       },
       "baseline": {
-        "answer": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+        "answer": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
         "trace_report": {
           "mode": "real_baseline"
         }
@@ -3435,7 +3435,7 @@
                     "expert_json_parse_failed"
                   ],
                   "json_attempts": 2,
-                  "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                  "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
                   "source": "fallback"
                 },
                 {
@@ -3454,7 +3454,7 @@
                     "expert_json_parse_failed"
                   ],
                   "json_attempts": 2,
-                  "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                  "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
                   "source": "fallback"
                 },
                 {
@@ -3473,7 +3473,7 @@
                     "expert_json_parse_failed"
                   ],
                   "json_attempts": 2,
-                  "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                  "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
                   "source": "fallback"
                 },
                 {
@@ -3492,7 +3492,7 @@
                     "expert_json_parse_failed"
                   ],
                   "json_attempts": 2,
-                  "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                  "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
                   "source": "fallback"
                 }
               ],
@@ -3672,7 +3672,7 @@
             "nuances": [],
             "potential_problems": [],
             "result": "",
-            "timestamp": "2026-05-06 08:14:39.325421",
+            "timestamp": "2026-05-06 10:40:28.302037",
             "depth": "detailed",
             "parse_warnings": [
               "json_and_legacy_plan_parse_failed",
@@ -3758,8 +3758,8 @@
                 "moderation_json_parse_failed"
               ],
               "json_attempts": 2,
-              "timestamp": "2026-05-06 08:14:39.327857",
-              "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+              "timestamp": "2026-05-06 10:40:29.141538",
+              "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
               "source": "fallback",
               "meta": {
                 "expert_bundle_used": true,
@@ -3792,8 +3792,8 @@
                 "moderation_json_parse_failed"
               ],
               "json_attempts": 2,
-              "timestamp": "2026-05-06 08:14:39.328846",
-              "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+              "timestamp": "2026-05-06 10:40:29.637687",
+              "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
               "source": "fallback",
               "meta": {
                 "expert_bundle_used": true,
@@ -3826,8 +3826,8 @@
                 "moderation_json_parse_failed"
               ],
               "json_attempts": 2,
-              "timestamp": "2026-05-06 08:14:39.329815",
-              "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+              "timestamp": "2026-05-06 10:40:30.188606",
+              "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
               "source": "fallback",
               "meta": {
                 "expert_bundle_used": true,
@@ -3954,7 +3954,7 @@
               "nuances": [],
               "potential_problems": [],
               "result": "",
-              "timestamp": "2026-05-06 08:14:39.325421",
+              "timestamp": "2026-05-06 10:40:28.302037",
               "depth": "detailed",
               "parse_warnings": [
                 "json_and_legacy_plan_parse_failed",
@@ -4005,7 +4005,7 @@
                 "nuances": [],
                 "potential_problems": [],
                 "result": "",
-                "timestamp": "2026-05-06 08:14:39.325421",
+                "timestamp": "2026-05-06 10:40:28.302037",
                 "depth": "detailed",
                 "parse_warnings": [
                   "json_and_legacy_plan_parse_failed",
@@ -4293,7 +4293,7 @@
                   "expert_json_parse_failed"
                 ],
                 "json_attempts": 2,
-                "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
                 "source": "fallback"
               },
               {
@@ -4312,7 +4312,7 @@
                   "expert_json_parse_failed"
                 ],
                 "json_attempts": 2,
-                "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
                 "source": "fallback"
               },
               {
@@ -4331,7 +4331,7 @@
                   "expert_json_parse_failed"
                 ],
                 "json_attempts": 2,
-                "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
                 "source": "fallback"
               },
               {
@@ -4350,7 +4350,7 @@
                   "expert_json_parse_failed"
                 ],
                 "json_attempts": 2,
-                "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
                 "source": "fallback"
               }
             ],
@@ -4530,7 +4530,7 @@
           "nuances": [],
           "potential_problems": [],
           "result": "",
-          "timestamp": "2026-05-06 08:14:39.325421",
+          "timestamp": "2026-05-06 10:40:28.302037",
           "depth": "detailed",
           "parse_warnings": [
             "json_and_legacy_plan_parse_failed",
@@ -4616,8 +4616,8 @@
               "moderation_json_parse_failed"
             ],
             "json_attempts": 2,
-            "timestamp": "2026-05-06 08:14:39.327857",
-            "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+            "timestamp": "2026-05-06 10:40:29.141538",
+            "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
             "source": "fallback",
             "meta": {
               "expert_bundle_used": true,
@@ -4650,8 +4650,8 @@
               "moderation_json_parse_failed"
             ],
             "json_attempts": 2,
-            "timestamp": "2026-05-06 08:14:39.328846",
-            "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+            "timestamp": "2026-05-06 10:40:29.637687",
+            "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
             "source": "fallback",
             "meta": {
               "expert_bundle_used": true,
@@ -4684,8 +4684,8 @@
               "moderation_json_parse_failed"
             ],
             "json_attempts": 2,
-            "timestamp": "2026-05-06 08:14:39.329815",
-            "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+            "timestamp": "2026-05-06 10:40:30.188606",
+            "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
             "source": "fallback",
             "meta": {
               "expert_bundle_used": true,
@@ -4812,7 +4812,7 @@
             "nuances": [],
             "potential_problems": [],
             "result": "",
-            "timestamp": "2026-05-06 08:14:39.325421",
+            "timestamp": "2026-05-06 10:40:28.302037",
             "depth": "detailed",
             "parse_warnings": [
               "json_and_legacy_plan_parse_failed",
@@ -4863,7 +4863,7 @@
               "nuances": [],
               "potential_problems": [],
               "result": "",
-              "timestamp": "2026-05-06 08:14:39.325421",
+              "timestamp": "2026-05-06 10:40:28.302037",
               "depth": "detailed",
               "parse_warnings": [
                 "json_and_legacy_plan_parse_failed",
@@ -4980,8 +4980,8 @@
       },
       "answer_a_source": "BASELINE",
       "answer_b_source": "CMM",
-      "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-005\", \"query\": \"Сравни два подхода к сбору обратной связи от клиентов.\", \"context\": \"B2B SaaS команда выбирает между интервью и короткими опросами.\", \"constraints\": \"Нужно начать за две недели | команда маленькая\", \"rubric_must_cover\": [\"сравнение интервью и опросов\", \"критерии выбора\", \"план запуска\"], \"expected_perspectives\": [\"strategy\", \"user\", \"measurement\"], \"possible_failure_modes\": [\"нет сравнения\", \"нет практического шага\"], \"answer_a\": \"Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.\", \"answer_b\": \"Не удалось получить стабильный ответ от модели. Ниже — краткий fallback на основе уже построенного плана.\\n\\nЗапрос: Сравни два подхода к сбору обратной связи от клиентов.\\nКонтекст: B2B SaaS команда выбирает между интервью и короткими опросами.\\nОграничения: Нужно начать за две недели | команда маленькая\\nОсновная идея: Ответить на: Сравни два подхода к сбору обратной связи от клиентов.\\nКонтекст: B2B SaaS команда выбирает между интервью и короткими опросами.\\nОграничения: Нужно начать за две недели | команда маленькая\\nКлючевые шаги:\\n1. Сформулировать цель и рабочий контекст запроса\\n2. Закрыть обязательные риски, blind spots и trade-offs\\n3. Подготовить итоговый ответ с реалистичными шагами и оговорками\"}",
-      "raw_judge_output": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+      "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-005\", \"query\": \"Сравни два подхода к сбору обратной связи от клиентов.\", \"context\": \"B2B SaaS команда выбирает между интервью и короткими опросами.\", \"constraints\": \"Нужно начать за две недели | команда маленькая\", \"rubric_must_cover\": [\"сравнение интервью и опросов\", \"критерии выбора\", \"план запуска\"], \"expected_perspectives\": [\"strategy\", \"user\", \"measurement\"], \"possible_failure_modes\": [\"нет сравнения\", \"нет практического шага\"], \"answer_a\": \"Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}\", \"answer_b\": \"Не удалось получить стабильный ответ от модели. Ниже — краткий fallback на основе уже построенного плана.\\n\\nЗапрос: Сравни два подхода к сбору обратной связи от клиентов.\\nКонтекст: B2B SaaS команда выбирает между интервью и короткими опросами.\\nОграничения: Нужно начать за две недели | команда маленькая\\nОсновная идея: Ответить на: Сравни два подхода к сбору обратной связи от клиентов.\\nКонтекст: B2B SaaS команда выбирает между интервью и короткими опросами.\\nОграничения: Нужно начать за две недели | команда маленькая\\nКлючевые шаги:\\n1. Сформулировать цель и рабочий контекст запроса\\n2. Закрыть обязательные риски, blind spots и trade-offs\\n3. Подготовить итоговый ответ с реалистичными шагами и оговорками\"}",
+      "raw_judge_output": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
       "normalized_judge_result": {
         "case_id": "V2-005",
         "baseline_scores": {
@@ -5007,8 +5007,8 @@
         "parse_warnings": [
           "judge_json_parse_failed"
         ],
-        "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
-        "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-005\", \"query\": \"Сравни два подхода к сбору обратной связи от клиентов.\", \"context\": \"B2B SaaS команда выбирает между интервью и короткими опросами.\", \"constraints\": \"Нужно начать за две недели | команда маленькая\", \"rubric_must_cover\": [\"сравнение интервью и опросов\", \"критерии выбора\", \"план запуска\"], \"expected_perspectives\": [\"strategy\", \"user\", \"measurement\"], \"possible_failure_modes\": [\"нет сравнения\", \"нет практического шага\"], \"answer_a\": \"Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.\", \"answer_b\": \"Не удалось получить стабильный ответ от модели. Ниже — краткий fallback на основе уже построенного плана.\\n\\nЗапрос: Сравни два подхода к сбору обратной связи от клиентов.\\nКонтекст: B2B SaaS команда выбирает между интервью и короткими опросами.\\nОграничения: Нужно начать за две недели | команда маленькая\\nОсновная идея: Ответить на: Сравни два подхода к сбору обратной связи от клиентов.\\nКонтекст: B2B SaaS команда выбирает между интервью и короткими опросами.\\nОграничения: Нужно начать за две недели | команда маленькая\\nКлючевые шаги:\\n1. Сформулировать цель и рабочий контекст запроса\\n2. Закрыть обязательные риски, blind spots и trade-offs\\n3. Подготовить итоговый ответ с реалистичными шагами и оговорками\"}",
+        "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
+        "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-005\", \"query\": \"Сравни два подхода к сбору обратной связи от клиентов.\", \"context\": \"B2B SaaS команда выбирает между интервью и короткими опросами.\", \"constraints\": \"Нужно начать за две недели | команда маленькая\", \"rubric_must_cover\": [\"сравнение интервью и опросов\", \"критерии выбора\", \"план запуска\"], \"expected_perspectives\": [\"strategy\", \"user\", \"measurement\"], \"possible_failure_modes\": [\"нет сравнения\", \"нет практического шага\"], \"answer_a\": \"Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}\", \"answer_b\": \"Не удалось получить стабильный ответ от модели. Ниже — краткий fallback на основе уже построенного плана.\\n\\nЗапрос: Сравни два подхода к сбору обратной связи от клиентов.\\nКонтекст: B2B SaaS команда выбирает между интервью и короткими опросами.\\nОграничения: Нужно начать за две недели | команда маленькая\\nОсновная идея: Ответить на: Сравни два подхода к сбору обратной связи от клиентов.\\nКонтекст: B2B SaaS команда выбирает между интервью и короткими опросами.\\nОграничения: Нужно начать за две недели | команда маленькая\\nКлючевые шаги:\\n1. Сформулировать цель и рабочий контекст запроса\\n2. Закрыть обязательные риски, blind spots и trade-offs\\n3. Подготовить итоговый ответ с реалистичными шагами и оговорками\"}",
         "blind_mapping": {
           "answer_a_source": "BASELINE",
           "answer_b_source": "CMM"

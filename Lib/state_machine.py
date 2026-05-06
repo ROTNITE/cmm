@@ -1342,8 +1342,8 @@ def handle_consensus_check(state: dict) -> tuple[str, str]:
         state["warnings"].append("consensus_check_high_conflict_without_identifiable_roles")
 
     if int(state.get("meta_recheck_count", 0)) >= int(state.get("max_meta_rechecks", 1)):
-        state["warnings"].append("meta_recheck_limit_reached_after_consensus_check")
-        return PLAN, "consensus check complete; meta recheck limit already reached"
+        state["warnings"].append("meta_recheck_budget_exhausted_after_consensus_check")
+        return PLAN, "consensus check complete; meta recheck budget exhausted"
 
     return META_RECHECK, "consensus check complete"
 
@@ -1437,8 +1437,8 @@ def handle_rebalance(state: dict) -> tuple[str, str]:
     _run_conflict_analysis(state, "rebalance_conflict_analysis")
 
     if int(state.get("meta_recheck_count", 0)) >= int(state.get("max_meta_rechecks", 1)):
-        state["warnings"].append("meta_recheck_limit_reached_after_rebalance")
-        return PLAN, "rebalance complete; meta recheck limit already reached"
+        state["warnings"].append("meta_recheck_budget_exhausted_after_rebalance")
+        return PLAN, "rebalance complete; meta recheck budget exhausted; synthesizing with decision rules"
 
     return META_RECHECK, "rebalance complete; meta recheck required"
 
@@ -1453,8 +1453,8 @@ def handle_meta_recheck(state: dict) -> tuple[str, str]:
     max_count = int(state.get("max_meta_rechecks", 1))
 
     if current_count >= max_count:
-        state["warnings"].append("meta_recheck_limit_reached")
-        return PLAN, "meta recheck limit reached; proceeding to planning"
+        state["warnings"].append("meta_recheck_budget_exhausted")
+        return PLAN, "meta recheck budget exhausted; synthesizing unresolved tradeoffs with decision rules"
 
     state["meta_recheck_count"] = current_count + 1
 

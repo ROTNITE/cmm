@@ -12,7 +12,7 @@ REM For local OmniRoute use root URL WITHOUT /v1 for Claude Code.
 set "OMNIROUTE_HOST=http://localhost:20128/v1"
 
 REM Paste your OmniRoute API key from Dashboard -> API Manager.
-set "OMNIROUTE_KEY=sk-31b45f6d41fac2b9-1d005a-28ce460e"
+set "OMNIROUTE_KEY=sk-5e22593ab0b2f60a-d9cd2b-138c420a"
 
 REM Prevent a real Anthropic key from taking priority in this session.
 set "ANTHROPIC_API_KEY="
