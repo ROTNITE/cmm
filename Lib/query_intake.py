@@ -76,6 +76,9 @@ def _items_by_markers(text: str, markers: tuple[str, ...], max_items: int) -> li
     items: list[str] = []
     for sentence in _split_sentences(text):
         lower = sentence.lower()
+        # Skip metadata labels (eval format: "Контекст: X", "Ограничения: Y")
+        if re.match(r'^\s*(контекст|ограничения|constraints?|context):\s*', lower):
+            continue
         if any(marker in lower for marker in markers):
             items.append(sentence)
         if len(items) >= max_items:
@@ -85,7 +88,25 @@ def _items_by_markers(text: str, markers: tuple[str, ...], max_items: int) -> li
 
 def _derive_complexity(original_query: str) -> str:
     text = original_query.lower()
-    words = original_query.split()
+
+    # For multi-line queries (eval format), analyze only the first line (actual question)
+    # to avoid metadata content inflating complexity
+    lines = text.split('\n')
+    first_line = lines[0].strip()
+
+    # If first line looks like a question/request, use it for analysis
+    # Otherwise use full text (for single-line queries)
+    if first_line and (
+        first_line.endswith('?') or
+        any(marker in first_line for marker in ('what', 'explain', 'define', 'что такое', 'объясни'))
+    ):
+        analysis_text = first_line
+    else:
+        # Remove metadata labels for full-text analysis
+        analysis_text = re.sub(r'\b(контекст|ограничения|constraints?|context):\s*', '', text)
+
+    words = analysis_text.split()
+
     complex_markers = (
         "стратег",
         "архитект",
@@ -100,9 +121,9 @@ def _derive_complexity(original_query: str) -> str:
         "evaluation",
         "architecture",
     )
-    if len(words) <= 12 and not any(marker in text for marker in complex_markers):
+    if len(words) <= 12 and not any(marker in analysis_text for marker in complex_markers):
         return "simple"
-    if len(words) > 80 or any(marker in text for marker in complex_markers):
+    if len(words) > 80 or any(marker in analysis_text for marker in complex_markers):
         return "complex"
     return "moderate"
 
@@ -129,7 +150,7 @@ def _derive_risk_level(original_query: str) -> str:
     )
     if any(marker in text for marker in high_markers):
         return "high"
-    return "medium"
+    return "low"
 
 
 def _truncate_task_goal(value: str, limit: int = 700) -> str:
@@ -271,6 +292,19 @@ def _model_intake(original_query: str, cleaned_query: str, *, model: str, max_ai
         "You are a safe query intake extractor for a Collective Meta-Moderation pipeline.\n"
         f"{_AUTHORITATIVE_RULE}\n"
         "Do not rewrite the full query. Extract structure only. Do not remove constraints.\n"
+        "\n"
+        "Classification rules:\n"
+        "- complexity=simple: definition/explanation requests (\"what is X\", \"explain Y\"), short queries (<15 words), no planning/strategy/architecture needed\n"
+        "- complexity=moderate: planning, comparison, implementation questions with some constraints\n"
+        "- complexity=complex: strategy, architecture, multi-stakeholder decisions, governance, high-stakes tradeoffs\n"
+        "- risk_level=low: general knowledge, definitions, technical explanations (DEFAULT)\n"
+        "- risk_level=medium: business decisions, moderate-stakes planning\n"
+        "- risk_level=high: medical, legal, financial, security, safety domains ONLY\n"
+        "- should_use_cmm=false: simple definitions/explanations with only formatting constraints (\"briefly\", \"in 5 sentences\")\n"
+        "- should_use_cmm=true: planning, strategy, multi-perspective analysis needed\n"
+        "\n"
+        "IMPORTANT: Words like \"user\", \"пользователь\", \"team\", \"команда\" in context descriptions are NOT stakeholder markers unless the query asks to analyze their conflicting needs.\n"
+        "\n"
         "Return strict JSON only, without markdown or commentary.\n"
         "Schema:\n"
         "{\n"
@@ -282,7 +316,7 @@ def _model_intake(original_query: str, cleaned_query: str, *, model: str, max_ai
         '  "user_preferences": ["string"],\n'
         '  "risk_level": "low|medium|high",\n'
         '  "complexity": "simple|moderate|complex",\n'
-        '  "should_use_cmm": true\n'
+        '  "should_use_cmm": true|false\n'
         "}"
     )
     state = {
