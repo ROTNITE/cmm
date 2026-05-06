@@ -1,0 +1,4 @@
+usage: eval.py [-h] --dataset DATASET [--limit LIMIT] [--mode {mock,real}]
+               [--judge-mode {none,llm}] [--judge-model JUDGE_MODEL]
+               [--model MODEL] [--output-dir OUTPUT_DIR]
+eval.py: error: ambiguous option: --judge could match --judge-mode, --judge-model

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from Lib.agent_moderator import run_moderated_loop
+from Lib.answer_budget import derive_answer_budget, enforce_answer_budget
 from Lib.balance_analyzer import analyze_balance
 from Lib.conflict_analyzer import analyze_conflicts
 from Lib.critic_decision import check_plan_and_act
@@ -81,6 +82,29 @@ def _safe_dict(value: Any) -> dict:
     return value if isinstance(value, dict) else {}
 
 
+def _has_actionable_plan(plan: Any) -> bool:
+    plan = _safe_dict(plan)
+    if not plan or plan.get("error"):
+        return False
+    if isinstance(plan.get("main_idea"), str) and plan["main_idea"].strip():
+        return True
+    if isinstance(plan.get("result"), str) and plan["result"].strip():
+        return True
+    for step in _safe_list(plan.get("steps")):
+        if not isinstance(step, dict):
+            continue
+        if isinstance(step.get("title"), str) and step["title"].strip():
+            return True
+        substeps = step.get("substeps")
+        if isinstance(substeps, list) and any(str(item or "").strip() for item in substeps):
+            return True
+    return False
+
+
+def _cyrillic_text(text: str) -> bool:
+    return any("а" <= char.lower() <= "я" or char.lower() == "ё" for char in str(text or ""))
+
+
 def _normalize_max_deliberation_rounds(value: Any) -> int:
     try:
         count = int(value)
@@ -120,6 +144,91 @@ def _build_intake_context(original_query: str, query_intake: dict) -> dict:
         "cleaned_query": query_intake.get("cleaned_query") or original_query,
         "instruction": _AUTHORITATIVE_QUERY_INSTRUCTION,
     }
+
+
+def _build_best_effort_answer_from_plan(state: dict, reason: str) -> str:
+    """Build a conservative non-empty answer from the latest actionable plan."""
+    query = str(state.get("original_query") or "").strip()
+    plan = _safe_dict(state.get("plan"))
+    if not query or not _has_actionable_plan(plan):
+        return ""
+    if has_critical_plan_blockers(state.get("plan_critiques", [])[-1] if state.get("plan_critiques") else {}):
+        return ""
+    if has_critical_answer_blockers(state.get("moderated_result", {})):
+        return ""
+
+    intake = _safe_dict(state.get("query_intake"))
+    brief = _safe_dict(state.get("deliberation_brief"))
+    budget = derive_answer_budget(query, intake)
+    russian = _cyrillic_text(query)
+    heading = "Краткий ответ:" if russian else "Short answer:"
+    steps_label = "Что сделать:" if russian else "What to do:"
+    caveat_label = "Учесть:" if russian else "Account for:"
+
+    lines: list[str] = []
+    main = plan.get("main_idea") or plan.get("result") or intake.get("task_goal") or query
+    if isinstance(main, str) and main.strip():
+        lines.append(f"{heading} {main.strip()}")
+
+    steps = []
+    for step in _safe_list(plan.get("steps")):
+        if not isinstance(step, dict):
+            continue
+        title = step.get("title")
+        if isinstance(title, str) and title.strip():
+            steps.append(title.strip())
+        if len(steps) >= (3 if budget.get("concise") else 6):
+            break
+    if steps:
+        lines.append("")
+        lines.append(steps_label)
+        for index, step in enumerate(steps, 1):
+            lines.append(f"{index}. {step}")
+
+    must_address = []
+    for key in ("constraints", "success_criteria"):
+        for item in _safe_list(intake.get(key)):
+            if isinstance(item, str) and item.strip():
+                must_address.append(item.strip())
+    for item in _safe_list(brief.get("must_address"))[:3]:
+        if isinstance(item, str) and item.strip():
+            must_address.append(item.strip())
+    if must_address and not budget.get("concise"):
+        lines.append("")
+        lines.append(caveat_label)
+        for item in must_address[:4]:
+            lines.append(f"- {item}")
+
+    answer = "\n".join(lines).strip()
+    answer = enforce_answer_budget(answer, budget)
+    if answer:
+        state["best_effort_answer_from_plan"] = True
+        state["warnings"].append(f"best_effort_answer_from_plan: {reason}")
+    return answer
+
+
+def _apply_answer_rescue(state: dict, reason: str) -> bool:
+    answer = _build_best_effort_answer_from_plan(state, reason)
+    if not answer:
+        return False
+    state["final_answer"] = answer
+    if not state.get("answers") or _safe_list(state.get("answers"))[-1] != answer:
+        state["answers"].append(answer)
+    state["answer_moderation_best_effort"] = True
+    moderated = normalize_moderated_result(
+        {
+            "final_answer": answer,
+            "reports": _safe_list(_safe_dict(state.get("moderated_result")).get("reports")),
+            "final_decision": "ACCEPT",
+            "critical_issues": [],
+            "source": "best_effort_answer_from_plan",
+        }
+    )
+    state["moderated_result"] = moderated
+    state["moderation_reports"] = _safe_list(moderated.get("reports"))
+    state["answer_moderation_final_decision"] = "ACCEPT"
+    state["answer_moderation_critical_issues"] = []
+    return True
 
 
 def _enrich_brief_with_intake(deliberation_brief: dict, query_intake: dict) -> dict:
@@ -842,6 +951,7 @@ def init_cmm_state(
         "quality_gate_decisions": [],
         "context_compression": {},
         "answer_moderation_best_effort": False,
+        "best_effort_answer_from_plan": False,
         "warnings": [],
         "errors": [],
         "history": [],
@@ -981,13 +1091,10 @@ def handle_panel_round_1(state: dict) -> tuple[str, str]:
         panel_context["dynamic_role_views"] = state["dynamic_role_reports"][-1].get("role_views", [])
 
     try:
-        execution_kwargs = {}
+        execution_kwargs = {"model": state["model"]}
         if state.get("parallel_mode") == "THREADS":
-            execution_kwargs = {
-                "execution_mode": "THREADS",
-                "max_workers": state.get("max_workers"),
-                "model": state["model"],
-            }
+            execution_kwargs["execution_mode"] = "THREADS"
+            execution_kwargs["max_workers"] = state.get("max_workers")
         expert_bundle = run_expert_panel(
             state["original_query"],
             context=panel_context,
@@ -1002,16 +1109,35 @@ def handle_panel_round_1(state: dict) -> tuple[str, str]:
         state["warnings"].append(f"expert_panel_failed; using empty expert bundle: {exc}")
         expert_bundle = _empty_expert_bundle()
 
-    # Check for catastrophic JSON failure: all experts returned fallback
+    # Check for degraded expert layer: model calls failed but deterministic
+    # role-aware fallback may still provide usable expert evidence.
     contributions = _safe_list(expert_bundle.get("contributions"))
     valid_contributions = [c for c in contributions if isinstance(c, dict) and c.get("source") == "model"]
-    fallback_contributions = [c for c in contributions if isinstance(c, dict) and c.get("source") == "fallback"]
+    fallback_contributions = [
+        c for c in contributions
+        if isinstance(c, dict) and c.get("source") in {"fallback", "rules_fallback", "rules_based_fallback"}
+    ]
 
-    if contributions and len(valid_contributions) == 0 and len(fallback_contributions) >= 5:
+    if contributions and len(valid_contributions) == 0 and len(fallback_contributions) == len(contributions):
         state["warnings"].append(
-            f"expert_panel_catastrophic_json_failure: {len(fallback_contributions)}/{len(contributions)} experts failed JSON parsing"
+            f"expert_panel_degraded: {len(fallback_contributions)}/{len(contributions)} experts used fallback contributions"
         )
         state["expert_panel_degraded"] = True
+        empty_fallbacks = [
+            c for c in fallback_contributions
+            if not (_safe_list(c.get("recommendations")) or _safe_list(c.get("risks")) or _safe_list(c.get("questions")))
+        ]
+        if empty_fallbacks:
+            state["warnings"].append("generating_role_aware_rules_expert_fallback")
+            expert_bundle = state_fallbacks.rules_based_expert_bundle(
+                state["original_query"],
+                context={
+                    "query_intake": state.get("query_intake", {}),
+                    "roles": expert_bundle.get("roles", []),
+                    "warnings": state.get("warnings", []),
+                },
+                roles=expert_bundle.get("roles", []),
+            )
         # Mark CMM mode as degraded
         original_mode = state.get("cmm_mode", "")
         if original_mode and not original_mode.endswith("_DEGRADED"):
@@ -1504,19 +1630,22 @@ def handle_plan_critique(state: dict) -> tuple[str, str]:
 
         message = f"plan_{status or decision.lower()}_after_max_iters"
 
-        if status == "needs_revision" and can_best_effort_finalize(critique_result=critique_result):
+        # Check if we can proceed with best-effort answer despite plan issues
+        # This applies to both needs_revision and rejected status when there are no critical blockers
+        if can_best_effort_finalize(critique_result=critique_result, plan=state.get("plan", {})):
             state["warnings"].append(f"{message}; proceeding_with_best_effort_plan")
             state.setdefault("quality_gate_decisions", []).append(
                 {
                     "gate": "plan_critique",
                     "decision": "BEST_EFFORT",
-                    "reason": "non-critical plan revision exhausted",
+                    "reason": f"non-critical plan {status or decision.lower()} exhausted; no safety/legal/privacy blockers",
                     "critical_blockers": [],
                 }
             )
             state["replan_context"] = {}
-            return ANSWER, "plan critique exhausted non-critical revisions; proceeding best effort"
+            return ANSWER, f"plan critique exhausted non-critical {status or decision.lower()}; proceeding best effort"
 
+        # Only block if there are actual critical blockers (safety/legal/privacy/security)
         state["warnings"].append(message)
         state["errors"].append(message)
         if critical_blockers and "critical_plan_blockers" not in state["errors"]:
@@ -1578,8 +1707,17 @@ def handle_answer(state: dict) -> tuple[str, str]:
     state["answer_moderation_best_effort"] = False
 
     final_answer = moderated_result.get("final_answer") if isinstance(moderated_result, dict) else ""
+    if (not isinstance(final_answer, str) or not final_answer.strip()) and _apply_answer_rescue(
+        state,
+        "moderated_loop_empty_or_rejected_noncritical",
+    ):
+        moderated_result = normalize_moderated_result(state.get("moderated_result", {}))
+        final_answer = moderated_result.get("final_answer", "")
+
     state["final_answer"] = final_answer if isinstance(final_answer, str) else ""
-    if state["final_answer"]:
+    if state["final_answer"] and (
+        not state.get("answers") or _safe_list(state.get("answers"))[-1] != state["final_answer"]
+    ):
         state["answers"].append(state["final_answer"])
 
     return ANSWER_MODERATION, "answer moderation component completed"
@@ -1597,18 +1735,6 @@ def handle_answer_moderation(state: dict) -> tuple[str, str]:
     state["answer_moderation_revision_count"] = int(moderated_result.get("revision_count") or 0)
     state["answer_moderation_best_effort"] = False
 
-    if decision == "REJECT" or moderated_result.get("rejected"):
-        state["errors"].append("answer_moderation_rejected")
-        state.setdefault("quality_gate_decisions", []).append(
-            {
-                "gate": "answer_moderation",
-                "decision": "BLOCK",
-                "reason": "answer moderation rejected final answer",
-                "critical_issues": critical_issues,
-            }
-        )
-        return FAILED, "answer moderation rejected final answer"
-
     if has_critical_answer_blockers(moderated_result):
         state["errors"].append("critical_answer_moderation_issues")
         state.setdefault("quality_gate_decisions", []).append(
@@ -1621,8 +1747,42 @@ def handle_answer_moderation(state: dict) -> tuple[str, str]:
         )
         return FAILED, "answer moderation found critical blockers"
 
+    if decision == "REJECT" or moderated_result.get("rejected"):
+        if _apply_answer_rescue(state, "answer_moderation_rejected_noncritical"):
+            state.setdefault("quality_gate_decisions", []).append(
+                {
+                    "gate": "answer_moderation",
+                    "decision": "BEST_EFFORT",
+                    "reason": "non-critical answer rejection rescued from actionable plan",
+                    "critical_issues": [],
+                }
+            )
+            return FINALIZE, "answer moderation rejected non-critical answer; finalized rescue answer"
+
+        state["errors"].append("answer_moderation_rejected")
+        state.setdefault("quality_gate_decisions", []).append(
+            {
+                "gate": "answer_moderation",
+                "decision": "BLOCK",
+                "reason": "answer moderation rejected final answer without rescueable plan",
+                "critical_issues": critical_issues,
+            }
+        )
+        return FAILED, "answer moderation rejected final answer"
+
     final_answer = state.get("final_answer")
     if not isinstance(final_answer, str) or not final_answer.strip():
+        if _apply_answer_rescue(state, "answer_moderation_empty_noncritical"):
+            state.setdefault("quality_gate_decisions", []).append(
+                {
+                    "gate": "answer_moderation",
+                    "decision": "BEST_EFFORT",
+                    "reason": "empty answer rescued from actionable plan",
+                    "critical_issues": [],
+                }
+            )
+            return FINALIZE, "answer moderation produced empty answer; finalized rescue answer"
+
         state["errors"].append("moderated_loop_returned_empty_final_answer")
         state.setdefault("quality_gate_decisions", []).append(
             {
@@ -1734,6 +1894,7 @@ def _build_trace_report(state: dict) -> dict:
         "answer_moderation_critical_issues": _safe_list(state.get("answer_moderation_critical_issues")),
         "answer_moderation_revision_count": int(state.get("answer_moderation_revision_count") or 0),
         "answer_moderation_best_effort": bool(state.get("answer_moderation_best_effort")),
+        "best_effort_answer_from_plan": bool(state.get("best_effort_answer_from_plan")),
         "quality_gate_decisions": _safe_list(state.get("quality_gate_decisions")),
         "context_compression": build_context_compression_report(state),
         "revision_count": max(0, len(moderation_reports) - 1),

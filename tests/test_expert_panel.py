@@ -51,7 +51,7 @@ class ExpertPanelParallelTests(unittest.TestCase):
         self.assertEqual([item["role_key"] for item in bundle["contributions"]], [role.key for role in roles])
         self.assertEqual([item["key"] for item in bundle["roles"]], [role.key for role in roles])
 
-    def test_threaded_mode_uses_fallback_for_one_failing_role(self):
+    def test_threaded_mode_uses_role_aware_fallback_for_one_failing_role(self):
         roles = _roles()
 
         def sometimes_fails(role, **kwargs):
@@ -65,8 +65,27 @@ class ExpertPanelParallelTests(unittest.TestCase):
             bundle = run_expert_panel("query", execution_mode="THREADS", max_workers=3)
 
         self.assertEqual([item["role_key"] for item in bundle["contributions"]], [role.key for role in roles])
-        self.assertEqual(bundle["contributions"][1]["risks"], ["expert_execution_failed"])
-        self.assertIn("expert_execution_failed", bundle["synthesis"]["risks"])
+        self.assertEqual(bundle["contributions"][1]["source"], "rules_fallback")
+        self.assertTrue(bundle["contributions"][1]["recommendations"])
+        self.assertIn("expert_execution_failed", bundle["contributions"][1]["parse_warnings"])
+        self.assertNotIn("expert_execution_failed", bundle["synthesis"]["risks"])
+
+    def test_all_role_failures_still_produce_usable_fallback_synthesis(self):
+        roles = _roles()
+
+        with patch("Lib.expert_panel.determine_expert_roles", return_value=roles), patch(
+            "Lib.expert_panel.run_expert", side_effect=RuntimeError("provider unavailable")
+        ):
+            bundle = run_expert_panel(
+                "Build a safe plan",
+                context={"query_intake": {"constraints": ["limited budget"], "success_criteria": ["clear metric"]}},
+            )
+
+        self.assertEqual(len(bundle["contributions"]), len(roles))
+        self.assertTrue(all(item["source"] == "rules_fallback" for item in bundle["contributions"]))
+        self.assertTrue(bundle["synthesis"]["recommendations"])
+        self.assertTrue(bundle["synthesis"]["risks"])
+        self.assertNotIn("provider unavailable", " ".join(bundle["synthesis"]["risks"]))
 
 
 if __name__ == "__main__":

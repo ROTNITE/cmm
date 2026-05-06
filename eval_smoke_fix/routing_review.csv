@@ -1,0 +1,4 @@
+case_id,expected_mode,actual_mode,router_mode_match,estimated_cost_class,answer_chars,warnings,errors,cmm_final_state
+V2-001,DIRECT,DIRECT,True,S,568,,,FINALIZE
+V2-002,DIRECT,DIRECT,True,S,376,,,FINALIZE
+V2-003,DIRECT,DIRECT,True,S,356,,,FINALIZE

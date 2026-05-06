@@ -329,6 +329,10 @@ def _mock_cmm(case: dict) -> dict:
 
 def _real_baseline(case: dict, model: str = "deepseek-chat") -> dict:
     from Lib.AI_request import send_to_AI
+    from Lib.eval_logger import get_logger
+
+    logger = get_logger()
+    logger.stage_start("baseline")
 
     prompt = "\n".join(
         [
@@ -344,11 +348,17 @@ def _real_baseline(case: dict, model: str = "deepseek-chat") -> dict:
         tokens=850,
         model=model,
     )
+
+    logger.stage_end("baseline")
     return {"answer": answer or "", "trace_report": {"mode": "real_baseline"}}
 
 
 def _real_cmm(case: dict, model: str = "deepseek-chat") -> dict:
     from Lib.orchestrator import run_cmm
+    from Lib.eval_logger import get_logger
+
+    logger = get_logger()
+    logger.stage_start("cmm")
 
     query_parts = [
         str(case.get("query", "")),
@@ -356,6 +366,46 @@ def _real_cmm(case: dict, model: str = "deepseek-chat") -> dict:
         f"Ограничения: {case.get('constraints', '')}" if case.get("constraints") else "",
     ]
     result = run_cmm("\n".join(part for part in query_parts if part), model=model)
+
+    # Log trace information
+    trace = result.get("trace_report", {})
+    if isinstance(trace, dict):
+        # Log router decision
+        router = trace.get("router_decision", {})
+        if isinstance(router, dict):
+            logger.router_decision(
+                mode=router.get("mode", ""),
+                complexity=router.get("complexity", ""),
+                reasoning=router.get("reasoning", ""),
+            )
+
+        # Log expert contributions
+        for role in trace.get("roles_used", []) or []:
+            if isinstance(role, dict):
+                logger.expert_contribution(
+                    role=role.get("key", ""),
+                    perspective=role.get("perspective_tag", ""),
+                    valid=True,
+                )
+
+        # Log plan critiques
+        for status in trace.get("plan_critique_statuses", []) or []:
+            logger.plan_critique(status=str(status))
+
+        # Log moderation
+        if trace.get("answer_moderation_final_decision"):
+            logger.moderation_decision(
+                decision=trace.get("answer_moderation_final_decision", ""),
+                best_effort=bool(trace.get("answer_moderation_best_effort")),
+            )
+
+        # Log warnings and errors
+        for warning in trace.get("warnings", []) or []:
+            logger.warning(str(warning))
+        for error in trace.get("errors", []) or []:
+            logger.error(str(error))
+
+    logger.stage_end("cmm")
     return {
         "answer": result.get("final_answer", ""),
         "final_answer": result.get("final_answer", ""),
@@ -600,6 +650,10 @@ def normalize_judge_payload(payload: dict | None, mapping: dict, raw: str = "", 
 
 def judge_case_with_llm(case: dict, baseline: dict, cmm: dict, model: str = "deepseek-chat") -> dict:
     from Lib.AI_request import send_to_AI
+    from Lib.eval_logger import get_logger
+
+    logger = get_logger()
+    logger.stage_start("judge")
 
     mapping = assign_blind_answers(case.get("case_id") or case.get("id") or "", baseline, cmm)
     prompt = build_judge_prompt(case, mapping["answer_a"], mapping["answer_b"])
@@ -618,6 +672,8 @@ def judge_case_with_llm(case: dict, baseline: dict, cmm: dict, model: str = "dee
         "answer_a_source": mapping["answer_a_source"],
         "answer_b_source": mapping["answer_b_source"],
     }
+
+    logger.stage_end("judge")
     return result
 
 
@@ -1015,11 +1071,35 @@ def _run_real_judged_eval(
     judge_model: str,
     model: str = "deepseek-chat",
 ) -> dict:
+    from Lib.eval_logger import get_logger, reset_logger
+
+    # Reset and initialize logger for this eval run
+    reset_logger()
+    logger = get_logger()
+    logger.enabled = True  # Enable logging for eval
+
+    logger.info(f"Starting evaluation: {len(rows)} cases")
+    logger.info(f"Judge mode: {judge_mode}")
+    logger.info(f"Model: {model}")
+    logger.info("")
+
     results: list[dict] = []
     artifacts: list[dict] = []
     human_packets: list[dict] = []
 
     for case in rows:
+        # Start case logging
+        case_id = case.get("case_id") or case.get("id") or ""
+        query = case.get("query", "")
+
+        # Encode query safely for Windows console
+        try:
+            query_display = query.encode('ascii', 'replace').decode('ascii')
+        except:
+            query_display = query
+
+        logger.case_start(case_id=case_id, query=query_display)
+
         baseline_output = _real_baseline(case, model=model)
         cmm_output = _real_cmm(case, model=model)
         scored = score_case_judged(
@@ -1035,6 +1115,13 @@ def _run_real_judged_eval(
         if scored.get("human_packet"):
             human_packets.append(scored["human_packet"])
 
+        # End case logging
+        winner = scored["row"].get("winner", "TIE")
+        logger.case_end(
+            case_id=case_id,
+            winner=winner,
+        )
+
     output_paths, summary = _write_judged_results(
         results,
         artifacts,
@@ -1044,6 +1131,11 @@ def _run_real_judged_eval(
         human_packets=human_packets,
     )
     summary["output_paths"] = output_paths
+
+    # Print final summary
+    logger.summary()
+    logger.enabled = False
+
     return {
         "summary": summary,
         "schema_report": schema_report,

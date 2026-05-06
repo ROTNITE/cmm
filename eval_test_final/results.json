@@ -1,0 +1,489 @@
+{
+  "schema_report": {
+    "path": "cmm_dataset_v2.csv",
+    "columns": [
+      "id",
+      "query",
+      "context",
+      "constraints",
+      "expected_perspectives",
+      "rubric_must_cover",
+      "rubric_desirable",
+      "expected_single_model_failure_modes",
+      "expected_mode"
+    ],
+    "row_count": 20,
+    "missing_optional_columns": [
+      "expected_domain_expert",
+      "rubric_should_cover",
+      "reference_outline"
+    ],
+    "warnings": []
+  },
+  "judge_mode": "llm",
+  "results": [
+    {
+      "case_id": "V2-001",
+      "expected_mode": "DIRECT",
+      "actual_mode": "DIRECT",
+      "router_mode_match": true,
+      "winner": "TIE",
+      "baseline_overall": 0.0,
+      "cmm_overall": 0.0,
+      "overall_delta": 0.0,
+      "baseline_rubric_coverage": 0.0,
+      "cmm_rubric_coverage": 0.0,
+      "baseline_perspective_coverage": 0.0,
+      "cmm_perspective_coverage": 0.0,
+      "baseline_risk_handling": 0.0,
+      "cmm_risk_handling": 0.0,
+      "baseline_actionability": 0.0,
+      "cmm_actionability": 0.0,
+      "baseline_clarity": 0.0,
+      "cmm_clarity": 0.0,
+      "reason": "Judge output could not be parsed; marked as tie for review.",
+      "baseline_failure_modes": "",
+      "cmm_failure_modes": "",
+      "baseline_answer_chars": 143,
+      "cmm_answer_chars": 373,
+      "cmm_trace_available": true,
+      "cmm_mode": "DIRECT",
+      "router_complexity": "low",
+      "estimated_cost_class": "S",
+      "cmm_final_state": "FINALIZE",
+      "cmm_warning_count": 6,
+      "cmm_error_count": 0,
+      "cmm_warnings": "query_intake: model_intake_invalid_json | query_intake: json_model_empty_or_error_attempt_1 | query_intake: json_retry_after_invalid_json | query_intake: json_model_empty_or_error_attempt_2 | query_intake: json_retry_exhausted | direct_answer: direct_answer_failed",
+      "cmm_errors": "",
+      "cmm_json_warnings": "query_intake: model_intake_invalid_json | query_intake: json_model_empty_or_error_attempt_1 | query_intake: json_retry_after_invalid_json | query_intake: json_model_empty_or_error_attempt_2 | query_intake: json_retry_exhausted",
+      "cmm_json_fallback_count": 0,
+      "expert_valid_contributions": 0,
+      "expert_invalid_json_contributions": 0,
+      "planner_raw_format": "",
+      "planner_json_attempts": 0,
+      "plan_critique_statuses": "",
+      "answer_moderation_final_decision": "",
+      "answer_moderation_best_effort": false,
+      "roles_used_unique": "[]",
+      "estimated_call_count": 3,
+      "estimated_stage_count": 3,
+      "answer_chars": 373,
+      "warnings_count": 6,
+      "errors_count": 0
+    }
+  ],
+  "artifacts": [
+    {
+      "case_id": "V2-001",
+      "case": {
+        "id": "V2-001",
+        "query": "Что такое коллективная метамодерация?",
+        "context": "Пользователь просит короткое объяснение термина.",
+        "constraints": "Ответ кратко до 5 предложений.",
+        "expected_perspectives": "",
+        "rubric_must_cover": "простое определение | отличие от обычной модерации | упоминание нескольких перспектив",
+        "rubric_desirable": "пример применения",
+        "expected_single_model_failure_modes": "слишком длинное объяснение | уход в абстракции",
+        "expected_mode": "DIRECT",
+        "case_id": "V2-001",
+        "schema_warnings": []
+      },
+      "baseline": {
+        "answer": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
+        "trace_report": {
+          "mode": "real_baseline"
+        }
+      },
+      "cmm": {
+        "answer": "Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\"LIGHT_CMM\")`.",
+        "final_answer": "Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\"LIGHT_CMM\")`.",
+        "trace_report": {
+          "original_query": "Что такое коллективная метамодерация?\nКонтекст: Пользователь просит короткое объяснение термина.\nОграничения: Ответ кратко до 5 предложений.",
+          "formalized_query": "Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.",
+          "query_intake": {
+            "original_query": "Что такое коллективная метамодерация?\nКонтекст: Пользователь просит короткое объяснение термина.\nОграничения: Ответ кратко до 5 предложений.",
+            "cleaned_query": "Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.",
+            "task_goal": "Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.",
+            "context": [],
+            "constraints": [],
+            "success_criteria": [],
+            "unknowns": [],
+            "user_preferences": [],
+            "risk_level": "low",
+            "complexity": "simple",
+            "should_use_cmm": false,
+            "parse_warnings": [
+              "model_intake_invalid_json",
+              "json_model_empty_or_error_attempt_1",
+              "json_retry_after_invalid_json",
+              "json_model_empty_or_error_attempt_2",
+              "json_retry_exhausted"
+            ],
+            "json_attempts": 2,
+            "source": "fallback"
+          },
+          "router_decision": {
+            "mode": "DIRECT",
+            "reason": "Simple low-risk explanation request has only formatting constraints.",
+            "complexity": "low",
+            "needs_expert_panel": false,
+            "needs_second_round": false,
+            "estimated_cost_class": "S",
+            "signals": {
+              "risk_level": "low",
+              "intake_complexity": "simple",
+              "word_count": 64,
+              "constraints_count": 0,
+              "success_criteria_count": 0,
+              "context_count": 0,
+              "unknowns_count": 0,
+              "preferences_count": 0,
+              "has_constraints": false,
+              "has_success_criteria": false,
+              "should_use_cmm": false,
+              "has_high_risk_markers": false,
+              "has_risk_markers": false,
+              "has_stakeholder_markers": true,
+              "has_tradeoff_markers": false,
+              "has_full_markers": false,
+              "has_light_markers": false,
+              "has_direct_markers": true,
+              "needs_second_round": false
+            },
+            "warnings": []
+          },
+          "cmm_mode": "DIRECT",
+          "estimated_cost_class": "S",
+          "routing_warnings": [],
+          "parallel_mode": "SEQUENTIAL",
+          "max_workers": null,
+          "parallelized_stages": [],
+          "roles_used": [],
+          "roles_used_unique": [],
+          "expert_rounds": [],
+          "deliberation_brief": {},
+          "balance_reports": [],
+          "conflict_reports": [],
+          "deliberation_rounds": [],
+          "deliberation_revisions": [],
+          "deliberation_round_count": 0,
+          "max_deliberation_rounds": 1,
+          "consensus_checks": [],
+          "deliberation_position_changes": [],
+          "dynamic_role_reports": [],
+          "dynamic_roles_generated": [],
+          "dynamic_roles_executed": [],
+          "dynamic_roles_rejected": [],
+          "dynamic_roles_used": [],
+          "unresolved_tradeoffs": [],
+          "premature_consensus_risks": [],
+          "blind_spots": [],
+          "plan": {},
+          "plan_critique": {},
+          "moderation_reports": [],
+          "answer_moderation_final_decision": "",
+          "answer_moderation_critical_issues": [],
+          "answer_moderation_revision_count": 0,
+          "answer_moderation_best_effort": false,
+          "quality_gate_decisions": [],
+          "context_compression": {
+            "planner_context_chars": 0,
+            "critic_context_chars": 0,
+            "answer_context_chars": 0,
+            "meta_context_chars": 0
+          },
+          "revision_count": 0,
+          "final_confidence": null,
+          "meta_moderation_decisions": [],
+          "meta_recheck_count": 0,
+          "meta_recheck_decisions": [],
+          "conflicts_to_resolve": [],
+          "risks_to_address": [],
+          "warnings": [
+            "query_intake: model_intake_invalid_json",
+            "query_intake: json_model_empty_or_error_attempt_1",
+            "query_intake: json_retry_after_invalid_json",
+            "query_intake: json_model_empty_or_error_attempt_2",
+            "query_intake: json_retry_exhausted",
+            "direct_answer: direct_answer_failed"
+          ],
+          "state_history": [
+            {
+              "from": "INTAKE",
+              "to": "ROUTE",
+              "reason": "query intake complete"
+            },
+            {
+              "from": "ROUTE",
+              "to": "DIRECT_ANSWER",
+              "reason": "router selected direct answer"
+            },
+            {
+              "from": "DIRECT_ANSWER",
+              "to": "FINALIZE",
+              "reason": "direct answer finalized"
+            }
+          ],
+          "final_state": "FINALIZE",
+          "transition_count": 3,
+          "iteration_count": 0,
+          "plans": [],
+          "plan_critiques": [],
+          "plan_critique_statuses": [],
+          "plan_replan_reasons": [],
+          "plan_critique_decisions": [],
+          "plan_critique_blockers": [],
+          "ignored_must_address": [],
+          "ignored_risks": [],
+          "ignored_tradeoffs": [],
+          "errors": [],
+          "json_health": {
+            "expert_agent": {
+              "calls": 0,
+              "success": 0,
+              "fallbacks": 0,
+              "retry_attempts": 0,
+              "invalid_json_count": 0
+            },
+            "planner": {
+              "called": false,
+              "success": false,
+              "raw_format": "",
+              "source": "",
+              "json_attempts": 0
+            },
+            "moderator": {
+              "invalid_json_count": 0,
+              "retry_attempts": 0,
+              "final_decision": ""
+            },
+            "conflict_analyzer": {
+              "invalid_json_count": 0,
+              "retry_attempts": 0
+            },
+            "meta_moderator": {
+              "invalid_json_count": 0,
+              "retry_attempts": 0
+            }
+          },
+          "estimated_call_count": 3,
+          "estimated_stage_count": 3,
+          "answer_chars": 373,
+          "warnings_count": 6,
+          "errors_count": 0
+        }
+      },
+      "cmm_trace_report": {
+        "original_query": "Что такое коллективная метамодерация?\nКонтекст: Пользователь просит короткое объяснение термина.\nОграничения: Ответ кратко до 5 предложений.",
+        "formalized_query": "Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.",
+        "query_intake": {
+          "original_query": "Что такое коллективная метамодерация?\nКонтекст: Пользователь просит короткое объяснение термина.\nОграничения: Ответ кратко до 5 предложений.",
+          "cleaned_query": "Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.",
+          "task_goal": "Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.",
+          "context": [],
+          "constraints": [],
+          "success_criteria": [],
+          "unknowns": [],
+          "user_preferences": [],
+          "risk_level": "low",
+          "complexity": "simple",
+          "should_use_cmm": false,
+          "parse_warnings": [
+            "model_intake_invalid_json",
+            "json_model_empty_or_error_attempt_1",
+            "json_retry_after_invalid_json",
+            "json_model_empty_or_error_attempt_2",
+            "json_retry_exhausted"
+          ],
+          "json_attempts": 2,
+          "source": "fallback"
+        },
+        "router_decision": {
+          "mode": "DIRECT",
+          "reason": "Simple low-risk explanation request has only formatting constraints.",
+          "complexity": "low",
+          "needs_expert_panel": false,
+          "needs_second_round": false,
+          "estimated_cost_class": "S",
+          "signals": {
+            "risk_level": "low",
+            "intake_complexity": "simple",
+            "word_count": 64,
+            "constraints_count": 0,
+            "success_criteria_count": 0,
+            "context_count": 0,
+            "unknowns_count": 0,
+            "preferences_count": 0,
+            "has_constraints": false,
+            "has_success_criteria": false,
+            "should_use_cmm": false,
+            "has_high_risk_markers": false,
+            "has_risk_markers": false,
+            "has_stakeholder_markers": true,
+            "has_tradeoff_markers": false,
+            "has_full_markers": false,
+            "has_light_markers": false,
+            "has_direct_markers": true,
+            "needs_second_round": false
+          },
+          "warnings": []
+        },
+        "cmm_mode": "DIRECT",
+        "estimated_cost_class": "S",
+        "routing_warnings": [],
+        "parallel_mode": "SEQUENTIAL",
+        "max_workers": null,
+        "parallelized_stages": [],
+        "roles_used": [],
+        "roles_used_unique": [],
+        "expert_rounds": [],
+        "deliberation_brief": {},
+        "balance_reports": [],
+        "conflict_reports": [],
+        "deliberation_rounds": [],
+        "deliberation_revisions": [],
+        "deliberation_round_count": 0,
+        "max_deliberation_rounds": 1,
+        "consensus_checks": [],
+        "deliberation_position_changes": [],
+        "dynamic_role_reports": [],
+        "dynamic_roles_generated": [],
+        "dynamic_roles_executed": [],
+        "dynamic_roles_rejected": [],
+        "dynamic_roles_used": [],
+        "unresolved_tradeoffs": [],
+        "premature_consensus_risks": [],
+        "blind_spots": [],
+        "plan": {},
+        "plan_critique": {},
+        "moderation_reports": [],
+        "answer_moderation_final_decision": "",
+        "answer_moderation_critical_issues": [],
+        "answer_moderation_revision_count": 0,
+        "answer_moderation_best_effort": false,
+        "quality_gate_decisions": [],
+        "context_compression": {
+          "planner_context_chars": 0,
+          "critic_context_chars": 0,
+          "answer_context_chars": 0,
+          "meta_context_chars": 0
+        },
+        "revision_count": 0,
+        "final_confidence": null,
+        "meta_moderation_decisions": [],
+        "meta_recheck_count": 0,
+        "meta_recheck_decisions": [],
+        "conflicts_to_resolve": [],
+        "risks_to_address": [],
+        "warnings": [
+          "query_intake: model_intake_invalid_json",
+          "query_intake: json_model_empty_or_error_attempt_1",
+          "query_intake: json_retry_after_invalid_json",
+          "query_intake: json_model_empty_or_error_attempt_2",
+          "query_intake: json_retry_exhausted",
+          "direct_answer: direct_answer_failed"
+        ],
+        "state_history": [
+          {
+            "from": "INTAKE",
+            "to": "ROUTE",
+            "reason": "query intake complete"
+          },
+          {
+            "from": "ROUTE",
+            "to": "DIRECT_ANSWER",
+            "reason": "router selected direct answer"
+          },
+          {
+            "from": "DIRECT_ANSWER",
+            "to": "FINALIZE",
+            "reason": "direct answer finalized"
+          }
+        ],
+        "final_state": "FINALIZE",
+        "transition_count": 3,
+        "iteration_count": 0,
+        "plans": [],
+        "plan_critiques": [],
+        "plan_critique_statuses": [],
+        "plan_replan_reasons": [],
+        "plan_critique_decisions": [],
+        "plan_critique_blockers": [],
+        "ignored_must_address": [],
+        "ignored_risks": [],
+        "ignored_tradeoffs": [],
+        "errors": [],
+        "json_health": {
+          "expert_agent": {
+            "calls": 0,
+            "success": 0,
+            "fallbacks": 0,
+            "retry_attempts": 0,
+            "invalid_json_count": 0
+          },
+          "planner": {
+            "called": false,
+            "success": false,
+            "raw_format": "",
+            "source": "",
+            "json_attempts": 0
+          },
+          "moderator": {
+            "invalid_json_count": 0,
+            "retry_attempts": 0,
+            "final_decision": ""
+          },
+          "conflict_analyzer": {
+            "invalid_json_count": 0,
+            "retry_attempts": 0
+          },
+          "meta_moderator": {
+            "invalid_json_count": 0,
+            "retry_attempts": 0
+          }
+        },
+        "estimated_call_count": 3,
+        "estimated_stage_count": 3,
+        "answer_chars": 373,
+        "warnings_count": 6,
+        "errors_count": 0
+      },
+      "answer_a_source": "BASELINE",
+      "answer_b_source": "CMM",
+      "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-001\", \"query\": \"Что такое коллективная метамодерация?\", \"context\": \"Пользователь просит короткое объяснение термина.\", \"constraints\": \"Ответ кратко до 5 предложений.\", \"rubric_must_cover\": [\"простое определение\", \"отличие от обычной модерации\", \"упоминание нескольких перспектив\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"слишком длинное объяснение\", \"уход в абстракции\"], \"answer_a\": \"Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}\", \"answer_b\": \"Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\\\"LIGHT_CMM\\\")`.\"}",
+      "raw_judge_output": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
+      "normalized_judge_result": {
+        "case_id": "V2-001",
+        "baseline_scores": {
+          "rubric_coverage": 0.0,
+          "perspective_coverage": 0.0,
+          "risk_handling": 0.0,
+          "actionability": 0.0,
+          "clarity": 0.0,
+          "overall": 0.0
+        },
+        "cmm_scores": {
+          "rubric_coverage": 0.0,
+          "perspective_coverage": 0.0,
+          "risk_handling": 0.0,
+          "actionability": 0.0,
+          "clarity": 0.0,
+          "overall": 0.0
+        },
+        "winner": "TIE",
+        "reason": "Judge output could not be parsed; marked as tie for review.",
+        "cmm_failure_modes": [],
+        "baseline_failure_modes": [],
+        "parse_warnings": [
+          "judge_json_parse_failed"
+        ],
+        "raw": "Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}",
+        "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-001\", \"query\": \"Что такое коллективная метамодерация?\", \"context\": \"Пользователь просит короткое объяснение термина.\", \"constraints\": \"Ответ кратко до 5 предложений.\", \"rubric_must_cover\": [\"простое определение\", \"отличие от обычной модерации\", \"упоминание нескольких перспектив\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"слишком длинное объяснение\", \"уход в абстракции\"], \"answer_a\": \"Error: Error code: 400 - {'error': {'message': 'No credentials for provider: aimlapi', 'type': 'invalid_request_error', 'code': 'bad_request'}}\", \"answer_b\": \"Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\\\"LIGHT_CMM\\\")`.\"}",
+        "blind_mapping": {
+          "answer_a_source": "BASELINE",
+          "answer_b_source": "CMM"
+        }
+      }
+    }
+  ]
+}

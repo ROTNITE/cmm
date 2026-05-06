@@ -86,6 +86,16 @@ class QueryIntakeTests(unittest.TestCase):
         self.assertEqual(intake["json_attempts"], 2)
         self.assertTrue(intake["should_use_cmm"])
 
+    def test_build_query_intake_fallback_extracts_brevity_constraint(self):
+        from Lib.query_intake import build_query_intake
+
+        original = "Кратко объясни разницу между метрикой и KPI."
+        with patch("Lib.json_retry.send_to_AI", return_value="not json"):
+            intake = build_query_intake(original)
+
+        self.assertIn("Кратко", " ".join(intake["constraints"]))
+        self.assertEqual(intake["original_query"], original)
+
     def test_build_query_intake_retries_invalid_json_once(self):
         from Lib.query_intake import build_query_intake
 

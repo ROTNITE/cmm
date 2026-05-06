@@ -17,41 +17,70 @@ from typing import Any
 
 
 CRITICAL_MARKERS = (
-    "critical",
-    "safety",
-    "security",
-    "privacy",
-    "legal",
-    "compliance",
-    "harm",
     "unsafe",
+    "harmful",
+    "safety issue",
     "danger",
-    "failure",
+    "illegal",
+    "unlawful",
+    "violates law",
+    "legal compliance issue",
+    "privacy leak",
+    "data leak",
+    "gdpr violation",
+    "hipaa violation",
+    "security exploit",
+    "bypass security",
+    "medical advice",
+    "financial advice",
+    "investment advice",
     "irreversible",
-    "medical",
-    "financial",
-    "vulnerable",
     "secret",
     "credential",
-    "leak",
+    "password",
+    "token",
     "pii",
-    "gdpr",
-    "hipaa",
-    "критическ",
-    "безопас",
-    "опасн",
-    "закон",
-    "право",
-    "комплаенс",
-    "приват",
-    "персональн",
+    "незакон",
+    "нарушает закон",
+    "нарушение закона",
+    "юридический запрет",
     "утеч",
+    "персональные данные",
+    "персональных данных",
     "вред",
     "секрет",
-    "ключ",
-    "финанс",
-    "медиц",
-    "уязвим",
+    "api key",
+    "secret key",
+    "ключ доступа",
+    "api ключ",
+    "ключ api",
+    "секретный ключ",
+    "пароль",
+    "токен",
+    "медицинский совет",
+    "финансовый совет",
+    "инвестиционный совет",
+    "обойти безопасность",
+    "необратимый вред",
+)
+
+PIPELINE_FAILURE_MARKERS = (
+    "no credentials",
+    "credential error",
+    "api credential",
+    "provider",
+    "model error",
+    "model unavailable",
+    "json parse",
+    "json model",
+    "invalid json",
+    "expert contributions failed",
+    "expert contribution system",
+    "expert execution failed",
+    "expert panel catastrophic",
+    "all expert",
+    "call failed",
+    "aimlapi",
 )
 
 
@@ -103,6 +132,12 @@ def _is_critical_text(value: Any) -> bool:
     return bool(text) and any(marker in text for marker in CRITICAL_MARKERS)
 
 
+def is_pipeline_failure_text(value: Any) -> bool:
+    """Return True for internal provider/API/JSON failures, not user-domain risks."""
+    text = _normalize_text(value)
+    return bool(text) and any(marker in text for marker in PIPELINE_FAILURE_MARKERS)
+
+
 def _is_plan_stop_text(value: Any) -> bool:
     """True only for real no-answer blockers: safety/legal/privacy/medical/etc.
 
@@ -113,40 +148,55 @@ def _is_plan_stop_text(value: Any) -> bool:
     text = _normalize_text(value)
     if not text:
         return False
+    if is_pipeline_failure_text(text):
+        return False
 
     stop_markers = (
-        "safety",
-        "security",
-        "privacy",
-        "legal",
-        "compliance",
-        "harm",
         "unsafe",
+        "harmful",
+        "safety issue",
         "danger",
-        "irreversible",
-        "medical",
-        "financial",
-        "vulnerable",
+        "illegal",
+        "unlawful",
+        "violates law",
+        "legal compliance issue",
+        "privacy leak",
+        "data leak",
+        "gdpr violation",
+        "hipaa violation",
+        "security exploit",
+        "bypass security",
+        "medical advice",
+        "financial advice",
+        "investment advice",
+        "irreversible harm",
         "secret",
         "credential",
-        "leak",
+        "password",
+        "token",
         "pii",
-        "gdpr",
-        "hipaa",
-        "безопас",
-        "опасн",
-        "закон",
-        "право",
-        "комплаенс",
-        "приват",
-        "персональн",
+        "незакон",
+        "нарушает закон",
+        "нарушение закона",
+        "юридический запрет",
         "утеч",
+        "персональные данные",
+        "персональных данных",
         "вред",
         "секрет",
-        "ключ",
-        "финанс",
-        "медиц",
-        "уязвим",
+        "api key",
+        "secret key",
+        "ключ доступа",
+        "api ключ",
+        "ключ api",
+        "секретный ключ",
+        "пароль",
+        "токен",
+        "медицинский совет",
+        "финансовый совет",
+        "инвестиционный совет",
+        "обойти безопасность",
+        "необратимый вред",
     )
     return any(marker in text for marker in stop_markers)
 
@@ -182,8 +232,11 @@ def plan_blockers(critique_result: Any) -> list[str]:
 
     blockers: list[str] = []
 
-    # Explicit critical_blockers are trusted, but still deduped.
-    blockers.extend(_string_items(critique.get("critical_blockers")))
+    # Explicit model-provided critical_blockers are untrusted until they match
+    # the true no-answer policy. Provider/API failures must stay in trace only.
+    for item in _string_items(critique.get("critical_blockers")):
+        if _is_plan_stop_text(item):
+            blockers.append(item)
 
     # Model critical_issues are only hard blockers if they mention true
     # safety/legal/privacy/medical/security/financial risk.
@@ -317,21 +370,33 @@ def normalize_moderated_result(value: Any) -> dict:
 def has_critical_answer_blockers(moderated_result: Any) -> bool:
     """Return True when answer moderation must block finalization."""
     normalized = normalize_moderated_result(moderated_result)
-    if normalized.get("final_decision") == "REJECT":
-        return True
-    if normalized.get("rejected"):
-        return True
     if _safe_list(normalized.get("critical_issues")):
         return True
 
     for report in _safe_list(normalized.get("reports")):
         if not isinstance(report, dict):
             continue
-        if str(report.get("decision") or "").upper() == "REJECT":
-            return True
         if _collect_answer_critical_issues({"reports": [report]}):
             return True
 
+    return False
+
+
+def _has_actionable_plan(plan: Any) -> bool:
+    plan = _safe_dict(plan)
+    if not plan or plan.get("error"):
+        return False
+    if isinstance(plan.get("main_idea"), str) and plan["main_idea"].strip():
+        return True
+    if isinstance(plan.get("result"), str) and plan["result"].strip():
+        return True
+    for step in _safe_list(plan.get("steps")):
+        if not isinstance(step, dict):
+            continue
+        if isinstance(step.get("title"), str) and step["title"].strip():
+            return True
+        if _string_items(step.get("substeps")):
+            return True
     return False
 
 
@@ -339,25 +404,30 @@ def can_best_effort_finalize(
     *,
     critique_result: Any | None = None,
     moderated_result: Any | None = None,
+    plan: Any | None = None,
 ) -> bool:
     """Return True only when best-effort finalization is safe.
 
-    Best-effort is allowed for non-critical needs_revision / REVISE cases.
+    Best-effort is allowed for non-critical needs_revision / REVISE / REJECT cases.
     It is never allowed when plan or answer gates contain critical blockers.
+
+    IMPORTANT: REJECT decision alone is not a blocker. Only REJECT with critical
+    safety/legal/privacy/security issues blocks answer generation.
     """
     if critique_result is not None:
         if has_critical_plan_blockers(critique_result):
             return False
         result = _safe_dict(critique_result)
         decision = _normalize_decision(result.get("decision") or result.get("status"))
-        if decision == "REJECT":
+        effective_plan = plan if plan is not None else result.get("plan")
+        if decision == "REJECT" and not _has_actionable_plan(effective_plan):
+            return False
+        if effective_plan is not None and not _has_actionable_plan(effective_plan):
             return False
 
     if moderated_result is not None:
         normalized = normalize_moderated_result(moderated_result)
         if has_critical_answer_blockers(normalized):
-            return False
-        if normalized.get("final_decision") == "REJECT":
             return False
 
     return True

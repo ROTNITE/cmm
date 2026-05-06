@@ -16,6 +16,7 @@ from Lib.expert_agent import run_expert
 from Lib.expert_roles import BASE_EXPERT_ROLES, ExpertRole
 from Lib.expert_selector import determine_expert_roles
 from Lib.parallel_utils import normalize_max_workers, normalize_parallel_mode, run_ordered_thread_tasks
+from Lib.state_fallbacks import build_rules_expert_contribution
 
 
 def _unique_keep_order(items: list[str]) -> list[str]:
@@ -74,15 +75,12 @@ def run_expert_panel(
                 raise ValueError("invalid contribution format")
             return contribution
         except Exception:
-            return {
-                "role_key": role.key,
-                "perspective_tag": role.perspective_tag,
-                "insights": [],
-                "risks": ["expert_execution_failed"],
-                "questions": [],
-                "recommendations": [],
-                "confidence": 0.0,
-            }
+            return build_rules_expert_contribution(
+                role,
+                query,
+                context=context,
+                warnings=["expert_execution_failed"],
+            )
 
     mode = normalize_parallel_mode(execution_mode)
     if mode == "THREADS" and len(roles) > 1:

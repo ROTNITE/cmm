@@ -82,7 +82,9 @@ class ImportAndHelperTests(unittest.TestCase):
             bundle = run_expert_panel("query")
 
         self.assertEqual(bundle["roles"][0]["key"], "strategist")
-        self.assertEqual(bundle["contributions"][0]["risks"], ["expert_execution_failed"])
+        self.assertEqual(bundle["contributions"][0]["source"], "rules_fallback")
+        self.assertTrue(bundle["contributions"][0]["risks"])
+        self.assertIn("expert_execution_failed", bundle["contributions"][0]["parse_warnings"])
         self.assertIn("synthesis", bundle)
 
     def test_expert_selector_rules_first_domain_avoids_model_call(self):

@@ -1,0 +1,2 @@
+"id","query","context","constraints","expected_perspectives","rubric_must_cover","rubric_desirable","expected_single_model_failure_modes","expected_mode"
+"V2-006","Составь лёгкий план запуска внутренней базы знаний.","Компания 40 человек теряет решения в чатах.","Нельзя покупать дорогую систему | нужен старт за месяц","strategy | engineering | user","пошаговый план | недорогой инструмент | правила наполнения","роли владельцев контента","слишком сложная архитектура | нет внедрения","LIGHT_CMM"

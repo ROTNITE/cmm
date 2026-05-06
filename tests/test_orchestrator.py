@@ -295,7 +295,7 @@ class OrchestratorTests(unittest.TestCase):
             call_order.append("query_intake")
             return _sample_query_intake()
 
-        def experts(query, context=None, max_roles=5, dynamic_roles=None):
+        def experts(query, context=None, max_roles=5, dynamic_roles=None, **kwargs):
             call_order.append("expert_panel")
             return _sample_expert_bundle()
 
@@ -398,10 +398,10 @@ class OrchestratorTests(unittest.TestCase):
 
             result = run_cmm("raw query")
 
-        self.assertEqual(result["final_answer"], "")
-        self.assertEqual(result["trace_report"]["moderation_reports"], [])
-        self.assertIn("plan_rejected", result["trace_report"]["warnings"][-1])
-        mocks["run_moderated_loop"].assert_not_called()
+        self.assertTrue(result["final_answer"].strip())
+        self.assertTrue(result["trace_report"]["best_effort_answer_from_plan"])
+        self.assertTrue(any("plan_rejected" in item for item in result["trace_report"]["warnings"]))
+        mocks["run_moderated_loop"].assert_called()
 
     def test_deepen_decision_runs_second_round_and_enriches_planner_context(self):
         from Lib.orchestrator import run_cmm
@@ -477,7 +477,7 @@ class OrchestratorTests(unittest.TestCase):
 
         captured = {}
 
-        def capture_experts(query, context=None, max_roles=5, dynamic_roles=None):
+        def capture_experts(query, context=None, max_roles=5, dynamic_roles=None, **kwargs):
             captured["query"] = query
             captured["context"] = context
             return _sample_expert_bundle()

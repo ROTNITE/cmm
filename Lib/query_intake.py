@@ -193,6 +193,14 @@ def _rule_based_intake(
             "need",
             "deadline",
             "budget",
+            "кратко",
+            "коротко",
+            "лаконично",
+            "briefly",
+            "concise",
+            "short answer",
+            "sentences",
+            "предложен",
         ),
         max_items=8,
     )
@@ -304,7 +312,7 @@ def _model_intake(original_query: str, cleaned_query: str, *, model: str, max_ai
         "- should_use_cmm=true: planning, strategy, multi-perspective analysis needed\n"
         "\n"
         "Extraction rules:\n"
-        "- constraints: ONLY extract explicitly stated constraints from the query. Do NOT extract words from the question itself (e.g., if query is \"Briefly explain X\", do NOT add \"Briefly\" as a constraint).\n"
+        "- constraints: Extract ALL constraints including brevity/length requirements from the query itself (\"briefly\", \"кратко\", \"in 5 sentences\", \"short answer\") AND explicitly stated constraints. These are critical formatting requirements.\n"
         "- success_criteria: ONLY extract if explicitly stated. Do NOT infer or generate success criteria for simple definition/explanation questions.\n"
         "- context: ONLY extract if provided. Metadata labels like \"Context:\", \"Constraints:\" are NOT context content.\n"
         "\n"

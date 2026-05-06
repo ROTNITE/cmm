@@ -1,0 +1,11 @@
+case_id,expected_mode,actual_mode,router_mode_match,estimated_cost_class,answer_chars,warnings,errors,cmm_final_state
+V2-001,DIRECT,DIRECT,True,S,568,,,FINALIZE
+V2-002,DIRECT,DIRECT,True,S,875,,,FINALIZE
+V2-003,DIRECT,DIRECT,True,S,766,,,FINALIZE
+V2-004,LIGHT_CMM,LIGHT_CMM,True,M,2592,plan_needs_revision_after_max_iters; proceeding_with_best_effort_plan,,FINALIZE
+V2-005,LIGHT_CMM,LIGHT_CMM,True,M,5943,plan_needs_revision_after_max_iters; proceeding_with_best_effort_plan,,FINALIZE
+V2-006,LIGHT_CMM,FULL_CMM,False,L,,meta_recheck_limit_reached_after_rebalance | plan_needs_revision_after_max_iters,plan_needs_revision_after_max_iters | critical_plan_blockers,FAILED
+V2-007,LIGHT_CMM,LIGHT_CMM,True,M,5709,,,FINALIZE
+V2-008,LIGHT_CMM,LIGHT_CMM,True,M,2660,plan_needs_revision_after_max_iters; proceeding_with_best_effort_plan,,FINALIZE
+V2-009,FULL_CMM,FULL_CMM,True,L,,meta_recheck_limit_reached_after_rebalance | plan_needs_revision_after_max_iters,plan_needs_revision_after_max_iters | critical_plan_blockers,FAILED
+V2-010,FULL_CMM,FULL_CMM,True,L,,meta_recheck_limit_reached_after_rebalance | plan_needs_revision_after_max_iters,plan_needs_revision_after_max_iters | critical_plan_blockers,FAILED

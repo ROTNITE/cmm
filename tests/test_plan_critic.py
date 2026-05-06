@@ -271,6 +271,29 @@ class PlanCriticTests(unittest.TestCase):
         self.assertIn("critical privacy compliance requirement", result["critique"]["ignored_must_address"])
         self.assertTrue(result["critique"]["critical_blockers"])
 
+    def test_provider_failure_must_address_is_not_critical_blocker(self):
+        from Lib.plan_critic import check_plan_and_act
+
+        ctx = {
+            "query_intake": {"constraints": [], "success_criteria": []},
+            "deliberation_brief": {
+                "must_address": [
+                    "CRITICAL: all expert API calls failed due to No credentials for provider: aimlapi"
+                ],
+                "expert_risks": ["Complete failure of expert contribution system - invalid JSON"],
+            },
+            "conflict_report": {
+                "unresolved_tradeoffs": [],
+                "blind_spots": ["all expert contributions failed due to API credential errors"],
+                "premature_consensus_risks": [],
+            },
+        }
+        with patch("Lib.json_retry.send_to_AI", return_value="invalid"):
+            result = check_plan_and_act(_generic_plan("Actionable plan with clear ordered steps"), "Build pilot", **ctx)
+
+        self.assertEqual(result["critique"]["critical_blockers"], [])
+        self.assertNotIn("No credentials", " ".join(result["critique"].get("ignored_must_address", [])))
+
     def test_missing_perspectives_handling_score(self):
         from Lib.plan_critic import check_plan_and_act
 

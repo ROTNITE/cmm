@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from Lib.quality_gates import is_pipeline_failure_text
+
 
 def _as_string_list(value: Any, max_items: int) -> list[str]:
     if not isinstance(value, list):
@@ -22,6 +24,11 @@ def _as_string_list(value: Any, max_items: int) -> list[str]:
         if len(out) >= max_items:
             break
     return out
+
+
+def _substantive_string_list(value: Any, max_items: int) -> list[str]:
+    """User-facing brief items; internal provider/JSON failures stay in trace."""
+    return [item for item in _as_string_list(value, max_items=max_items) if not is_pipeline_failure_text(item)]
 
 
 def _as_dict(value: Any) -> dict:
@@ -48,12 +55,12 @@ def build_deliberation_brief(
     balance = _as_dict(balance_report)
     synthesis = _as_dict(bundle.get("synthesis"))
 
-    recommendations = _as_string_list(synthesis.get("recommendations"), max_items=10)
-    risks = _as_string_list(synthesis.get("risks"), max_items=10)
-    questions = _as_string_list(synthesis.get("questions"), max_items=8)
+    recommendations = _substantive_string_list(synthesis.get("recommendations"), max_items=10)
+    risks = _substantive_string_list(synthesis.get("risks"), max_items=10)
+    questions = _substantive_string_list(synthesis.get("questions"), max_items=8)
     balance_notes = _as_string_list(balance.get("notes"), max_items=6)
     balance_quality = _as_dict(balance.get("argument_quality"))
-    balance_blind_spots = _as_string_list(balance.get("blind_spots"), max_items=8)
+    balance_blind_spots = _substantive_string_list(balance.get("blind_spots"), max_items=8)
     constraint_coverage = _as_dict_list(balance.get("constraint_coverage"), max_items=8)
     stakeholder_coverage = _as_dict_list(balance.get("stakeholder_coverage"), max_items=8)
     recommended_balance_action = balance.get("recommended_action")
@@ -111,9 +118,9 @@ def apply_meta_decision_to_brief(deliberation_brief: dict, meta_decision: dict) 
         return brief
 
     additions: list[str] = []
-    additions.extend(_as_string_list(meta_decision.get("risks_to_address"), max_items=10))
-    additions.extend(_as_string_list(meta_decision.get("questions_to_answer"), max_items=10))
-    additions.extend(_as_string_list(meta_decision.get("conflicts_to_resolve"), max_items=10))
+    additions.extend(_substantive_string_list(meta_decision.get("risks_to_address"), max_items=10))
+    additions.extend(_substantive_string_list(meta_decision.get("questions_to_answer"), max_items=10))
+    additions.extend(_substantive_string_list(meta_decision.get("conflicts_to_resolve"), max_items=10))
 
     must_address = _as_string_list(brief.get("must_address"), max_items=20)
     for item in additions:
@@ -139,6 +146,8 @@ def _compact_disagreements(value: Any, max_items: int) -> list[dict]:
             continue
         issue = item.get("issue")
         if not isinstance(issue, str) or not issue.strip():
+            continue
+        if is_pipeline_failure_text(issue):
             continue
         out.append(
             {
@@ -179,6 +188,8 @@ def _compact_tradeoffs(value: Any, max_items: int) -> list[dict]:
         tradeoff = item.get("tradeoff")
         if not isinstance(tradeoff, str) or not tradeoff.strip():
             continue
+        if is_pipeline_failure_text(tradeoff):
+            continue
         why = item.get("why_it_matters")
         out.append(
             {
@@ -200,9 +211,9 @@ def apply_conflict_report_to_brief(deliberation_brief: dict, conflict_report: di
     agreements = _compact_agreements(report.get("agreements"), max_items=5)
     disagreements = _compact_disagreements(report.get("disagreements"), max_items=5)
     tradeoffs = _compact_tradeoffs(report.get("unresolved_tradeoffs"), max_items=5)
-    premature = _as_string_list(report.get("premature_consensus_risks"), max_items=5)
-    blind_spots = _as_string_list(report.get("blind_spots"), max_items=5)
-    questions = _as_string_list(report.get("questions_for_next_round"), max_items=5)
+    premature = _substantive_string_list(report.get("premature_consensus_risks"), max_items=5)
+    blind_spots = _substantive_string_list(report.get("blind_spots"), max_items=5)
+    questions = _substantive_string_list(report.get("questions_for_next_round"), max_items=5)
 
     brief["agreements"] = agreements
     brief["disagreements"] = disagreements

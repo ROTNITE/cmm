@@ -1,0 +1,6 @@
+case_id,expected_mode,actual_mode,router_mode_match,estimated_cost_class,answer_chars,warnings,errors,cmm_final_state
+V2-001,DIRECT,DIRECT,True,S,568,,,FINALIZE
+V2-002,DIRECT,DIRECT,True,S,793,,,FINALIZE
+V2-003,DIRECT,DIRECT,True,S,766,,,FINALIZE
+V2-004,LIGHT_CMM,LIGHT_CMM,True,M,7677,plan_needs_revision_after_max_iters; proceeding_with_best_effort_plan,critical_answer_moderation_issues,FAILED
+V2-005,LIGHT_CMM,LIGHT_CMM,True,M,5679,plan_needs_revision_after_max_iters; proceeding_with_best_effort_plan | answer_moderation_revise_best_effort,,FINALIZE

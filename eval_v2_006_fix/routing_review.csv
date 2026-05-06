@@ -1,0 +1,2 @@
+case_id,expected_mode,actual_mode,router_mode_match,estimated_cost_class,answer_chars,warnings,errors,cmm_final_state
+V2-001,DIRECT,DIRECT,True,S,203,query_intake: model_intake_invalid_json | query_intake: json_model_empty_or_error_attempt_1 | query_intake: json_retry_after_invalid_json | query_intake: json_model_empty_or_error_attempt_2 | query_intake: json_retry_exhausted | direct_answer: direct_answer_failed,,FINALIZE

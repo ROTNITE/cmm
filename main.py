@@ -26,7 +26,8 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None):
-    sys.stdout.reconfigure(encoding='utf-8')
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     args = _build_parser().parse_args([] if argv is None else argv)
     user_query = " ".join(args.query).strip()
     if not user_query:

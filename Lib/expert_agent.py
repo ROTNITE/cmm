@@ -19,28 +19,34 @@ from typing import Any
 from Lib.expert_roles import ExpertRole
 from Lib.json_retry import call_json_model
 from Lib.json_utils import safe_json_loads
+from Lib.state_fallbacks import build_rules_expert_contribution
 
 
-def _fallback_output(role: ExpertRole, *, warnings: list[str] | None = None, attempts: int = 0, raw: str = "") -> dict:
+def _fallback_output(
+    role: ExpertRole,
+    *,
+    context: dict | None = None,
+    query: str = "",
+    warnings: list[str] | None = None,
+    attempts: int = 0,
+    raw: str = "",
+) -> dict:
     """Фолбэк на случай ошибок модели/парсинга.
 
     IMPORTANT: Do NOT put technical errors like "invalid_json_from_model" into risks.
     Technical failures belong in parse_warnings, not expert_risks.
-    Empty contributions signal JSON failure to downstream stages via source="fallback".
+    The contribution is deterministic and role-aware so downstream stages keep
+    useful evidence even when provider/API/JSON calls fail.
     """
-    return {
-        "role_key": role.key,
-        "perspective_tag": role.perspective_tag,
-        "insights": [],
-        "risks": [],
-        "questions": [],
-        "recommendations": [],
-        "confidence": 0.0,
-        "parse_warnings": list(warnings or []) + ["expert_json_parse_failed"],
-        "json_attempts": int(attempts or 0),
-        "raw": str(raw or "")[:2000],
-        "source": "fallback",
-    }
+    contribution = build_rules_expert_contribution(
+        role,
+        query,
+        context=context,
+        warnings=list(warnings or []) + ["expert_json_parse_failed"],
+        raw=raw,
+    )
+    contribution["json_attempts"] = int(attempts or 0)
+    return contribution
 
 
 def _safe_json_loads(raw: str) -> dict | None:
@@ -186,7 +192,7 @@ def run_expert(
     attempts = result.get("attempts") if isinstance(result, dict) and isinstance(result.get("attempts"), int) else 0
     raw = result.get("raw") if isinstance(result, dict) and isinstance(result.get("raw"), str) else ""
     if not parsed:
-        return _fallback_output(role, warnings=warnings, attempts=attempts, raw=raw)
+        return _fallback_output(role, context=context, query=query, warnings=warnings, attempts=attempts, raw=raw)
 
     normalized = _normalize_output(role, parsed)
     normalized["parse_warnings"] = warnings

@@ -27,18 +27,18 @@ class ExpertAgentJsonRetryTests(unittest.TestCase):
         self.assertEqual(result["insights"], ["Insight"])
         self.assertIn("json_retry_after_invalid_json", result["parse_warnings"])
 
-    def test_expert_invalid_json_after_retry_returns_diagnostic_fallback(self):
+    def test_expert_invalid_json_after_retry_returns_role_aware_fallback(self):
         from Lib.expert_agent import run_expert
 
         with patch("Lib.json_retry.send_to_AI", return_value="not json"):
             result = run_expert(BASE_EXPERT_ROLES[0], "query")
 
-        self.assertEqual(result["source"], "fallback")
-        # After fix: technical errors no longer pollute expert_risks
-        self.assertEqual(result["risks"], [])
-        self.assertEqual(result["insights"], [])
-        self.assertEqual(result["recommendations"], [])
-        self.assertEqual(result["questions"], [])
+        self.assertEqual(result["source"], "rules_fallback")
+        self.assertTrue(result["risks"])
+        self.assertTrue(result["insights"])
+        self.assertTrue(result["recommendations"])
+        self.assertTrue(result["questions"])
+        self.assertNotIn("not json", " ".join(result["risks"]))
         self.assertEqual(result["json_attempts"], 2)
         self.assertIn("expert_json_parse_failed", result["parse_warnings"])
         self.assertEqual(result["raw"], "not json")

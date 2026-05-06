@@ -1,0 +1,266 @@
+[96mStarting evaluation: 3 cases[0m
+[96mJudge mode: llm[0m
+[96mModel: kr/claude-sonnet-4.5[0m
+[96m[0m
+[1m================================================================================[0m
+[1m[*] CASE: V2-001[0m
+[96mQuery: ??? ????? ???????????? ??????????????[0m
+
+[94m[>] Stage: BASELINE[0m
+  [93m[AI] AI Call #1 [unknown][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 16 prompt + 48 completion = 64 total[0m
+    [96mRunning total: 64 tokens[0m
+[92m[OK] BASELINE complete[0m
+
+[94m[>] Stage: CMM[0m
+  [93m[AI] AI Call #2 [answer_moderator][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 216 prompt + 22 completion = 238 total[0m
+    [96mRunning total: 302 tokens[0m
+  [93m[AI] AI Call #3 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 394 prompt + 283 completion = 677 total[0m
+    [96mRunning total: 979 tokens[0m
+  [93m[AI] AI Call #4 [router][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 670 prompt + 345 completion = 1015 total[0m
+    [96mRunning total: 1994 tokens[0m
+  [93m[AI] AI Call #5 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 1044 prompt + 389 completion = 1433 total[0m
+    [96mRunning total: 3427 tokens[0m
+  [93m[AI] AI Call #6 [router][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 1627 prompt + 153 completion = 1780 total[0m
+    [96mRunning total: 5207 tokens[0m
+  [93m[AI] AI Call #7 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 526 prompt + 56 completion = 582 total[0m
+    [96mRunning total: 5789 tokens[0m
+  [93m[AI] AI Call #8 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 267 prompt + 136 completion = 403 total[0m
+    [96mRunning total: 6192 tokens[0m
+  [94m[R] Router: LIGHT_CMM (complexity: low)[0m
+  [92m[E] Expert: strategist (strategy) - valid[0m
+  [92m[E] Expert: engineer (engineering) - valid[0m
+  [92m[E] Expert: risk_manager (risk) - valid[0m
+  [92m[E] Expert: user_advocate (user) - valid[0m
+  [93m[P] Plan critique: needs_revision[0m
+  [93m[P] Plan critique: ready[0m
+  [93m[M] Moderation: REJECT[0m
+  [91m[X] Error: answer_moderation_rejected[0m
+[92m[OK] CMM complete[0m
+
+[94m[>] Stage: JUDGE[0m
+  [93m[AI] AI Call #9 [judge][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 171 prompt + 84 completion = 255 total[0m
+    [96mRunning total: 6447 tokens[0m
+[92m[OK] JUDGE complete[0m
+
+Case V2-001
+Mode: LIGHT_CMM
+Expected mode: DIRECT
+Final state: FAILED
+Expert contributions: 0/4 valid
+Planner: json
+Plan critique: needs_revision | ready
+Moderation: REJECT
+Judge: llm
+
+[93m[+] Winner: BASELINE[0m
+[96mTime: 100.10s[0m
+[1m================================================================================[0m
+
+[1m================================================================================[0m
+[1m[*] CASE: V2-002[0m
+[96mQuery: ?????? ??????? ??????? ????? ???????? ? KPI.[0m
+
+[94m[>] Stage: BASELINE[0m
+  [93m[AI] AI Call #10 [unknown][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 18 prompt + 69 completion = 87 total[0m
+    [96mRunning total: 6534 tokens[0m
+[92m[OK] BASELINE complete[0m
+
+[94m[>] Stage: CMM[0m
+  [93m[AI] AI Call #11 [answer_moderator][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 219 prompt + 24 completion = 243 total[0m
+    [96mRunning total: 6777 tokens[0m
+  [93m[AI] AI Call #12 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 459 prompt + 173 completion = 632 total[0m
+    [96mRunning total: 7409 tokens[0m
+  [93m[AI] AI Call #13 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 775 prompt + 141 completion = 916 total[0m
+    [96mRunning total: 8325 tokens[0m
+  [93m[AI] AI Call #14 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 585 prompt + 417 completion = 1002 total[0m
+    [96mRunning total: 9327 tokens[0m
+  [93m[AI] AI Call #15 [router][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 1439 prompt + 505 completion = 1944 total[0m
+    [96mRunning total: 11271 tokens[0m
+  [93m[AI] AI Call #16 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 1413 prompt + 342 completion = 1755 total[0m
+    [96mRunning total: 13026 tokens[0m
+  [93m[AI] AI Call #17 [router][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 2471 prompt + 140 completion = 2611 total[0m
+    [96mRunning total: 15637 tokens[0m
+  [93m[AI] AI Call #18 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 1020 prompt + 606 completion = 1626 total[0m
+    [96mRunning total: 17263 tokens[0m
+  [93m[AI] AI Call #19 [router][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 2305 prompt + 186 completion = 2491 total[0m
+    [96mRunning total: 19754 tokens[0m
+  [94m[R] Router: LIGHT_CMM (complexity: low)[0m
+  [92m[E] Expert: strategist (strategy) - valid[0m
+  [92m[E] Expert: engineer (engineering) - valid[0m
+  [92m[E] Expert: risk_manager (risk) - valid[0m
+  [92m[E] Expert: user_advocate (user) - valid[0m
+  [92m[E] Expert: measurement_expert (measurement) - valid[0m
+  [93m[P] Plan critique: rejected[0m
+  [93m[P] Plan critique: needs_revision[0m
+  [93m[P] Plan critique: needs_revision[0m
+  [93m[!] Warning: expert_panel_catastrophic_json_failure: 5/5 experts failed JSON parsing[0m
+  [93m[!] Warning: cmm_mode_degraded: LIGHT_CMM -> LIGHT_CMM_DEGRADED[0m
+  [93m[!] Warning: plan_needs_revision_after_max_iters[0m
+  [91m[X] Error: plan_needs_revision_after_max_iters[0m
+  [91m[X] Error: critical_plan_blockers[0m
+[92m[OK] CMM complete[0m
+
+[94m[>] Stage: JUDGE[0m
+  [93m[AI] AI Call #20 [judge][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 186 prompt + 102 completion = 288 total[0m
+    [96mRunning total: 20042 tokens[0m
+[92m[OK] JUDGE complete[0m
+
+Case V2-002
+Mode: LIGHT_CMM_DEGRADED
+Expected mode: DIRECT
+Final state: FAILED
+Expert contributions: 0/5 valid
+Planner: json
+Plan critique: rejected | needs_revision | needs_revision
+Moderation: unknown
+Judge: llm
+
+[93m[+] Winner: BASELINE[0m
+[96mTime: 151.02s[0m
+[1m================================================================================[0m
+
+[1m================================================================================[0m
+[1m[*] CASE: V2-003[0m
+[96mQuery: What is a trade-off in product design?[0m
+
+[94m[>] Stage: BASELINE[0m
+  [93m[AI] AI Call #21 [unknown][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 15 prompt + 68 completion = 83 total[0m
+    [96mRunning total: 20125 tokens[0m
+[92m[OK] BASELINE complete[0m
+
+[94m[>] Stage: CMM[0m
+  [93m[AI] AI Call #22 [answer_moderator][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 214 prompt + 23 completion = 237 total[0m
+    [96mRunning total: 20362 tokens[0m
+  [93m[AI] AI Call #23 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 382 prompt + 282 completion = 664 total[0m
+    [96mRunning total: 21026 tokens[0m
+  [93m[AI] AI Call #24 [router][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 645 prompt + 273 completion = 918 total[0m
+    [96mRunning total: 21944 tokens[0m
+  [93m[AI] AI Call #25 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 956 prompt + 316 completion = 1272 total[0m
+    [96mRunning total: 23216 tokens[0m
+  [93m[AI] AI Call #26 [router][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 1449 prompt + 148 completion = 1597 total[0m
+    [96mRunning total: 24813 tokens[0m
+  [93m[AI] AI Call #27 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 459 prompt + 65 completion = 524 total[0m
+    [96mRunning total: 25337 tokens[0m
+  [93m[AI] AI Call #28 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 266 prompt + 76 completion = 342 total[0m
+    [96mRunning total: 25679 tokens[0m
+  [93m[AI] AI Call #29 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 561 prompt + 75 completion = 636 total[0m
+    [96mRunning total: 26315 tokens[0m
+  [93m[AI] AI Call #30 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 276 prompt + 69 completion = 345 total[0m
+    [96mRunning total: 26660 tokens[0m
+  [93m[AI] AI Call #31 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 569 prompt + 94 completion = 663 total[0m
+    [96mRunning total: 27323 tokens[0m
+  [93m[AI] AI Call #32 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 295 prompt + 153 completion = 448 total[0m
+    [96mRunning total: 27771 tokens[0m
+  [93m[AI] AI Call #33 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 595 prompt + 54 completion = 649 total[0m
+    [96mRunning total: 28420 tokens[0m
+  [94m[R] Router: LIGHT_CMM (complexity: low)[0m
+  [92m[E] Expert: strategist (strategy) - valid[0m
+  [92m[E] Expert: engineer (engineering) - valid[0m
+  [92m[E] Expert: risk_manager (risk) - valid[0m
+  [92m[E] Expert: user_advocate (user) - valid[0m
+  [93m[P] Plan critique: needs_revision[0m
+  [93m[P] Plan critique: ready[0m
+  [93m[M] Moderation: REVISE (best-effort)[0m
+  [93m[!] Warning: answer_moderation_revise_best_effort[0m
+[92m[OK] CMM complete[0m
+
+[94m[>] Stage: JUDGE[0m
+  [93m[AI] AI Call #34 [balance_analyzer][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 237 prompt + 114 completion = 351 total[0m
+    [96mRunning total: 28771 tokens[0m
+[92m[OK] JUDGE complete[0m
+
+Case V2-003
+Mode: LIGHT_CMM
+Expected mode: DIRECT
+Final state: FINALIZE
+Expert contributions: 0/4 valid
+Planner: json
+Plan critique: needs_revision | ready
+Moderation: REVISE best-effort
+Judge: llm
+
+[93m[+] Winner: TIE[0m
+[96mTime: 109.04s[0m
+[1m================================================================================[0m
+
+
+[1m================================================================================[0m
+[1m[#] EVALUATION SUMMARY[0m
+[96mTotal AI calls: 34[0m
+[96mTotal tokens used: 28,771[0m
+[92mEstimated cost: $0.0060[0m
+[1m================================================================================[0m
+Evaluation complete: cases=3, cmm_wins=0, baseline_wins=2, ties=1, unjudged=0
+Judge mode: llm
+CSV: eval_router_fix\results.csv
+JSON: eval_router_fix\results.json
+Summary: eval_router_fix\summary.json
+Cases: eval_router_fix\cases.jsonl

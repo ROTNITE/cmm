@@ -216,7 +216,7 @@ class RealEvalJudgeTests(unittest.TestCase):
             captured["baseline_prompt"] = user_prompt
             return "baseline"
 
-        def fake_run_cmm(query):
+        def fake_run_cmm(query, **kwargs):
             captured["cmm_query"] = query
             return {"final_answer": "cmm", "trace_report": {}}
 

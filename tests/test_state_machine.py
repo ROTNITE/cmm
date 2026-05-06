@@ -625,7 +625,7 @@ class StateMachineTests(unittest.TestCase):
         self.assertGreaterEqual(compression["answer_context_chars"], 0)
         self.assertGreaterEqual(compression["meta_context_chars"], 0)
 
-    def test_answer_moderation_reject_with_answer_fails(self):
+    def test_answer_moderation_reject_with_critical_issue_fails(self):
         from Lib.state_machine import run_cmm_state_machine
 
         with self._patch_core() as mocks:
@@ -641,9 +641,9 @@ class StateMachineTests(unittest.TestCase):
         self.assertEqual(trace["final_state"], "FAILED")
         self.assertEqual(trace["answer_moderation_final_decision"], "REJECT")
         self.assertEqual(trace["answer_moderation_critical_issues"], ["unsafe"])
-        self.assertIn("answer_moderation_rejected", trace["errors"])
+        self.assertIn("critical_answer_moderation_issues", trace["errors"])
 
-    def test_answer_moderation_empty_answer_fails(self):
+    def test_answer_moderation_empty_answer_rescues_from_actionable_plan(self):
         from Lib.state_machine import run_cmm_state_machine
 
         with self._patch_core() as mocks:
@@ -654,8 +654,11 @@ class StateMachineTests(unittest.TestCase):
             }
             result = run_cmm_state_machine("raw query")
 
-        self.assertEqual(result["trace_report"]["final_state"], "FAILED")
-        self.assertIn("moderated_loop_returned_empty_final_answer", result["trace_report"]["errors"])
+        trace = result["trace_report"]
+        self.assertEqual(trace["final_state"], "FINALIZE")
+        self.assertTrue(result["final_answer"].strip())
+        self.assertTrue(trace["best_effort_answer_from_plan"])
+        self.assertEqual(trace["errors"], [])
 
     def test_threaded_mode_passes_config_to_initial_expert_panel_and_trace(self):
         from Lib.state_machine import run_cmm_state_machine
@@ -752,6 +755,75 @@ class StateMachineTests(unittest.TestCase):
 
         self.assertEqual(captured["model"], "test-model")
 
+    def test_state_machine_passes_model_to_core_stages(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        captured = {}
+
+        def capture_dynamic(**kwargs):
+            captured.setdefault("dynamic_models", []).append(kwargs.get("model"))
+            return _dynamic_report()
+
+        def capture_panel(query, context=None, max_roles=5, dynamic_roles=None, **kwargs):
+            captured["panel_model"] = kwargs.get("model")
+            return _expert_bundle()
+
+        def capture_conflict(query_intake, expert_bundle, deliberation_brief, **kwargs):
+            captured["conflict_model"] = kwargs.get("model")
+            return _conflict()
+
+        def capture_meta(query, expert_bundle, balance_report=None, deliberation_brief=None, **kwargs):
+            captured["meta_model"] = kwargs.get("model")
+            return _meta("SYNTHESIZE")
+
+        def capture_plan(query, context=None, depth="detailed", model="deepseek-chat"):
+            captured["plan_model"] = model
+            return _plan()
+
+        def capture_critique(plan, query, min_score=0.7, **kwargs):
+            captured["critic_model"] = kwargs.get("model")
+            return {"status": "ready", "critique": _critique()}
+
+        def capture_answer(query, plan, critique, **kwargs):
+            captured["answer_model"] = kwargs.get("model")
+            return _moderated()
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["generate_dynamic_roles"].side_effect = capture_dynamic
+            mocks["run_expert_panel"].side_effect = capture_panel
+            mocks["analyze_conflicts"].side_effect = capture_conflict
+            mocks["run_meta_moderator"].side_effect = capture_meta
+            mocks["develop_plan"].side_effect = capture_plan
+            mocks["check_plan_and_act"].side_effect = capture_critique
+            mocks["run_moderated_loop"].side_effect = capture_answer
+            run_cmm_state_machine("raw query", model="test-model")
+
+        self.assertEqual(captured["dynamic_models"], ["test-model"])
+        self.assertEqual(captured["panel_model"], "test-model")
+        self.assertEqual(captured["conflict_model"], "test-model")
+        self.assertEqual(captured["meta_model"], "test-model")
+        self.assertEqual(captured["plan_model"], "test-model")
+        self.assertEqual(captured["critic_model"], "test-model")
+        self.assertEqual(captured["answer_model"], "test-model")
+
+    def test_answer_moderation_reject_without_critical_issue_rescues(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["run_moderated_loop"].return_value = {
+                "final_answer": "generic rejected answer",
+                "reports": [{"decision": "REJECT", "avg_score": 4.0, "critical_issues": ["too generic"]}],
+            }
+            result = run_cmm_state_machine("raw query")
+
+        trace = result["trace_report"]
+        self.assertEqual(trace["final_state"], "FINALIZE")
+        self.assertTrue(result["final_answer"].strip())
+        self.assertTrue(trace["best_effort_answer_from_plan"])
+        self.assertEqual(trace["errors"], [])
+
     def test_state_machine_passes_context_to_plan_critic(self):
         from Lib.state_machine import run_cmm_state_machine
 
@@ -800,6 +872,42 @@ class StateMachineTests(unittest.TestCase):
         self.assertEqual(trace["dynamic_roles_executed"], [])
         self.assertEqual(trace["dynamic_roles_used"], [])
         self.assertEqual(captured["dynamic_roles_used"], [])
+
+    def test_empty_expert_fallback_bundle_is_replaced_with_role_aware_fallback(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        empty_fallback_bundle = {
+            "roles": [
+                {"key": "strategist", "name": "Strategist", "perspective_tag": "strategy"},
+                {"key": "risk_manager", "name": "Risk Manager", "perspective_tag": "risk"},
+                {"key": "user_advocate", "name": "User Advocate", "perspective_tag": "user"},
+                {"key": "engineer", "name": "Engineer", "perspective_tag": "engineering"},
+                {"key": "measurement_expert", "name": "Measurement Expert", "perspective_tag": "measurement"},
+            ],
+            "contributions": [
+                {
+                    "role_key": role,
+                    "perspective_tag": role,
+                    "recommendations": [],
+                    "risks": [],
+                    "questions": [],
+                    "source": "fallback",
+                }
+                for role in ("strategist", "risk", "user", "engineering", "measurement")
+            ],
+            "synthesis": {"recommendations": [], "risks": [], "questions": [], "perspective_counts": {}},
+        }
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["run_expert_panel"].return_value = empty_fallback_bundle
+            result = run_cmm_state_machine("raw query")
+
+        trace = result["trace_report"]
+        first_round = trace["expert_rounds"][0]
+        self.assertTrue(trace["cmm_mode"].endswith("_DEGRADED"))
+        self.assertTrue(first_round["synthesis"]["recommendations"])
+        self.assertTrue(all(item["source"] == "rules_fallback" for item in first_round["contributions"]))
 
     def test_roles_used_unique_dedupes_rounds_and_marks_dynamic_roles(self):
         from Lib.state_machine import run_cmm_state_machine
@@ -854,7 +962,7 @@ class StateMachineTests(unittest.TestCase):
         self.assertEqual(trace["warnings_count"], len(trace["warnings"]))
         self.assertEqual(trace["errors_count"], len(trace["errors"]))
 
-    def test_plan_rejected_fails_after_max_iters(self):
+    def test_plan_rejected_noncritical_after_max_iters_proceeds_best_effort(self):
         from Lib.state_machine import run_cmm_state_machine
 
         with self._patch_core() as mocks:
@@ -866,8 +974,8 @@ class StateMachineTests(unittest.TestCase):
             }
             result = run_cmm_state_machine("raw query", max_iters=1)
 
-        self.assertEqual(result["final_answer"], "")
-        self.assertEqual(result["trace_report"]["final_state"], "FAILED")
+        self.assertEqual(result["final_answer"], "final answer")
+        self.assertEqual(result["trace_report"]["final_state"], "FINALIZE")
         self.assertTrue(any("plan_rejected" in item for item in result["trace_report"]["warnings"]))
 
     def test_noncritical_needs_revision_after_max_iters_proceeds_best_effort(self):
@@ -898,7 +1006,7 @@ class StateMachineTests(unittest.TestCase):
             self._configure_success(mocks)
             mocks["check_plan_and_act"].return_value = {
                 "status": "needs_revision",
-                "critique": {"critical_blockers": ["critical privacy risk"]},
+                "critique": {"critical_blockers": ["critical privacy leak risk"]},
                 "feedback": ["Fix blocker"],
                 "reason": "critical blocker",
             }

@@ -104,6 +104,47 @@ def _auto_token_count(word_count: int) -> int:
     return int(min(auto_max, max(auto_min, int(auto_k * word_count)))) + 1
 
 
+def _estimate_tokens(text: str) -> int:
+    """Rough token estimation: ~0.75 tokens per word."""
+    if not text:
+        return 0
+    words = len(str(text).split())
+    return int(words * 0.75)
+
+
+def _infer_purpose(system_prompt: str, user_prompt: str) -> str:
+    """Infer the purpose of the AI call from the prompts."""
+    combined = (system_prompt + " " + user_prompt).lower()
+
+    if "router" in combined or "route query" in combined:
+        return "router"
+    elif "expert" in combined and "contribution" in combined:
+        return "expert_agent"
+    elif "plan" in combined and ("develop" in combined or "steps" in combined):
+        return "planner"
+    elif "critique" in combined or "plan critic" in combined:
+        return "plan_critic"
+    elif "meta" in combined and "moderator" in combined:
+        return "meta_moderator"
+    elif "moderate" in combined and "answer" in combined:
+        return "answer_moderator"
+    elif "conflict" in combined:
+        return "conflict_analyzer"
+    elif "balance" in combined:
+        return "balance_analyzer"
+    elif "deliberation" in combined:
+        return "deliberation"
+    elif "query intake" in combined or "cleaned_query" in combined:
+        return "query_intake"
+    elif "direct answer" in combined:
+        return "direct_answer"
+    elif "judge" in combined or "evaluation" in combined:
+        return "judge"
+    elif "baseline" in combined:
+        return "baseline"
+    return "unknown"
+
+
 def send_to_AI(
     user_prompt: str,
     system_prompt: str = "",
@@ -142,6 +183,24 @@ def send_to_AI(
         if tokens is None:
             tokens = _auto_token_count(_count_words(messages))
 
+        # Log before call
+        logger = None
+        purpose = ""
+        estimated_prompt_tokens = 0
+        try:
+            from Lib.eval_logger import get_logger
+            logger = get_logger()
+            if logger and logger.enabled:
+                purpose = _infer_purpose(system_prompt, user_prompt)
+                prompt_text = f"{system_prompt}\n{user_prompt}"
+                if history:
+                    for msg in history:
+                        if isinstance(msg, dict) and "content" in msg:
+                            prompt_text += f"\n{msg['content']}"
+                estimated_prompt_tokens = _estimate_tokens(prompt_text)
+        except Exception:
+            pass
+
         response = client.chat.completions.create(
             model=model,
             messages=messages,
@@ -151,7 +210,24 @@ def send_to_AI(
             stream=stream,
         )
 
-        return response.choices[0].message.content
+        result = response.choices[0].message.content
+
+        # Log after call
+        try:
+            if logger and logger.enabled:
+                estimated_completion_tokens = _estimate_tokens(result)
+                total_tokens = estimated_prompt_tokens + estimated_completion_tokens
+                logger.ai_call(
+                    model=model,
+                    prompt_tokens=estimated_prompt_tokens,
+                    completion_tokens=estimated_completion_tokens,
+                    total_tokens=total_tokens,
+                    purpose=purpose,
+                )
+        except Exception:
+            pass
+
+        return result
 
     except Exception as exc:
         return f"Error: {exc}"

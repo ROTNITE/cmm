@@ -1,0 +1,4 @@
+case_id,expected_mode,actual_mode,router_mode_match,estimated_cost_class,answer_chars,warnings,errors,cmm_final_state
+V2-001,DIRECT,LIGHT_CMM,False,M,,,answer_moderation_rejected,FAILED
+V2-002,DIRECT,LIGHT_CMM_DEGRADED,False,M,,expert_panel_catastrophic_json_failure: 5/5 experts failed JSON parsing | cmm_mode_degraded: LIGHT_CMM -> LIGHT_CMM_DEGRADED | plan_needs_revision_after_max_iters,plan_needs_revision_after_max_iters | critical_plan_blockers,FAILED
+V2-003,DIRECT,LIGHT_CMM,False,M,503,answer_moderation_revise_best_effort,,FINALIZE
