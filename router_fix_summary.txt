@@ -1,0 +1,49 @@
+Router Fix Summary - 2026-05-06
+================================
+
+COMPLETED: Router Accuracy Fix
+-------------------------------
+Router accuracy: 0% → 100% (5/5 V2 cases)
+
+Changes made to Lib/query_intake.py:
+1. Default risk_level: "medium" → "low" (line 152)
+2. Complexity derivation: analyze first line only for definition queries
+3. Skip metadata labels in _items_by_markers
+4. Improved model intake prompt with classification rules
+
+Verification:
+- eval_intake_fix_final: 3/3 DIRECT cases correct
+- eval_stability_5case_router_fixed: 5/5 cases correct routing
+- All 228 tests pass
+
+REMAINING ISSUES (Downstream from Router)
+------------------------------------------
+1. Model-based query intake completely failing
+   - All cases show: json_retry_exhausted
+   - DeepSeek model not producing valid JSON
+   - Rule-based fallback is working correctly (good safety net)
+
+2. DIRECT answer path failing
+   - All DIRECT cases show: direct_answer_failed
+   - Need to investigate direct_answer.py
+
+3. Expert contributions: 0 valid in all CMM cases
+   - LIGHT_CMM cases show 0/4 valid contributions
+   - Experts producing invalid JSON or empty responses
+
+4. Planner issues
+   - Using fallback/fallback_repair planners
+   - Plan critique showing needs_revision
+
+5. Moderation degraded
+   - answer_moderation_revise_best_effort in LIGHT_CMM cases
+
+NEXT RECOMMENDED STEPS
+-----------------------
+Priority 1: Fix direct_answer path (blocks DIRECT mode validation)
+Priority 2: Investigate expert JSON failures (blocks CMM quality)
+Priority 3: Debug DeepSeek query intake JSON issues (currently mitigated by fallback)
+Priority 4: Planner stability (fallback_repair frequency)
+
+Router is now stable and can be considered DONE.
+Focus should shift to expert/planner/direct_answer pipeline.

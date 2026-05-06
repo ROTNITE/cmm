@@ -1,0 +1,84 @@
+УЛУЧШЕНИЯ КАЧЕСТВА CMM - 2026-05-06
+====================================
+
+ЦЕЛЬ: Сделать CMM значительно лучше baseline
+Текущий статус: CMM проигрывает baseline на -0.32
+
+ДИАГНОСТИКА ПРОБЛЕМ
+-------------------
+1. DIRECT mode (-1.0 на всех 3 кейсах):
+   - "generic advice" - слишком общие ответы
+   - "missing explicit distinction" - нет конкретики
+   - "no product example" - нет примеров
+   - Только 700 токенов, слабый prompt
+
+2. LIGHT_CMM mode (+1.0, +0.4 - ХОРОШО):
+   - Уже выигрывает у baseline
+   - Но planner падает в fallback_repair
+   - Expert contributions слишком короткие (100 chars)
+
+ВНЕСЁННЫЕ УЛУЧШЕНИЯ
+--------------------
+
+1. direct_answer.py - РАДИКАЛЬНОЕ УЛУЧШЕНИЕ
+   ✓ Новый detailed prompt с quality standards
+   ✓ Требования: SPECIFIC, CONCRETE, EXAMPLES, ACTIONABLE, CLEAR
+   ✓ Explicit инструкции для definition questions
+   ✓ Token budget: 700 → 1200 (+71%)
+   
+2. plan_development.py - УЛУЧШЕНИЕ PLANNER
+   ✓ Новый expert-quality prompt
+   ✓ Требования: SPECIFIC, ACTIONABLE, COMPREHENSIVE, RISK-AWARE
+   ✓ Explicit инструкции для каждого шага
+   ✓ Token budgets:
+     - quick: 500 → 800 (+60%)
+     - detailed: 1000 → 1500 (+50%)
+     - comprehensive: 1400 → 2000 (+43%)
+
+3. expert_agent.py - УЛУЧШЕНИЕ ЭКСПЕРТОВ
+   ✓ Новый quality-focused prompt
+   ✓ Требования: SPECIFIC, EVIDENCE-BASED, RISK-AWARE, ACTIONABLE
+   ✓ Char limit per item: 100 → 200 (+100%)
+   ✓ Token budget: 500 → 800 (+60%)
+   ✓ Более детальные инструкции для каждого типа вклада
+
+ОЖИДАЕМЫЕ РЕЗУЛЬТАТЫ
+--------------------
+1. DIRECT mode:
+   - Более конкретные определения
+   - Реальные примеры с деталями
+   - Чёткие distinctions от смежных концептов
+   - Практические implications
+   → Ожидаем: -1.0 → +0.5 или лучше
+
+2. LIGHT_CMM mode:
+   - Более детальные планы
+   - Более содержательные expert contributions
+   - Меньше fallback_repair
+   → Ожидаем: +1.0 → +1.5 или лучше
+
+3. Общий результат:
+   - Текущий: CMM 7.92 vs Baseline 8.24 (Δ=-0.32)
+   - Цель: CMM > Baseline (Δ > 0)
+   - Оптимистичный прогноз: CMM 8.5+ vs Baseline 8.24 (Δ=+0.26+)
+
+ТЕХНИЧЕСКИЕ ДЕТАЛИ
+-------------------
+Token budget увеличения:
+- direct_answer: +500 tokens (+71%)
+- planner detailed: +500 tokens (+50%)
+- expert_agent: +300 tokens (+60%)
+
+Общее увеличение стоимости на запрос:
+- DIRECT: +500 tokens (~+71%)
+- LIGHT_CMM: +500 (planner) + 1200 (4 experts × 300) = +1700 tokens (~+40%)
+
+Это приемлемо, т.к. качество важнее стоимости.
+
+СТАТУС
+------
+✓ Все изменения внесены
+✓ Все 228 тестов: PASS
+⏳ Запущен eval_quality_improvements (в процессе)
+
+Ожидаем результаты...

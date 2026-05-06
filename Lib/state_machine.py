@@ -29,7 +29,11 @@ from Lib.context_manager import (
     build_context_compression_report,
     record_context_size,
 )
-from Lib.deliberation_round import merge_deliberation_into_bundle, run_deliberation_round
+from Lib.deliberation_round import (
+    merge_deliberation_into_bundle,
+    run_deliberation_round,
+    select_high_conflict_deliberation_roles,
+)
 from Lib.expert_panel import run_expert_panel
 from Lib.expert_rounds import merge_expert_bundles, run_targeted_expert_round, select_targeted_roles
 from Lib.meta_moderator import run_meta_moderator
@@ -39,6 +43,8 @@ from Lib.direct_answer import run_direct_answer
 from Lib.parallel_utils import normalize_max_workers, normalize_parallel_mode
 from Lib.role_generator import generate_dynamic_roles
 from Lib.router import route_query
+from Lib import state_fallbacks
+from Lib.state_trace import build_result_payload
 
 
 INTAKE = "INTAKE"
@@ -49,6 +55,7 @@ BALANCE = "BALANCE"
 CONFLICT_ANALYSIS = "CONFLICT_ANALYSIS"
 META_DECISION = "META_DECISION"
 DELIBERATION_ROUND = "DELIBERATION_ROUND"
+CONSENSUS_CHECK = "CONSENSUS_CHECK"
 REBALANCE = "REBALANCE"
 META_RECHECK = "META_RECHECK"
 PANEL_ROUND_EXTRA = "PANEL_ROUND_EXTRA"
@@ -74,119 +81,36 @@ def _safe_dict(value: Any) -> dict:
     return value if isinstance(value, dict) else {}
 
 
+def _normalize_max_deliberation_rounds(value: Any) -> int:
+    try:
+        count = int(value)
+    except Exception:
+        count = 1
+    return max(1, min(2, count))
+
+
 def _empty_expert_bundle() -> dict:
-    return {
-        "roles": [],
-        "contributions": [],
-        "synthesis": {
-            "recommendations": [],
-            "risks": [],
-            "questions": [],
-            "perspective_counts": {},
-        },
-    }
+    return state_fallbacks.empty_expert_bundle()
 
 
 def _conservative_balance_report() -> dict:
-    return {
-        "dominant_perspective_found": False,
-        "dominant_perspective": None,
-        "missing_perspectives": ["strategy", "engineering", "risk", "user"],
-        "notes": ["Balance analysis failed; conservative fallback marks all base perspectives as missing."],
-        "perspective_coverage": {
-            "strategy": 0.0,
-            "engineering": 0.0,
-            "risk": 0.0,
-            "user": 0.0,
-        },
-        "stakeholder_coverage": [],
-        "constraint_coverage": [],
-        "risk_severity_distribution": {"low": 0, "medium": 0, "high": 0, "unknown": 0},
-        "argument_quality": {
-            "evidence_level": 0.0,
-            "specificity": 0.0,
-            "actionability": 0.0,
-            "novelty": 0.0,
-            "tradeoff_awareness": 0.0,
-        },
-        "dominance": {
-            "dominant_perspective": None,
-            "dominant_ratio": 0.0,
-            "counts": {},
-            "total_contributions": 0,
-        },
-        "blind_spots": [
-            "Missing base perspective: strategy.",
-            "Missing base perspective: engineering.",
-            "Missing base perspective: risk.",
-            "Missing base perspective: user.",
-        ],
-        "recommended_action": "ADD_EXPERT",
-    }
+    return state_fallbacks.conservative_balance_report()
 
 
 def _empty_deliberation_brief(query: str) -> dict:
-    return {
-        "summary": f"Expert deliberation for query: {query[:240]}",
-        "expert_recommendations": [],
-        "expert_risks": [],
-        "expert_questions": [],
-        "perspective_counts": {},
-        "missing_perspectives": [],
-        "dominant_perspective_found": False,
-        "balance_notes": [],
-        "must_address": [],
-    }
+    return state_fallbacks.empty_deliberation_brief(query)
 
 
 def _fallback_query_intake(original_query: str, warning: str) -> dict:
-    cleaned_query = str(original_query or "").strip()
-    complexity = "simple" if len(cleaned_query.split()) <= 12 else "moderate"
-    return {
-        "original_query": original_query,
-        "cleaned_query": cleaned_query or original_query,
-        "task_goal": (cleaned_query or original_query)[:700],
-        "context": [],
-        "constraints": [],
-        "success_criteria": [],
-        "unknowns": [],
-        "user_preferences": [],
-        "risk_level": "medium" if cleaned_query else "low",
-        "complexity": complexity,
-        "should_use_cmm": complexity != "simple",
-        "parse_warnings": [warning],
-        "source": "fallback",
-    }
+    return state_fallbacks.fallback_query_intake(original_query, warning)
 
 
 def _fallback_conflict_report() -> dict:
-    return {
-        "agreements": [],
-        "disagreements": [],
-        "unresolved_tradeoffs": [],
-        "premature_consensus_risks": [],
-        "blind_spots": ["Conflict analysis failed."],
-        "minority_positions": [],
-        "questions_for_next_round": [],
-        "confidence": 0.0,
-        "parse_warnings": ["conflict_analysis_failed"],
-        "source": "fallback",
-    }
+    return state_fallbacks.fallback_conflict_report()
 
 
 def _fallback_meta_decision(reason: str, warning: str) -> dict:
-    return {
-        "decision": "SYNTHESIZE",
-        "reason": reason,
-        "missing_perspectives": [],
-        "conflicts_to_resolve": [],
-        "risks_to_address": [],
-        "questions_to_answer": [],
-        "next_actions": ["Proceed to planning."],
-        "confidence": 0.0,
-        "parse_warnings": [warning],
-        "source": "state_machine_fallback",
-    }
+    return state_fallbacks.fallback_meta_decision(reason, warning)
 
 
 def _build_intake_context(original_query: str, query_intake: dict) -> dict:
@@ -778,6 +702,42 @@ def _has_high_severity_tradeoff(conflict_report: dict | None) -> bool:
     return False
 
 
+def _high_conflict_role_keys(state: dict) -> list[str]:
+    roles = select_high_conflict_deliberation_roles(
+        state.get("expert_bundle", {}),
+        state.get("conflict_report", {}),
+        max_roles=4,
+    )
+    return [role.key for role in roles]
+
+
+def _summarize_position_changes(deliberation_bundle: dict, round_number: int) -> list[dict]:
+    changes: list[dict] = []
+    for response in _safe_list(_safe_dict(deliberation_bundle).get("responses")):
+        if not isinstance(response, dict):
+            continue
+        revised = _safe_list(response.get("revised_recommendations"))
+        risks = _safe_list(response.get("new_risks"))
+        disagreements = _safe_list(response.get("disagreements"))
+        confidence_change = response.get("confidence_change")
+        try:
+            confidence_value = float(confidence_change)
+        except Exception:
+            confidence_value = 0.0
+        changes.append(
+            {
+                "round": round_number,
+                "role_key": response.get("role_key") or "unknown",
+                "confidence_change": confidence_value,
+                "revised_recommendations_count": len(revised),
+                "new_risks_count": len(risks),
+                "disagreements_count": len(disagreements),
+                "position_changed": bool(revised or risks or disagreements or confidence_value != 0.0),
+            }
+        )
+    return changes
+
+
 def _run_meta_decision_with_context(state: dict, *, phase: str) -> dict:
     """Run meta moderator with compact context and stable fallback."""
     try:
@@ -827,6 +787,7 @@ def init_cmm_state(
     route_mode: str = "AUTO",
     parallel_mode: str = "SEQUENTIAL",
     max_workers: int | None = None,
+    max_deliberation_rounds: int = 1,
 ) -> dict:
     original_query = "" if query is None else str(query)
     normalized_parallel_mode = normalize_parallel_mode(parallel_mode)
@@ -858,6 +819,10 @@ def init_cmm_state(
         "conflict_reports": [],
         "deliberation_brief": {},
         "deliberation_rounds": [],
+        "deliberation_round_count": 0,
+        "max_deliberation_rounds": _normalize_max_deliberation_rounds(max_deliberation_rounds),
+        "consensus_checks": [],
+        "deliberation_position_changes": [],
         "meta_decisions": [],
         "meta_decision": {},
         "meta_recheck_count": 0,
@@ -1179,8 +1144,12 @@ def handle_meta_decision(state: dict) -> tuple[str, str]:
 
 
 def handle_deliberation_round(state: dict) -> tuple[str, str]:
-    if state.get("deliberation_round_done"):
-        return REBALANCE, "deliberation already completed"
+    current_count = int(state.get("deliberation_round_count", 0))
+    max_rounds = _normalize_max_deliberation_rounds(state.get("max_deliberation_rounds", 1))
+    if current_count >= max_rounds:
+        state["deliberation_round_done"] = True
+        return CONSENSUS_CHECK, "deliberation already completed"
+    round_number = current_count + 1
     try:
         deliberation_bundle = run_deliberation_round(
             query=state["original_query"],
@@ -1190,18 +1159,67 @@ def handle_deliberation_round(state: dict) -> tuple[str, str]:
             conflict_report=state.get("conflict_report", {}),
             meta_decision=state.get("meta_decision", {}),
             model=state["model"],
+            conflicting_only=round_number > 1,
         )
         if not isinstance(deliberation_bundle, dict):
             raise ValueError("invalid deliberation round bundle")
+        deliberation_bundle["round"] = round_number
         state["deliberation_rounds"].append(deliberation_bundle)
+        state["deliberation_position_changes"].extend(
+            _summarize_position_changes(deliberation_bundle, round_number)
+        )
         expert_bundle = merge_deliberation_into_bundle(state.get("expert_bundle", {}), deliberation_bundle)
         if not isinstance(expert_bundle, dict):
             raise ValueError("invalid deliberation merge result")
         state["expert_bundle"] = expert_bundle
+        state["deliberation_round_count"] = round_number
     except Exception as exc:
         state["warnings"].append(f"deliberation_round_failed; continuing_without_deliberation: {exc}")
+        state["deliberation_round_count"] = round_number
+    return CONSENSUS_CHECK, "deliberation round handled"
+
+
+def handle_consensus_check(state: dict) -> tuple[str, str]:
+    """Bounded check between deliberation rounds and meta recheck."""
+    _run_balance(state, "consensus_balance")
+    _rebuild_brief(state, "consensus_brief")
+
+    if state.get("meta_decision"):
+        state["deliberation_brief"] = apply_meta_decision_to_brief(
+            state.get("deliberation_brief", {}),
+            state.get("meta_decision", {}),
+        )
+
+    _run_conflict_analysis(state, "consensus_conflict_analysis")
+
+    round_count = int(state.get("deliberation_round_count", 0))
+    max_rounds = _normalize_max_deliberation_rounds(state.get("max_deliberation_rounds", 1))
+    high_unresolved = _has_high_severity_tradeoff(state.get("conflict_report"))
+    conflicting_roles = _high_conflict_role_keys(state)
+    can_run_second_round = bool(high_unresolved and conflicting_roles and round_count < max_rounds)
+
+    check = {
+        "after_round": round_count,
+        "high_unresolved_conflict": bool(high_unresolved),
+        "conflicting_roles": conflicting_roles,
+        "remaining_disagreements": len(_safe_list(_safe_dict(state.get("conflict_report")).get("disagreements"))),
+        "remaining_tradeoffs": len(_safe_list(_safe_dict(state.get("conflict_report")).get("unresolved_tradeoffs"))),
+        "decision": "DELIBERATION_ROUND_2" if can_run_second_round else "META_RECHECK",
+    }
+    state.setdefault("consensus_checks", []).append(check)
+
+    if can_run_second_round:
+        return DELIBERATION_ROUND, "consensus check found unresolved high-severity conflict"
+
     state["deliberation_round_done"] = True
-    return REBALANCE, "deliberation round handled"
+    if high_unresolved and not conflicting_roles and round_count < max_rounds:
+        state["warnings"].append("consensus_check_high_conflict_without_identifiable_roles")
+
+    if int(state.get("meta_recheck_count", 0)) >= int(state.get("max_meta_rechecks", 1)):
+        state["warnings"].append("meta_recheck_limit_reached_after_consensus_check")
+        return PLAN, "consensus check complete; meta recheck limit already reached"
+
+    return META_RECHECK, "consensus check complete"
 
 
 def handle_panel_round_extra(state: dict) -> tuple[str, str]:
@@ -1697,6 +1715,10 @@ def _build_trace_report(state: dict) -> dict:
         "conflict_reports": conflict_reports,
         "deliberation_rounds": deliberation_rounds,
         "deliberation_revisions": _flatten_deliberation_revisions(deliberation_rounds),
+        "deliberation_round_count": int(state.get("deliberation_round_count", 0)),
+        "max_deliberation_rounds": int(state.get("max_deliberation_rounds", 1)),
+        "consensus_checks": _safe_list(state.get("consensus_checks")),
+        "deliberation_position_changes": _safe_list(state.get("deliberation_position_changes")),
         "dynamic_role_reports": [_sanitize_dynamic_role_report(report) for report in dynamic_role_reports],
         "dynamic_roles_generated": dynamic_roles_generated,
         "dynamic_roles_executed": dynamic_roles_executed,
@@ -1761,6 +1783,8 @@ def _compact_raw_state(state: dict) -> dict:
         "transition_count": state.get("transition_count", 0),
         "iteration_count": state.get("iteration_count", 0),
         "meta_recheck_count": int(state.get("meta_recheck_count", 0)),
+        "deliberation_round_count": int(state.get("deliberation_round_count", 0)),
+        "max_deliberation_rounds": int(state.get("max_deliberation_rounds", 1)),
         "warnings": _safe_list(state.get("warnings")),
         "errors": _safe_list(state.get("errors")),
         "history": _safe_list(state.get("history")),
@@ -1768,18 +1792,12 @@ def _compact_raw_state(state: dict) -> dict:
 
 
 def _build_result(state: dict) -> dict:
-    final_answer = state.get("final_answer") if state.get("current_state") != FAILED else ""
-    if not isinstance(final_answer, str):
-        final_answer = ""
-    return {
-        "final_answer": final_answer,
-        "trace_report": _build_trace_report(state),
-        "raw": {
-            "expert_bundle": state.get("expert_bundle", {}),
-            "moderated_result": state.get("moderated_result", {}),
-            "state": _compact_raw_state(state),
-        },
-    }
+    return build_result_payload(
+        state=state,
+        trace_report=_build_trace_report(state),
+        raw_state=_compact_raw_state(state),
+        failed_state=FAILED,
+    )
 
 
 _HANDLERS = {
@@ -1791,6 +1809,7 @@ _HANDLERS = {
     CONFLICT_ANALYSIS: handle_conflict_analysis,
     META_DECISION: handle_meta_decision,
     DELIBERATION_ROUND: handle_deliberation_round,
+    CONSENSUS_CHECK: handle_consensus_check,
     PANEL_ROUND_EXTRA: handle_panel_round_extra,
     REBALANCE: handle_rebalance,
     META_RECHECK: handle_meta_recheck,
@@ -1811,6 +1830,7 @@ def run_cmm_state_machine(
     route_mode: str = "AUTO",
     parallel_mode: str = "SEQUENTIAL",
     max_workers: int | None = None,
+    max_deliberation_rounds: int = 1,
 ) -> dict:
     """Run CMM through a bounded explicit state machine."""
     state = init_cmm_state(
@@ -1821,6 +1841,7 @@ def run_cmm_state_machine(
         route_mode=route_mode,
         parallel_mode=parallel_mode,
         max_workers=max_workers,
+        max_deliberation_rounds=max_deliberation_rounds,
     )
 
     while state.get("current_state") not in {FINALIZE, FAILED}:

@@ -1,0 +1,2 @@
+case_id,expected_mode,actual_mode,router_mode_match,estimated_cost_class,answer_chars,warnings,errors,cmm_final_state
+V2-001,DIRECT,FULL_CMM,False,L,,meta_recheck_limit_reached_after_rebalance | plan_needs_revision_after_max_iters,plan_needs_revision_after_max_iters | critical_plan_blockers,FAILED

@@ -13,6 +13,7 @@ def run_cmm(
     route_mode: str = "AUTO",
     parallel_mode: str = "SEQUENTIAL",
     max_workers: int | None = None,
+    max_deliberation_rounds: int = 1,
 ) -> dict:
     """Run the Collective Meta-Moderation pipeline through the state machine."""
     return run_cmm_state_machine(
@@ -22,4 +23,5 @@ def run_cmm(
         route_mode=route_mode,
         parallel_mode=parallel_mode,
         max_workers=max_workers,
+        max_deliberation_rounds=max_deliberation_rounds,
     )

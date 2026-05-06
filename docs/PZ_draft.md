@@ -11,8 +11,8 @@ Collective Meta-Moderation — экспериментальный програм
 ## Технические характеристики
 
 - Язык: Python.
-- Основной API: `Lib.orchestrator.run_cmm(query, max_iters=2, model="deepseek-chat", route_mode="AUTO", parallel_mode="SEQUENTIAL", max_workers=None)`; старые вызовы без новых optional параметров сохраняются, внутри выполнение делегируется bounded CMM state machine.
-- CLI запуска CMM: `python main.py`.
+- Основной API: `Lib.orchestrator.run_cmm(query, max_iters=2, model="deepseek-chat", route_mode="AUTO", parallel_mode="SEQUENTIAL", max_workers=None, max_deliberation_rounds=1)`; старые вызовы без новых optional параметров сохраняются, внутри выполнение делегируется bounded CMM state machine. `max_deliberation_rounds` ограничен диапазоном `1..2`.
+- CLI запуска CMM: `python main.py`; компактный trace demo: `python main.py --trace-summary "query"`.
 - CLI оценки: `python -m cmm.eval --dataset cmm_dataset_v1.csv --mode mock` или `python -m cmm.eval --dataset cmm_dataset_v2.csv --limit 20 --mode mock`.
 - CLI real-evaluation: `python -m cmm.eval --dataset cmm_dataset_v2.csv --limit 20 --mode real --judge-mode none|llm`.
 - Зависимости: `openai`, `python-dotenv`.
@@ -31,13 +31,15 @@ Collective Meta-Moderation — экспериментальный програм
 6. `PLAN`: для `LIGHT_CMM` перейти к планированию без conflict/meta/deliberation/second-round stages.
 7. `CONFLICT_ANALYSIS`: для `FULL_CMM` выявить согласия, разногласия, trade-offs, blind spots и риски преждевременного консенсуса.
 8. `META_DECISION`: принять process-level решение.
-9. `DELIBERATION_ROUND`: при необходимости запустить один structured deliberation round.
-10. `PANEL_ROUND_EXTRA`: при необходимости запустить один targeted second expert round. Он также последовательный по умолчанию и может использовать opt-in thread execution только для независимых вызовов выбранных ролей.
-11. `REBALANCE`: обновить balance, brief и conflict in-place без нового meta loop.
-12. `PLAN_CRITIQUE`: проверить план context-aware критиком с учётом `query_intake`, `must_address`, экспертных рисков и рекомендаций, conflict reports, dynamic roles, deliberation revisions, meta decision и предыдущего replan feedback. Stage 9 hardening добавляет совместимые поля `decision`, `ignored_risks`, `ignored_tradeoffs`, `ignored_must_address` и не позволяет молча принять план, который игнорирует критические экспертные риски или критические must-address пункты.
-13. `REPLAN`: при `needs_revision` / `rejected` пересоздать только план на основе последнего контекста и actionable critique feedback.
-14. `ANSWER` / `ANSWER_MODERATION`: использовать существующий `run_moderated_loop` как black-box компонент.
-15. `FINALIZE` или `FAILED`: вернуть `final_answer`, `trace_report` и raw-данные.
+9. `DELIBERATION_ROUND`: при необходимости запустить structured deliberation round.
+10. `CONSENSUS_CHECK`: после deliberation обновить balance/brief/conflict; при `max_deliberation_rounds=2` запустить второй deliberation round только для unresolved high-severity conflicts с явно определёнными ролями.
+11. `META_RECHECK`: после изменений deliberation/extra round проверить, можно ли перейти к планированию или нужен targeted follow-up.
+12. `PANEL_ROUND_EXTRA`: при необходимости запустить один targeted second expert round. Он также последовательный по умолчанию и может использовать opt-in thread execution только для независимых вызовов выбранных ролей.
+13. `REBALANCE`: обновить balance, brief и conflict.
+14. `PLAN_CRITIQUE`: проверить план context-aware критиком с учётом `query_intake`, `must_address`, экспертных рисков и рекомендаций, conflict reports, dynamic roles, deliberation revisions, meta decision и предыдущего replan feedback. Stage 9 hardening добавляет совместимые поля `decision`, `ignored_risks`, `ignored_tradeoffs`, `ignored_must_address` и не позволяет молча принять план, который игнорирует критические экспертные риски или критические must-address пункты.
+15. `REPLAN`: при `needs_revision` / `rejected` пересоздать только план на основе последнего контекста и actionable critique feedback.
+16. `ANSWER` / `ANSWER_MODERATION`: использовать существующий `run_moderated_loop` как black-box компонент.
+17. `FINALIZE` или `FAILED`: вернуть `final_answer`, `trace_report` и raw-данные.
 
 ## Входные и выходные данные
 
@@ -71,6 +73,8 @@ Collective Meta-Moderation — экспериментальный програм
 - `main.py`: CLI-обертка.
 - `Lib/orchestrator.py`: публичная обертка `run_cmm`.
 - `Lib/state_machine.py`: bounded state-machine orchestration, история переходов и сбор trace/result.
+- `Lib/state_fallbacks.py`: fallback-структуры для state machine.
+- `Lib/state_trace.py`: компактные helpers для сборки result payload.
 - `Lib/router.py`: deterministic routing layer для `DIRECT`, `LIGHT_CMM`, `FULL_CMM`.
 - `Lib/direct_answer.py`: прямой low-cost ответ для простых low-risk задач.
 - `Lib/parallel_utils.py`: bounded helpers для optional ordered thread execution независимых экспертных вызовов.
@@ -83,7 +87,7 @@ Collective Meta-Moderation — экспериментальный програм
 - `Lib/balance_analyzer.py`: Balance Analyzer 2.0, который сохраняет tag/count checks и добавляет deterministic quality heuristics.
 - `Lib/conflict_analyzer.py`: смысловой анализ согласий, разногласий, trade-offs, blind spots и рисков преждевременного консенсуса.
 - `Lib/deliberation.py`: синтез экспертного brief.
-- `Lib/deliberation_round.py`: структурированный раунд, где выбранные эксперты отвечают на позиции других ролей и пересматривают рекомендации.
+- `Lib/deliberation_round.py`: структурированный раунд, где выбранные эксперты отвечают на позиции других ролей и пересматривают рекомендации; opt-in второй раунд ограничен named high-severity conflicts.
 - `Lib/meta_moderator.py`: управление процессом.
 - `Lib/plan_development.py`: JSON-first планировщик с retry, legacy text parser и context-aware fallback plan.
 - `Lib/plan_critic.py`: context-aware JSON-first критик плана.
@@ -121,7 +125,7 @@ Real judged evaluation является отдельным opt-in режимом
 ## Ограничения
 
 - Второй экспертный раунд есть, но он ограничен: он использует существующие базовые роли и whitelist dynamic role templates, и является targeted follow-up, а не свободной дискуссией.
-- Structured deliberation round есть, но он ограничен одной schema-driven итерацией и не является полноценной свободной debate/state-machine системой.
+- Structured deliberation round есть, но по умолчанию он ограничен одной schema-driven итерацией. Второй раунд opt-in, capped и запускается только для unresolved high-severity conflicts с определяемыми ролями; это не полноценная свободная debate/state-machine система.
 - Dynamic roles ограничены заранее заданными шаблонами; модель может предложить только разрешенный key/tag, но не произвольный `system_prompt`.
 - Role generation теперь rules-first: очевидные cost/measurement/legal/ethics роли выбираются без model call; модель используется только как дополнительный источник при свободных слотах и сложном контексте.
 - Trace разделяет `dynamic_roles_generated`, `dynamic_roles_executed` и `dynamic_roles_rejected`; старое поле `dynamic_roles_used` сохранено как alias к реально выполненным `dynamic_roles_executed`.

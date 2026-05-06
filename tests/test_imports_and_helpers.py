@@ -21,6 +21,8 @@ class ImportAndHelperTests(unittest.TestCase):
             "Lib.json_retry",
             "Lib.orchestrator",
             "Lib.state_machine",
+            "Lib.state_fallbacks",
+            "Lib.state_trace",
             "Lib.router",
             "Lib.direct_answer",
             "Lib.parallel_utils",

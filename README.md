@@ -29,9 +29,33 @@ python tools/analyze_eval_routing.py --input eval_real_20/results.csv --output e
 
 ## Environment
 
-1. Create a local `.env` from `.env.example`.
-2. Set `DEEPSEEK_API_KEY` locally.
+1. Create a local `.env` file.
+2. Set API key and base URL for your provider.
 3. Install dependencies from `requirements.txt`.
+
+### Option A: Claude via OmniRoute (recommended for agent testing)
+
+```bash
+# Start OmniRoute, open http://localhost:20128/dashboard
+# Go to API Manager → Create API Key
+# Copy the key and add to .env:
+
+OMNIROUTE_API_KEY=sk-your-omniroute-key
+OMNIROUTE_BASE_URL=http://localhost:20128/v1
+AI_MODEL=kr/claude-sonnet-4.5
+```
+
+Verify setup:
+```bash
+curl http://localhost:20128/v1/models -H "Authorization: Bearer YOUR_KEY"
+```
+
+### Option B: DeepSeek (original setup)
+
+```bash
+DEEPSEEK_API_KEY=sk-your-deepseek-key
+AI_MODEL=deepseek-chat
+```
 
 Do not commit real secrets. `.env` and `Api.env` are ignored. The API client reads secrets only at call time and does not print key values.
 
@@ -53,7 +77,13 @@ print(result["final_answer"])
 print(result["trace_report"])
 ```
 
-`run_cmm(query, *, max_iters=2, model="deepseek-chat", route_mode="AUTO", parallel_mode="SEQUENTIAL", max_workers=None)` is the central MVP entrypoint. Existing calls without the newer optional keywords still work. Internally it delegates to a bounded CMM state machine with deterministic routing.
+`run_cmm(query, *, max_iters=2, model="deepseek-chat", route_mode="AUTO", parallel_mode="SEQUENTIAL", max_workers=None, max_deliberation_rounds=1)` is the central MVP entrypoint. Existing calls without the newer optional keywords still work. Internally it delegates to a bounded CMM state machine with deterministic routing. `max_deliberation_rounds` is capped to `1..2`; the default preserves the original one-round behavior.
+
+For a compact demo/debug view:
+
+```bash
+python main.py --trace-summary "Кратко объясни коллективную метамодерацию"
+```
 
 ## Architecture Overview
 
@@ -69,8 +99,10 @@ original_query
 -> PLAN for LIGHT_CMM
    or CONFLICT_ANALYSIS for FULL_CMM
 -> META_DECISION
--> DELIBERATION_ROUND or PANEL_ROUND_EXTRA when needed
--> REBALANCE
+-> DELIBERATION_ROUND when needed
+-> CONSENSUS_CHECK
+-> optional second DELIBERATION_ROUND only for unresolved high-severity conflicts
+-> META_RECHECK / PANEL_ROUND_EXTRA / REBALANCE when needed
 -> PLAN
 -> PLAN_CRITIQUE
 -> REPLAN when critique requires it
@@ -82,6 +114,8 @@ Key modules:
 
 - `Lib/orchestrator.py`: public `run_cmm(...)` wrapper.
 - `Lib/state_machine.py`: bounded CMM state machine, transition history, trace/result assembly.
+- `Lib/state_fallbacks.py`: fallback structures used by the state machine.
+- `Lib/state_trace.py`: small result-payload assembly helpers for state-machine output.
 - `Lib/router.py`: deterministic router that chooses `DIRECT`, `LIGHT_CMM`, or `FULL_CMM`.
 - `Lib/direct_answer.py`: low-cost direct answer path for simple low-risk requests.
 - `Lib/query_intake.py`: preserves the original query as authoritative and extracts helper structure such as constraints, context, success criteria, unknowns, and preferences.
@@ -93,7 +127,7 @@ Key modules:
 - `Lib/balance_analyzer.py`: Balance Analyzer 2.0 checks missing/dominant perspectives plus deterministic quality heuristics.
 - `Lib/conflict_analyzer.py`: checks semantic agreements, disagreements, unresolved trade-offs, blind spots, and premature consensus risks.
 - `Lib/deliberation.py`: builds compact expert synthesis for downstream stages.
-- `Lib/deliberation_round.py`: runs a structured deliberation pass where experts respond to other roles and revise recommendations.
+- `Lib/deliberation_round.py`: runs a structured deliberation pass where experts respond to other roles and revise recommendations; an opt-in second pass is limited to named roles in unresolved high-severity conflicts.
 - `Lib/meta_moderator.py`: makes process-level decisions such as `SYNTHESIZE` or `DEEPEN`.
 - `Lib/plan_development.py`: creates a JSON-first plan with legacy fallback.
 - `Lib/plan_critic.py`: checks plans against the current CMM context and returns structured `ready` / `needs_revision` / `rejected` feedback.
@@ -176,7 +210,9 @@ The project uses JSON-first contracts where downstream code depends on structure
 
 `meta_moderator` reviews the process after expert balance and before planning. It checks whether perspectives are missing, one perspective dominates, or risks/questions need deeper treatment.
 
-When conflict or meta-moderation state indicates meaningful disagreement, unresolved trade-offs, blind spots, or premature consensus, the MVP can run one structured deliberation round using existing base roles. Experts see their own first contribution, compact positions from other roles, and the conflict report, then return agreements, disagreements, missed points, revised recommendations, new risks, and group questions.
+When conflict or meta-moderation state indicates meaningful disagreement, unresolved trade-offs, blind spots, or premature consensus, the MVP runs one structured deliberation round using existing roles. Experts see their own first contribution, compact positions from other roles, and the conflict report, then return agreements, disagreements, missed points, revised recommendations, new risks, and group questions.
+
+By default deliberation remains one round. If `max_deliberation_rounds=2`, the state machine performs a `CONSENSUS_CHECK` after round 1, refreshes balance/brief/conflict context once, and runs a second round only when a high-severity unresolved conflict remains and the conflicting roles are identifiable. This keeps deliberation bounded and prevents open-ended debate.
 
 If the decision is still `DEEPEN` or `ADD_EXPERT`, the MVP may also run the existing targeted second expert round using existing base roles and safe dynamic templates. It is sequential by default and can use opt-in thread execution for independent expert calls. The system merges downstream expert context, re-runs balance/conflict analysis, rebuilds `deliberation_brief`, and records expert rounds, deliberation rounds, dynamic role reports, balance reports, and conflict reports in `trace_report`.
 
@@ -228,7 +264,7 @@ The test suite is designed to run without a real API key, network access, or ext
 - Balance Analyzer 2.0 and semantic conflict analysis provide heuristic quality signals, but they do not prove quality or fully solve groupthink.
 - The state machine is bounded and MVP-level; it is not an unbounded autonomous process controller.
 - The router is deterministic and heuristic; real evaluation should compare quality and cost by `cmm_mode` and router complexity.
-- The structured deliberation round lets selected experts respond to other roles and revise recommendations, but it is bounded and schema-driven.
+- The structured deliberation round lets selected experts respond to other roles and revise recommendations, but it is bounded and schema-driven. A second deliberation round is opt-in, capped, and only for unresolved high-severity conflicts with identifiable roles.
 - The context-aware plan critic is still an MVP control node with heuristic/model-assisted checks, not formal verification of plan correctness.
 - The second expert round is implemented, but it is limited to existing safe base roles plus whitelisted dynamic templates.
 - There is no fully free-form expert debate state machine.

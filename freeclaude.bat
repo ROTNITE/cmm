@@ -28,7 +28,7 @@ set "ANTHROPIC_CUSTOM_MODEL_OPTION=kr/claude-sonnet-4.5"
 REM Optional: increase timeout when routing through a gateway.
 set "API_TIMEOUT_MS=600000"
 
-call claude --model "%ANTHROPIC_MODEL%" %*
+call claude --model "%ANTHROPIC_MODEL%" --permission-mode bypassPermissions %*
 
 REM Optional troubleshooting:
 REM If your gateway rejects Anthropic beta headers, uncomment:

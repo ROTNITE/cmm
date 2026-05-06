@@ -1,0 +1,3939 @@
+{
+  "schema_report": {
+    "path": "cmm_dataset_v2.csv",
+    "columns": [
+      "id",
+      "query",
+      "context",
+      "constraints",
+      "expected_perspectives",
+      "rubric_must_cover",
+      "rubric_desirable",
+      "expected_single_model_failure_modes",
+      "expected_mode"
+    ],
+    "row_count": 20,
+    "missing_optional_columns": [
+      "expected_domain_expert",
+      "rubric_should_cover",
+      "reference_outline"
+    ],
+    "warnings": []
+  },
+  "judge_mode": "none",
+  "results": [
+    {
+      "case_id": "V2-001",
+      "expected_mode": "DIRECT",
+      "actual_mode": "DIRECT",
+      "router_mode_match": true,
+      "winner": "UNJUDGED",
+      "baseline_overall": 0.0,
+      "cmm_overall": 0.0,
+      "overall_delta": 0.0,
+      "baseline_rubric_coverage": 0.0,
+      "cmm_rubric_coverage": 0.0,
+      "baseline_perspective_coverage": 0.0,
+      "cmm_perspective_coverage": 0.0,
+      "baseline_risk_handling": 0.0,
+      "cmm_risk_handling": 0.0,
+      "baseline_actionability": 0.0,
+      "cmm_actionability": 0.0,
+      "baseline_clarity": 0.0,
+      "cmm_clarity": 0.0,
+      "reason": "judge_mode=none; exported for human review",
+      "baseline_failure_modes": "",
+      "cmm_failure_modes": "",
+      "baseline_answer_chars": 124,
+      "cmm_answer_chars": 373,
+      "cmm_trace_available": true,
+      "cmm_mode": "DIRECT",
+      "router_complexity": "low",
+      "estimated_cost_class": "S",
+      "cmm_final_state": "FINALIZE",
+      "cmm_warning_count": 6,
+      "cmm_error_count": 0,
+      "cmm_warnings": "query_intake: model_intake_invalid_json | query_intake: json_model_empty_or_error_attempt_1 | query_intake: json_retry_after_invalid_json | query_intake: json_model_empty_or_error_attempt_2 | query_intake: json_retry_exhausted | direct_answer: direct_answer_failed",
+      "cmm_errors": "",
+      "cmm_json_warnings": "query_intake: model_intake_invalid_json | query_intake: json_model_empty_or_error_attempt_1 | query_intake: json_retry_after_invalid_json | query_intake: json_model_empty_or_error_attempt_2 | query_intake: json_retry_exhausted",
+      "cmm_json_fallback_count": 0,
+      "expert_valid_contributions": 0,
+      "expert_invalid_json_contributions": 0,
+      "planner_raw_format": "",
+      "planner_json_attempts": 0,
+      "plan_critique_statuses": "",
+      "answer_moderation_final_decision": "",
+      "answer_moderation_best_effort": false,
+      "roles_used_unique": "[]",
+      "estimated_call_count": 3,
+      "estimated_stage_count": 3,
+      "answer_chars": 373,
+      "warnings_count": 6,
+      "errors_count": 0
+    },
+    {
+      "case_id": "V2-002",
+      "expected_mode": "DIRECT",
+      "actual_mode": "LIGHT_CMM_DEGRADED",
+      "router_mode_match": false,
+      "winner": "UNJUDGED",
+      "baseline_overall": 0.0,
+      "cmm_overall": 0.0,
+      "overall_delta": 0.0,
+      "baseline_rubric_coverage": 0.0,
+      "cmm_rubric_coverage": 0.0,
+      "baseline_perspective_coverage": 0.0,
+      "cmm_perspective_coverage": 0.0,
+      "baseline_risk_handling": 0.0,
+      "cmm_risk_handling": 0.0,
+      "baseline_actionability": 0.0,
+      "cmm_actionability": 0.0,
+      "baseline_clarity": 0.0,
+      "cmm_clarity": 0.0,
+      "reason": "judge_mode=none; exported for human review",
+      "baseline_failure_modes": "",
+      "cmm_failure_modes": "",
+      "baseline_answer_chars": 124,
+      "cmm_answer_chars": 691,
+      "cmm_trace_available": true,
+      "cmm_mode": "LIGHT_CMM_DEGRADED",
+      "router_complexity": "low",
+      "estimated_cost_class": "M",
+      "cmm_final_state": "FINALIZE",
+      "cmm_warning_count": 13,
+      "cmm_error_count": 0,
+      "cmm_warnings": "query_intake: model_intake_invalid_json | query_intake: json_model_empty_or_error_attempt_1 | query_intake: json_retry_after_invalid_json | query_intake: json_model_empty_or_error_attempt_2 | query_intake: json_retry_exhausted | expert_panel_catastrophic_json_failure: 5/5 experts failed JSON parsing | cmm_mode_degraded: LIGHT_CMM -> LIGHT_CMM_DEGRADED | dynamic_roles_extra: json_model_empty_or_error_attempt_1 | dynamic_roles_extra: json_retry_after_invalid_json | dynamic_roles_extra: json_model_empty_or_error_attempt_2 | dynamic_roles_extra: json_retry_exhausted | dynamic_roles_extra: dynamic_role_json_parse_failed | answer_moderation_revise_best_effort",
+      "cmm_errors": "",
+      "cmm_json_warnings": "query_intake: model_intake_invalid_json | query_intake: json_model_empty_or_error_attempt_1 | query_intake: json_retry_after_invalid_json | query_intake: json_model_empty_or_error_attempt_2 | query_intake: json_retry_exhausted | expert_panel_catastrophic_json_failure: 5/5 experts failed JSON parsing | dynamic_roles_extra: json_model_empty_or_error_attempt_1 | dynamic_roles_extra: json_retry_after_invalid_json | dynamic_roles_extra: json_model_empty_or_error_attempt_2 | dynamic_roles_extra: json_retry_exhausted | dynamic_roles_extra: dynamic_role_json_parse_failed",
+      "cmm_json_fallback_count": 17,
+      "expert_valid_contributions": 0,
+      "expert_invalid_json_contributions": 9,
+      "planner_raw_format": "fallback",
+      "planner_json_attempts": 2,
+      "plan_critique_statuses": "ready",
+      "answer_moderation_final_decision": "REVISE",
+      "answer_moderation_best_effort": true,
+      "roles_used_unique": "[{\"key\": \"strategist\", \"name\": \"Strategist\", \"perspective_tag\": \"strategy\", \"rounds\": [\"initial\", \"extra\"], \"dynamic\": false}, {\"key\": \"engineer\", \"name\": \"Engineer\", \"perspective_tag\": \"engineering\", \"rounds\": [\"initial\", \"extra\"], \"dynamic\": false}, {\"key\": \"risk_manager\", \"name\": \"Risk Manager\", \"perspective_tag\": \"risk\", \"rounds\": [\"initial\", \"extra\"], \"dynamic\": false}, {\"key\": \"user_advocate\", \"name\": \"User Advocate\", \"perspective_tag\": \"user\", \"rounds\": [\"initial\", \"extra\"], \"dynamic\": false}, {\"key\": \"measurement_expert\", \"name\": \"Measurement Expert\", \"perspective_tag\": \"measurement\", \"rounds\": [\"initial\"], \"dynamic\": true}]",
+      "estimated_call_count": 39,
+      "estimated_stage_count": 13,
+      "answer_chars": 691,
+      "warnings_count": 13,
+      "errors_count": 0
+    },
+    {
+      "case_id": "V2-003",
+      "expected_mode": "DIRECT",
+      "actual_mode": "DIRECT",
+      "router_mode_match": true,
+      "winner": "UNJUDGED",
+      "baseline_overall": 0.0,
+      "cmm_overall": 0.0,
+      "overall_delta": 0.0,
+      "baseline_rubric_coverage": 0.0,
+      "cmm_rubric_coverage": 0.0,
+      "baseline_perspective_coverage": 0.0,
+      "cmm_perspective_coverage": 0.0,
+      "baseline_risk_handling": 0.0,
+      "cmm_risk_handling": 0.0,
+      "baseline_actionability": 0.0,
+      "cmm_actionability": 0.0,
+      "baseline_clarity": 0.0,
+      "cmm_clarity": 0.0,
+      "reason": "judge_mode=none; exported for human review",
+      "baseline_failure_modes": "",
+      "cmm_failure_modes": "",
+      "baseline_answer_chars": 124,
+      "cmm_answer_chars": 339,
+      "cmm_trace_available": true,
+      "cmm_mode": "DIRECT",
+      "router_complexity": "low",
+      "estimated_cost_class": "S",
+      "cmm_final_state": "FINALIZE",
+      "cmm_warning_count": 6,
+      "cmm_error_count": 0,
+      "cmm_warnings": "query_intake: model_intake_invalid_json | query_intake: json_model_empty_or_error_attempt_1 | query_intake: json_retry_after_invalid_json | query_intake: json_model_empty_or_error_attempt_2 | query_intake: json_retry_exhausted | direct_answer: direct_answer_failed",
+      "cmm_errors": "",
+      "cmm_json_warnings": "query_intake: model_intake_invalid_json | query_intake: json_model_empty_or_error_attempt_1 | query_intake: json_retry_after_invalid_json | query_intake: json_model_empty_or_error_attempt_2 | query_intake: json_retry_exhausted",
+      "cmm_json_fallback_count": 0,
+      "expert_valid_contributions": 0,
+      "expert_invalid_json_contributions": 0,
+      "planner_raw_format": "",
+      "planner_json_attempts": 0,
+      "plan_critique_statuses": "",
+      "answer_moderation_final_decision": "",
+      "answer_moderation_best_effort": false,
+      "roles_used_unique": "[]",
+      "estimated_call_count": 3,
+      "estimated_stage_count": 3,
+      "answer_chars": 339,
+      "warnings_count": 6,
+      "errors_count": 0
+    }
+  ],
+  "artifacts": [
+    {
+      "case_id": "V2-001",
+      "case": {
+        "id": "V2-001",
+        "query": "Что такое коллективная метамодерация?",
+        "context": "Пользователь просит короткое объяснение термина.",
+        "constraints": "Ответ кратко до 5 предложений.",
+        "expected_perspectives": "",
+        "rubric_must_cover": "простое определение | отличие от обычной модерации | упоминание нескольких перспектив",
+        "rubric_desirable": "пример применения",
+        "expected_single_model_failure_modes": "слишком длинное объяснение | уход в абстракции",
+        "expected_mode": "DIRECT",
+        "case_id": "V2-001",
+        "schema_warnings": []
+      },
+      "baseline": {
+        "answer": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+        "trace_report": {
+          "mode": "real_baseline"
+        }
+      },
+      "cmm": {
+        "answer": "Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\"LIGHT_CMM\")`.",
+        "final_answer": "Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\"LIGHT_CMM\")`.",
+        "trace_report": {
+          "original_query": "Что такое коллективная метамодерация?\nКонтекст: Пользователь просит короткое объяснение термина.\nОграничения: Ответ кратко до 5 предложений.",
+          "formalized_query": "Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.",
+          "query_intake": {
+            "original_query": "Что такое коллективная метамодерация?\nКонтекст: Пользователь просит короткое объяснение термина.\nОграничения: Ответ кратко до 5 предложений.",
+            "cleaned_query": "Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.",
+            "task_goal": "Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.",
+            "context": [
+              "Контекст: Пользователь просит короткое объяснение термина."
+            ],
+            "constraints": [
+              "Ограничения: Ответ кратко до 5 предложений."
+            ],
+            "success_criteria": [],
+            "unknowns": [],
+            "user_preferences": [],
+            "risk_level": "low",
+            "complexity": "simple",
+            "should_use_cmm": false,
+            "parse_warnings": [
+              "model_intake_invalid_json",
+              "json_model_empty_or_error_attempt_1",
+              "json_retry_after_invalid_json",
+              "json_model_empty_or_error_attempt_2",
+              "json_retry_exhausted"
+            ],
+            "json_attempts": 2,
+            "source": "fallback"
+          },
+          "router_decision": {
+            "mode": "DIRECT",
+            "reason": "Simple low-risk explanation request has only formatting constraints.",
+            "complexity": "low",
+            "needs_expert_panel": false,
+            "needs_second_round": false,
+            "estimated_cost_class": "S",
+            "signals": {
+              "risk_level": "low",
+              "intake_complexity": "simple",
+              "word_count": 76,
+              "constraints_count": 1,
+              "success_criteria_count": 0,
+              "context_count": 1,
+              "unknowns_count": 0,
+              "preferences_count": 0,
+              "has_constraints": true,
+              "has_success_criteria": false,
+              "should_use_cmm": false,
+              "has_high_risk_markers": false,
+              "has_risk_markers": false,
+              "has_stakeholder_markers": true,
+              "has_tradeoff_markers": false,
+              "has_full_markers": false,
+              "has_light_markers": false,
+              "has_direct_markers": true,
+              "needs_second_round": false
+            },
+            "warnings": []
+          },
+          "cmm_mode": "DIRECT",
+          "estimated_cost_class": "S",
+          "routing_warnings": [],
+          "parallel_mode": "SEQUENTIAL",
+          "max_workers": null,
+          "parallelized_stages": [],
+          "roles_used": [],
+          "roles_used_unique": [],
+          "expert_rounds": [],
+          "deliberation_brief": {},
+          "balance_reports": [],
+          "conflict_reports": [],
+          "deliberation_rounds": [],
+          "deliberation_revisions": [],
+          "deliberation_round_count": 0,
+          "max_deliberation_rounds": 1,
+          "consensus_checks": [],
+          "deliberation_position_changes": [],
+          "dynamic_role_reports": [],
+          "dynamic_roles_generated": [],
+          "dynamic_roles_executed": [],
+          "dynamic_roles_rejected": [],
+          "dynamic_roles_used": [],
+          "unresolved_tradeoffs": [],
+          "premature_consensus_risks": [],
+          "blind_spots": [],
+          "plan": {},
+          "plan_critique": {},
+          "moderation_reports": [],
+          "answer_moderation_final_decision": "",
+          "answer_moderation_critical_issues": [],
+          "answer_moderation_revision_count": 0,
+          "answer_moderation_best_effort": false,
+          "quality_gate_decisions": [],
+          "context_compression": {
+            "planner_context_chars": 0,
+            "critic_context_chars": 0,
+            "answer_context_chars": 0,
+            "meta_context_chars": 0
+          },
+          "revision_count": 0,
+          "final_confidence": null,
+          "meta_moderation_decisions": [],
+          "meta_recheck_count": 0,
+          "meta_recheck_decisions": [],
+          "conflicts_to_resolve": [],
+          "risks_to_address": [],
+          "warnings": [
+            "query_intake: model_intake_invalid_json",
+            "query_intake: json_model_empty_or_error_attempt_1",
+            "query_intake: json_retry_after_invalid_json",
+            "query_intake: json_model_empty_or_error_attempt_2",
+            "query_intake: json_retry_exhausted",
+            "direct_answer: direct_answer_failed"
+          ],
+          "state_history": [
+            {
+              "from": "INTAKE",
+              "to": "ROUTE",
+              "reason": "query intake complete"
+            },
+            {
+              "from": "ROUTE",
+              "to": "DIRECT_ANSWER",
+              "reason": "router selected direct answer"
+            },
+            {
+              "from": "DIRECT_ANSWER",
+              "to": "FINALIZE",
+              "reason": "direct answer finalized"
+            }
+          ],
+          "final_state": "FINALIZE",
+          "transition_count": 3,
+          "iteration_count": 0,
+          "plans": [],
+          "plan_critiques": [],
+          "plan_critique_statuses": [],
+          "plan_replan_reasons": [],
+          "plan_critique_decisions": [],
+          "plan_critique_blockers": [],
+          "ignored_must_address": [],
+          "ignored_risks": [],
+          "ignored_tradeoffs": [],
+          "errors": [],
+          "json_health": {
+            "expert_agent": {
+              "calls": 0,
+              "success": 0,
+              "fallbacks": 0,
+              "retry_attempts": 0,
+              "invalid_json_count": 0
+            },
+            "planner": {
+              "called": false,
+              "success": false,
+              "raw_format": "",
+              "source": "",
+              "json_attempts": 0
+            },
+            "moderator": {
+              "invalid_json_count": 0,
+              "retry_attempts": 0,
+              "final_decision": ""
+            },
+            "conflict_analyzer": {
+              "invalid_json_count": 0,
+              "retry_attempts": 0
+            },
+            "meta_moderator": {
+              "invalid_json_count": 0,
+              "retry_attempts": 0
+            }
+          },
+          "estimated_call_count": 3,
+          "estimated_stage_count": 3,
+          "answer_chars": 373,
+          "warnings_count": 6,
+          "errors_count": 0
+        }
+      },
+      "cmm_trace_report": {
+        "original_query": "Что такое коллективная метамодерация?\nКонтекст: Пользователь просит короткое объяснение термина.\nОграничения: Ответ кратко до 5 предложений.",
+        "formalized_query": "Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.",
+        "query_intake": {
+          "original_query": "Что такое коллективная метамодерация?\nКонтекст: Пользователь просит короткое объяснение термина.\nОграничения: Ответ кратко до 5 предложений.",
+          "cleaned_query": "Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.",
+          "task_goal": "Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.",
+          "context": [
+            "Контекст: Пользователь просит короткое объяснение термина."
+          ],
+          "constraints": [
+            "Ограничения: Ответ кратко до 5 предложений."
+          ],
+          "success_criteria": [],
+          "unknowns": [],
+          "user_preferences": [],
+          "risk_level": "low",
+          "complexity": "simple",
+          "should_use_cmm": false,
+          "parse_warnings": [
+            "model_intake_invalid_json",
+            "json_model_empty_or_error_attempt_1",
+            "json_retry_after_invalid_json",
+            "json_model_empty_or_error_attempt_2",
+            "json_retry_exhausted"
+          ],
+          "json_attempts": 2,
+          "source": "fallback"
+        },
+        "router_decision": {
+          "mode": "DIRECT",
+          "reason": "Simple low-risk explanation request has only formatting constraints.",
+          "complexity": "low",
+          "needs_expert_panel": false,
+          "needs_second_round": false,
+          "estimated_cost_class": "S",
+          "signals": {
+            "risk_level": "low",
+            "intake_complexity": "simple",
+            "word_count": 76,
+            "constraints_count": 1,
+            "success_criteria_count": 0,
+            "context_count": 1,
+            "unknowns_count": 0,
+            "preferences_count": 0,
+            "has_constraints": true,
+            "has_success_criteria": false,
+            "should_use_cmm": false,
+            "has_high_risk_markers": false,
+            "has_risk_markers": false,
+            "has_stakeholder_markers": true,
+            "has_tradeoff_markers": false,
+            "has_full_markers": false,
+            "has_light_markers": false,
+            "has_direct_markers": true,
+            "needs_second_round": false
+          },
+          "warnings": []
+        },
+        "cmm_mode": "DIRECT",
+        "estimated_cost_class": "S",
+        "routing_warnings": [],
+        "parallel_mode": "SEQUENTIAL",
+        "max_workers": null,
+        "parallelized_stages": [],
+        "roles_used": [],
+        "roles_used_unique": [],
+        "expert_rounds": [],
+        "deliberation_brief": {},
+        "balance_reports": [],
+        "conflict_reports": [],
+        "deliberation_rounds": [],
+        "deliberation_revisions": [],
+        "deliberation_round_count": 0,
+        "max_deliberation_rounds": 1,
+        "consensus_checks": [],
+        "deliberation_position_changes": [],
+        "dynamic_role_reports": [],
+        "dynamic_roles_generated": [],
+        "dynamic_roles_executed": [],
+        "dynamic_roles_rejected": [],
+        "dynamic_roles_used": [],
+        "unresolved_tradeoffs": [],
+        "premature_consensus_risks": [],
+        "blind_spots": [],
+        "plan": {},
+        "plan_critique": {},
+        "moderation_reports": [],
+        "answer_moderation_final_decision": "",
+        "answer_moderation_critical_issues": [],
+        "answer_moderation_revision_count": 0,
+        "answer_moderation_best_effort": false,
+        "quality_gate_decisions": [],
+        "context_compression": {
+          "planner_context_chars": 0,
+          "critic_context_chars": 0,
+          "answer_context_chars": 0,
+          "meta_context_chars": 0
+        },
+        "revision_count": 0,
+        "final_confidence": null,
+        "meta_moderation_decisions": [],
+        "meta_recheck_count": 0,
+        "meta_recheck_decisions": [],
+        "conflicts_to_resolve": [],
+        "risks_to_address": [],
+        "warnings": [
+          "query_intake: model_intake_invalid_json",
+          "query_intake: json_model_empty_or_error_attempt_1",
+          "query_intake: json_retry_after_invalid_json",
+          "query_intake: json_model_empty_or_error_attempt_2",
+          "query_intake: json_retry_exhausted",
+          "direct_answer: direct_answer_failed"
+        ],
+        "state_history": [
+          {
+            "from": "INTAKE",
+            "to": "ROUTE",
+            "reason": "query intake complete"
+          },
+          {
+            "from": "ROUTE",
+            "to": "DIRECT_ANSWER",
+            "reason": "router selected direct answer"
+          },
+          {
+            "from": "DIRECT_ANSWER",
+            "to": "FINALIZE",
+            "reason": "direct answer finalized"
+          }
+        ],
+        "final_state": "FINALIZE",
+        "transition_count": 3,
+        "iteration_count": 0,
+        "plans": [],
+        "plan_critiques": [],
+        "plan_critique_statuses": [],
+        "plan_replan_reasons": [],
+        "plan_critique_decisions": [],
+        "plan_critique_blockers": [],
+        "ignored_must_address": [],
+        "ignored_risks": [],
+        "ignored_tradeoffs": [],
+        "errors": [],
+        "json_health": {
+          "expert_agent": {
+            "calls": 0,
+            "success": 0,
+            "fallbacks": 0,
+            "retry_attempts": 0,
+            "invalid_json_count": 0
+          },
+          "planner": {
+            "called": false,
+            "success": false,
+            "raw_format": "",
+            "source": "",
+            "json_attempts": 0
+          },
+          "moderator": {
+            "invalid_json_count": 0,
+            "retry_attempts": 0,
+            "final_decision": ""
+          },
+          "conflict_analyzer": {
+            "invalid_json_count": 0,
+            "retry_attempts": 0
+          },
+          "meta_moderator": {
+            "invalid_json_count": 0,
+            "retry_attempts": 0
+          }
+        },
+        "estimated_call_count": 3,
+        "estimated_stage_count": 3,
+        "answer_chars": 373,
+        "warnings_count": 6,
+        "errors_count": 0
+      },
+      "answer_a_source": "BASELINE",
+      "answer_b_source": "CMM",
+      "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-001\", \"query\": \"Что такое коллективная метамодерация?\", \"context\": \"Пользователь просит короткое объяснение термина.\", \"constraints\": \"Ответ кратко до 5 предложений.\", \"rubric_must_cover\": [\"простое определение\", \"отличие от обычной модерации\", \"упоминание нескольких перспектив\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"слишком длинное объяснение\", \"уход в абстракции\"], \"answer_a\": \"Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.\", \"answer_b\": \"Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\\\"LIGHT_CMM\\\")`.\"}",
+      "raw_judge_output": "",
+      "normalized_judge_result": {
+        "case_id": "V2-001",
+        "baseline_scores": {
+          "rubric_coverage": 0.0,
+          "perspective_coverage": 0.0,
+          "risk_handling": 0.0,
+          "actionability": 0.0,
+          "clarity": 0.0,
+          "overall": 0.0
+        },
+        "cmm_scores": {
+          "rubric_coverage": 0.0,
+          "perspective_coverage": 0.0,
+          "risk_handling": 0.0,
+          "actionability": 0.0,
+          "clarity": 0.0,
+          "overall": 0.0
+        },
+        "winner": "UNJUDGED",
+        "reason": "judge_mode=none; exported for human review",
+        "cmm_failure_modes": [],
+        "baseline_failure_modes": [],
+        "parse_warnings": [
+          "human_review_required",
+          "judge_json_parse_failed"
+        ],
+        "raw": ""
+      }
+    },
+    {
+      "case_id": "V2-002",
+      "case": {
+        "id": "V2-002",
+        "query": "Кратко объясни разницу между метрикой и KPI.",
+        "context": "Общий образовательный вопрос без высокого риска.",
+        "constraints": "Ответ простым языком.",
+        "expected_perspectives": "",
+        "rubric_must_cover": "разница между метрикой и KPI | короткий пример",
+        "rubric_desirable": "предупреждение что KPI является выбранной ключевой метрикой",
+        "expected_single_model_failure_modes": "избыточный консалтинг | нет примера",
+        "expected_mode": "DIRECT",
+        "case_id": "V2-002",
+        "schema_warnings": []
+      },
+      "baseline": {
+        "answer": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+        "trace_report": {
+          "mode": "real_baseline"
+        }
+      },
+      "cmm": {
+        "answer": "Не удалось получить стабильный ответ от модели. Ниже — краткий fallback на основе уже построенного плана.\n\nЗапрос: Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.\nОсновная идея: Ответить на: Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.\nКлючевые шаги:\n1. Сформулировать цель и рабочий контекст запроса\n2. Проверить решение против ограничений\n3. Закрыть обязательные риски, blind spots и trade-offs\n4. Связать рекомендации с критериями успеха\n5. Подготовить итоговый ответ с реалистичными шагами и оговорками",
+        "final_answer": "Не удалось получить стабильный ответ от модели. Ниже — краткий fallback на основе уже построенного плана.\n\nЗапрос: Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.\nОсновная идея: Ответить на: Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.\nКлючевые шаги:\n1. Сформулировать цель и рабочий контекст запроса\n2. Проверить решение против ограничений\n3. Закрыть обязательные риски, blind spots и trade-offs\n4. Связать рекомендации с критериями успеха\n5. Подготовить итоговый ответ с реалистичными шагами и оговорками",
+        "trace_report": {
+          "original_query": "Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+          "formalized_query": "Кратко объясни разницу между метрикой и KPI. Контекст: Общий образовательный вопрос без высокого риска. Ограничения: Ответ простым языком.",
+          "query_intake": {
+            "original_query": "Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+            "cleaned_query": "Кратко объясни разницу между метрикой и KPI. Контекст: Общий образовательный вопрос без высокого риска. Ограничения: Ответ простым языком.",
+            "task_goal": "Кратко объясни разницу между метрикой и KPI. Контекст: Общий образовательный вопрос без высокого риска. Ограничения: Ответ простым языком.",
+            "context": [
+              "Контекст: Общий образовательный вопрос без высокого риска."
+            ],
+            "constraints": [
+              "Контекст: Общий образовательный вопрос без высокого риска.",
+              "Ограничения: Ответ простым языком."
+            ],
+            "success_criteria": [
+              "Кратко объясни разницу между метрикой и KPI."
+            ],
+            "unknowns": [],
+            "user_preferences": [],
+            "risk_level": "low",
+            "complexity": "simple",
+            "should_use_cmm": false,
+            "parse_warnings": [
+              "model_intake_invalid_json",
+              "json_model_empty_or_error_attempt_1",
+              "json_retry_after_invalid_json",
+              "json_model_empty_or_error_attempt_2",
+              "json_retry_exhausted"
+            ],
+            "json_attempts": 2,
+            "source": "fallback"
+          },
+          "router_decision": {
+            "mode": "LIGHT_CMM",
+            "reason": "Constrained request with success criteria needs a light CMM pass.",
+            "complexity": "low",
+            "needs_expert_panel": true,
+            "needs_second_round": false,
+            "estimated_cost_class": "M",
+            "signals": {
+              "risk_level": "low",
+              "intake_complexity": "simple",
+              "word_count": 97,
+              "constraints_count": 2,
+              "success_criteria_count": 1,
+              "context_count": 1,
+              "unknowns_count": 0,
+              "preferences_count": 0,
+              "has_constraints": true,
+              "has_success_criteria": true,
+              "should_use_cmm": false,
+              "has_high_risk_markers": false,
+              "has_risk_markers": true,
+              "has_stakeholder_markers": false,
+              "has_tradeoff_markers": false,
+              "has_full_markers": false,
+              "has_light_markers": true,
+              "has_direct_markers": true,
+              "needs_second_round": false
+            },
+            "warnings": []
+          },
+          "cmm_mode": "LIGHT_CMM_DEGRADED",
+          "estimated_cost_class": "M",
+          "routing_warnings": [],
+          "parallel_mode": "SEQUENTIAL",
+          "max_workers": null,
+          "parallelized_stages": [],
+          "roles_used": [
+            {
+              "key": "strategist",
+              "name": "Strategist",
+              "perspective_tag": "strategy",
+              "dynamic": false
+            },
+            {
+              "key": "engineer",
+              "name": "Engineer",
+              "perspective_tag": "engineering",
+              "dynamic": false
+            },
+            {
+              "key": "risk_manager",
+              "name": "Risk Manager",
+              "perspective_tag": "risk",
+              "dynamic": false
+            },
+            {
+              "key": "user_advocate",
+              "name": "User Advocate",
+              "perspective_tag": "user",
+              "dynamic": false
+            },
+            {
+              "key": "measurement_expert",
+              "name": "Measurement Expert",
+              "perspective_tag": "measurement",
+              "dynamic": true,
+              "why_needed": "The task needs metrics, evaluation, or success criteria."
+            },
+            {
+              "key": "strategist",
+              "name": "Strategist",
+              "perspective_tag": "strategy"
+            },
+            {
+              "key": "engineer",
+              "name": "Engineer",
+              "perspective_tag": "engineering"
+            },
+            {
+              "key": "risk_manager",
+              "name": "Risk Manager",
+              "perspective_tag": "risk"
+            },
+            {
+              "key": "user_advocate",
+              "name": "User Advocate",
+              "perspective_tag": "user"
+            }
+          ],
+          "roles_used_unique": [
+            {
+              "key": "strategist",
+              "name": "Strategist",
+              "perspective_tag": "strategy",
+              "rounds": [
+                "initial",
+                "extra"
+              ],
+              "dynamic": false
+            },
+            {
+              "key": "engineer",
+              "name": "Engineer",
+              "perspective_tag": "engineering",
+              "rounds": [
+                "initial",
+                "extra"
+              ],
+              "dynamic": false
+            },
+            {
+              "key": "risk_manager",
+              "name": "Risk Manager",
+              "perspective_tag": "risk",
+              "rounds": [
+                "initial",
+                "extra"
+              ],
+              "dynamic": false
+            },
+            {
+              "key": "user_advocate",
+              "name": "User Advocate",
+              "perspective_tag": "user",
+              "rounds": [
+                "initial",
+                "extra"
+              ],
+              "dynamic": false
+            },
+            {
+              "key": "measurement_expert",
+              "name": "Measurement Expert",
+              "perspective_tag": "measurement",
+              "rounds": [
+                "initial"
+              ],
+              "dynamic": true
+            }
+          ],
+          "expert_rounds": [
+            {
+              "roles": [
+                {
+                  "key": "strategist",
+                  "name": "Strategist",
+                  "perspective_tag": "strategy",
+                  "dynamic": false
+                },
+                {
+                  "key": "engineer",
+                  "name": "Engineer",
+                  "perspective_tag": "engineering",
+                  "dynamic": false
+                },
+                {
+                  "key": "risk_manager",
+                  "name": "Risk Manager",
+                  "perspective_tag": "risk",
+                  "dynamic": false
+                },
+                {
+                  "key": "user_advocate",
+                  "name": "User Advocate",
+                  "perspective_tag": "user",
+                  "dynamic": false
+                },
+                {
+                  "key": "measurement_expert",
+                  "name": "Measurement Expert",
+                  "perspective_tag": "measurement",
+                  "dynamic": true,
+                  "why_needed": "The task needs metrics, evaluation, or success criteria."
+                }
+              ],
+              "contributions": [
+                {
+                  "role_key": "strategist",
+                  "perspective_tag": "strategy",
+                  "insights": [],
+                  "risks": [],
+                  "questions": [],
+                  "recommendations": [],
+                  "confidence": 0.0,
+                  "parse_warnings": [
+                    "json_model_empty_or_error_attempt_1",
+                    "json_retry_after_invalid_json",
+                    "json_model_empty_or_error_attempt_2",
+                    "json_retry_exhausted",
+                    "expert_json_parse_failed"
+                  ],
+                  "json_attempts": 2,
+                  "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                  "source": "fallback"
+                },
+                {
+                  "role_key": "engineer",
+                  "perspective_tag": "engineering",
+                  "insights": [],
+                  "risks": [],
+                  "questions": [],
+                  "recommendations": [],
+                  "confidence": 0.0,
+                  "parse_warnings": [
+                    "json_model_empty_or_error_attempt_1",
+                    "json_retry_after_invalid_json",
+                    "json_model_empty_or_error_attempt_2",
+                    "json_retry_exhausted",
+                    "expert_json_parse_failed"
+                  ],
+                  "json_attempts": 2,
+                  "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                  "source": "fallback"
+                },
+                {
+                  "role_key": "risk_manager",
+                  "perspective_tag": "risk",
+                  "insights": [],
+                  "risks": [],
+                  "questions": [],
+                  "recommendations": [],
+                  "confidence": 0.0,
+                  "parse_warnings": [
+                    "json_model_empty_or_error_attempt_1",
+                    "json_retry_after_invalid_json",
+                    "json_model_empty_or_error_attempt_2",
+                    "json_retry_exhausted",
+                    "expert_json_parse_failed"
+                  ],
+                  "json_attempts": 2,
+                  "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                  "source": "fallback"
+                },
+                {
+                  "role_key": "user_advocate",
+                  "perspective_tag": "user",
+                  "insights": [],
+                  "risks": [],
+                  "questions": [],
+                  "recommendations": [],
+                  "confidence": 0.0,
+                  "parse_warnings": [
+                    "json_model_empty_or_error_attempt_1",
+                    "json_retry_after_invalid_json",
+                    "json_model_empty_or_error_attempt_2",
+                    "json_retry_exhausted",
+                    "expert_json_parse_failed"
+                  ],
+                  "json_attempts": 2,
+                  "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                  "source": "fallback"
+                },
+                {
+                  "role_key": "measurement_expert",
+                  "perspective_tag": "measurement",
+                  "insights": [],
+                  "risks": [],
+                  "questions": [],
+                  "recommendations": [],
+                  "confidence": 0.0,
+                  "parse_warnings": [
+                    "json_model_empty_or_error_attempt_1",
+                    "json_retry_after_invalid_json",
+                    "json_model_empty_or_error_attempt_2",
+                    "json_retry_exhausted",
+                    "expert_json_parse_failed"
+                  ],
+                  "json_attempts": 2,
+                  "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                  "source": "fallback"
+                }
+              ],
+              "synthesis": {
+                "recommendations": [],
+                "risks": [],
+                "questions": [],
+                "perspective_counts": {
+                  "strategy": 1,
+                  "engineering": 1,
+                  "risk": 1,
+                  "user": 1,
+                  "measurement": 1
+                }
+              }
+            },
+            {
+              "roles": [
+                {
+                  "key": "strategist",
+                  "name": "Strategist",
+                  "perspective_tag": "strategy"
+                },
+                {
+                  "key": "engineer",
+                  "name": "Engineer",
+                  "perspective_tag": "engineering"
+                },
+                {
+                  "key": "risk_manager",
+                  "name": "Risk Manager",
+                  "perspective_tag": "risk"
+                },
+                {
+                  "key": "user_advocate",
+                  "name": "User Advocate",
+                  "perspective_tag": "user"
+                }
+              ],
+              "contributions": [
+                {
+                  "role_key": "strategist",
+                  "perspective_tag": "strategy",
+                  "insights": [],
+                  "risks": [],
+                  "questions": [],
+                  "recommendations": [],
+                  "confidence": 0.0,
+                  "parse_warnings": [
+                    "json_model_empty_or_error_attempt_1",
+                    "json_retry_after_invalid_json",
+                    "json_model_empty_or_error_attempt_2",
+                    "json_retry_exhausted",
+                    "expert_json_parse_failed"
+                  ],
+                  "json_attempts": 2,
+                  "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                  "source": "fallback"
+                },
+                {
+                  "role_key": "engineer",
+                  "perspective_tag": "engineering",
+                  "insights": [],
+                  "risks": [],
+                  "questions": [],
+                  "recommendations": [],
+                  "confidence": 0.0,
+                  "parse_warnings": [
+                    "json_model_empty_or_error_attempt_1",
+                    "json_retry_after_invalid_json",
+                    "json_model_empty_or_error_attempt_2",
+                    "json_retry_exhausted",
+                    "expert_json_parse_failed"
+                  ],
+                  "json_attempts": 2,
+                  "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                  "source": "fallback"
+                },
+                {
+                  "role_key": "risk_manager",
+                  "perspective_tag": "risk",
+                  "insights": [],
+                  "risks": [],
+                  "questions": [],
+                  "recommendations": [],
+                  "confidence": 0.0,
+                  "parse_warnings": [
+                    "json_model_empty_or_error_attempt_1",
+                    "json_retry_after_invalid_json",
+                    "json_model_empty_or_error_attempt_2",
+                    "json_retry_exhausted",
+                    "expert_json_parse_failed"
+                  ],
+                  "json_attempts": 2,
+                  "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                  "source": "fallback"
+                },
+                {
+                  "role_key": "user_advocate",
+                  "perspective_tag": "user",
+                  "insights": [],
+                  "risks": [],
+                  "questions": [],
+                  "recommendations": [],
+                  "confidence": 0.0,
+                  "parse_warnings": [
+                    "json_model_empty_or_error_attempt_1",
+                    "json_retry_after_invalid_json",
+                    "json_model_empty_or_error_attempt_2",
+                    "json_retry_exhausted",
+                    "expert_json_parse_failed"
+                  ],
+                  "json_attempts": 2,
+                  "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                  "source": "fallback"
+                }
+              ],
+              "synthesis": {
+                "recommendations": [],
+                "risks": [],
+                "questions": [],
+                "perspective_counts": {
+                  "strategy": 1,
+                  "engineering": 1,
+                  "risk": 1,
+                  "user": 1
+                }
+              }
+            }
+          ],
+          "deliberation_brief": {
+            "summary": "Expert deliberation for query: Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+            "expert_recommendations": [],
+            "expert_risks": [],
+            "expert_questions": [],
+            "perspective_counts": {
+              "strategy": 2,
+              "engineering": 2,
+              "risk": 2,
+              "user": 2,
+              "measurement": 1
+            },
+            "missing_perspectives": [],
+            "dominant_perspective_found": false,
+            "balance_notes": [
+              "All base perspectives are represented.",
+              "No dominant perspective detected (max share < 60%).",
+              "Balance quality blind spots detected."
+            ],
+            "balance_quality": {
+              "evidence_level": 0.0,
+              "specificity": 0.0,
+              "actionability": 0.0,
+              "novelty": 0.0,
+              "tradeoff_awareness": 0.0
+            },
+            "constraint_coverage": [
+              {
+                "constraint": "Контекст: Общий образовательный вопрос без высокого риска.",
+                "covered": false,
+                "supporting_roles": [],
+                "coverage_score": 0.0
+              },
+              {
+                "constraint": "Ограничения: Ответ простым языком.",
+                "covered": false,
+                "supporting_roles": [],
+                "coverage_score": 0.0
+              }
+            ],
+            "stakeholder_coverage": [],
+            "balance_blind_spots": [
+              "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+              "Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+              "Expert recommendations appear generic or duplicative.",
+              "Selected dynamic role perspective is not meaningfully covered: measurement_expert."
+            ],
+            "recommended_balance_action": "ADD_EXPERT",
+            "must_address": [
+              "Address balance blind spot: Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+              "Address balance blind spot: Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+              "Address balance blind spot: Expert recommendations appear generic or duplicative.",
+              "Address balance blind spot: Selected dynamic role perspective is not meaningfully covered: measurement_expert.",
+              "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+              "Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+              "Expert recommendations appear generic or duplicative.",
+              "Selected dynamic role perspective is not meaningfully covered: measurement_expert."
+            ],
+            "task_goal": "Кратко объясни разницу между метрикой и KPI. Контекст: Общий образовательный вопрос без высокого риска. Ограничения: Ответ простым языком.",
+            "constraints": [
+              "Контекст: Общий образовательный вопрос без высокого риска.",
+              "Ограничения: Ответ простым языком."
+            ],
+            "success_criteria": [
+              "Кратко объясни разницу между метрикой и KPI."
+            ],
+            "unknowns": [],
+            "user_preferences": [],
+            "complexity": "simple",
+            "risk_level": "low",
+            "meta_process_notes": [
+              "ADD_EXPERT: Balance Analyzer 2.0 recommends adding expertise for missing or weakly covered perspectives.",
+              "Add targeted expertise before synthesis."
+            ],
+            "agreements": [],
+            "disagreements": [],
+            "unresolved_tradeoffs": [],
+            "premature_consensus_risks": [],
+            "blind_spots": [],
+            "questions_for_next_round": []
+          },
+          "balance_reports": [
+            {
+              "dominant_perspective_found": false,
+              "dominant_perspective": null,
+              "missing_perspectives": [],
+              "notes": [
+                "All base perspectives are represented.",
+                "No dominant perspective detected (max share < 60%).",
+                "Balance quality blind spots detected."
+              ],
+              "perspective_coverage": {
+                "strategy": 0.2,
+                "engineering": 0.2,
+                "risk": 0.2,
+                "user": 0.2,
+                "measurement": 0.2
+              },
+              "stakeholder_coverage": [],
+              "constraint_coverage": [
+                {
+                  "constraint": "Контекст: Общий образовательный вопрос без высокого риска.",
+                  "covered": false,
+                  "supporting_roles": [],
+                  "coverage_score": 0.0
+                },
+                {
+                  "constraint": "Ограничения: Ответ простым языком.",
+                  "covered": false,
+                  "supporting_roles": [],
+                  "coverage_score": 0.0
+                }
+              ],
+              "risk_severity_distribution": {
+                "low": 0,
+                "medium": 0,
+                "high": 0,
+                "unknown": 0
+              },
+              "argument_quality": {
+                "evidence_level": 0.0,
+                "specificity": 0.0,
+                "actionability": 0.0,
+                "novelty": 0.0,
+                "tradeoff_awareness": 0.0
+              },
+              "dominance": {
+                "dominant_perspective": "strategy",
+                "dominant_ratio": 0.2,
+                "counts": {
+                  "strategy": 1,
+                  "engineering": 1,
+                  "risk": 1,
+                  "user": 1,
+                  "measurement": 1
+                },
+                "total_contributions": 5
+              },
+              "blind_spots": [
+                "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+                "Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+                "Expert recommendations appear generic or duplicative.",
+                "Selected dynamic role perspective is not meaningfully covered: measurement_expert."
+              ],
+              "recommended_action": "ADD_EXPERT"
+            },
+            {
+              "dominant_perspective_found": false,
+              "dominant_perspective": null,
+              "missing_perspectives": [],
+              "notes": [
+                "All base perspectives are represented.",
+                "No dominant perspective detected (max share < 60%).",
+                "Balance quality blind spots detected."
+              ],
+              "perspective_coverage": {
+                "strategy": 0.2,
+                "engineering": 0.2,
+                "risk": 0.2,
+                "user": 0.2,
+                "measurement": 0.2
+              },
+              "stakeholder_coverage": [],
+              "constraint_coverage": [
+                {
+                  "constraint": "Контекст: Общий образовательный вопрос без высокого риска.",
+                  "covered": false,
+                  "supporting_roles": [],
+                  "coverage_score": 0.0
+                },
+                {
+                  "constraint": "Ограничения: Ответ простым языком.",
+                  "covered": false,
+                  "supporting_roles": [],
+                  "coverage_score": 0.0
+                }
+              ],
+              "risk_severity_distribution": {
+                "low": 0,
+                "medium": 0,
+                "high": 0,
+                "unknown": 0
+              },
+              "argument_quality": {
+                "evidence_level": 0.0,
+                "specificity": 0.0,
+                "actionability": 0.0,
+                "novelty": 0.0,
+                "tradeoff_awareness": 0.0
+              },
+              "dominance": {
+                "dominant_perspective": "strategy",
+                "dominant_ratio": 0.2222,
+                "counts": {
+                  "strategy": 2,
+                  "engineering": 2,
+                  "risk": 2,
+                  "user": 2,
+                  "measurement": 1
+                },
+                "total_contributions": 9
+              },
+              "blind_spots": [
+                "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+                "Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+                "Expert recommendations appear generic or duplicative.",
+                "Selected dynamic role perspective is not meaningfully covered: measurement_expert."
+              ],
+              "recommended_action": "ADD_EXPERT"
+            }
+          ],
+          "conflict_reports": [
+            {
+              "agreements": [],
+              "disagreements": [],
+              "unresolved_tradeoffs": [],
+              "premature_consensus_risks": [],
+              "blind_spots": [],
+              "minority_positions": [],
+              "questions_for_next_round": [],
+              "confidence": 0.45,
+              "parse_warnings": [
+                "conflict_model_invalid_json",
+                "json_model_empty_or_error_attempt_1",
+                "json_retry_after_invalid_json",
+                "json_model_empty_or_error_attempt_2",
+                "json_retry_exhausted"
+              ],
+              "json_attempts": 2,
+              "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+              "source": "rules"
+            },
+            {
+              "agreements": [],
+              "disagreements": [],
+              "unresolved_tradeoffs": [],
+              "premature_consensus_risks": [],
+              "blind_spots": [],
+              "minority_positions": [],
+              "questions_for_next_round": [],
+              "confidence": 0.45,
+              "parse_warnings": [
+                "conflict_model_invalid_json",
+                "json_model_empty_or_error_attempt_1",
+                "json_retry_after_invalid_json",
+                "json_model_empty_or_error_attempt_2",
+                "json_retry_exhausted"
+              ],
+              "json_attempts": 2,
+              "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+              "source": "rules"
+            }
+          ],
+          "deliberation_rounds": [],
+          "deliberation_revisions": [],
+          "deliberation_round_count": 0,
+          "max_deliberation_rounds": 1,
+          "consensus_checks": [],
+          "deliberation_position_changes": [],
+          "dynamic_role_reports": [
+            {
+              "role_views": [
+                {
+                  "key": "measurement_expert",
+                  "name": "Measurement Expert",
+                  "perspective_tag": "measurement",
+                  "responsibility": "Metrics, evaluation, KPIs, experiments, and success criteria.",
+                  "why_needed": "The task needs metrics, evaluation, or success criteria."
+                }
+              ],
+              "rejected_suggestions": [],
+              "warnings": [],
+              "source": "rules",
+              "round": "initial",
+              "model_called": false,
+              "json_attempts": 0
+            },
+            {
+              "role_views": [],
+              "rejected_suggestions": [
+                {
+                  "raw_key": "measurement_expert",
+                  "reason": "duplicate"
+                }
+              ],
+              "warnings": [
+                "json_model_empty_or_error_attempt_1",
+                "json_retry_after_invalid_json",
+                "json_model_empty_or_error_attempt_2",
+                "json_retry_exhausted",
+                "dynamic_role_json_parse_failed"
+              ],
+              "source": "fallback",
+              "round": "extra",
+              "model_called": true,
+              "json_attempts": 2
+            }
+          ],
+          "dynamic_roles_generated": [
+            {
+              "key": "measurement_expert",
+              "name": "Measurement Expert",
+              "perspective_tag": "measurement",
+              "why_needed": "The task needs metrics, evaluation, or success criteria.",
+              "round": "initial"
+            }
+          ],
+          "dynamic_roles_executed": [
+            {
+              "key": "measurement_expert",
+              "name": "Measurement Expert",
+              "perspective_tag": "measurement",
+              "why_needed": "The task needs metrics, evaluation, or success criteria.",
+              "round": "initial"
+            }
+          ],
+          "dynamic_roles_rejected": [
+            {
+              "raw_key": "measurement_expert",
+              "reason": "duplicate",
+              "round": "extra"
+            }
+          ],
+          "dynamic_roles_used": [
+            {
+              "key": "measurement_expert",
+              "name": "Measurement Expert",
+              "perspective_tag": "measurement",
+              "why_needed": "The task needs metrics, evaluation, or success criteria.",
+              "round": "initial"
+            }
+          ],
+          "unresolved_tradeoffs": [],
+          "premature_consensus_risks": [],
+          "blind_spots": [],
+          "plan": {
+            "query": "Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+            "main_idea": "Ответить на: Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+            "preparation": [],
+            "steps": [
+              {
+                "number": "1",
+                "title": "Сформулировать цель и рабочий контекст запроса",
+                "substeps": [],
+                "uses_expert_inputs": []
+              },
+              {
+                "number": "2",
+                "title": "Проверить решение против ограничений",
+                "substeps": [
+                  "Контекст: Общий образовательный вопрос без высокого риска.",
+                  "Ограничения: Ответ простым языком."
+                ],
+                "uses_expert_inputs": [
+                  "Контекст: Общий образовательный вопрос без высокого риска.",
+                  "Ограничения: Ответ простым языком."
+                ]
+              },
+              {
+                "number": "3",
+                "title": "Закрыть обязательные риски, blind spots и trade-offs",
+                "substeps": [
+                  "Address balance blind spot: Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+                  "Address balance blind spot: Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+                  "Address balance blind spot: Expert recommendations appear generic or duplicative.",
+                  "Address balance blind spot: Selected dynamic role perspective is not meaningfully covered: measurement_expert.",
+                  "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска.."
+                ],
+                "uses_expert_inputs": [
+                  "Address balance blind spot: Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+                  "Address balance blind spot: Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+                  "Address balance blind spot: Expert recommendations appear generic or duplicative.",
+                  "Address balance blind spot: Selected dynamic role perspective is not meaningfully covered: measurement_expert.",
+                  "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска.."
+                ]
+              },
+              {
+                "number": "4",
+                "title": "Связать рекомендации с критериями успеха",
+                "substeps": [
+                  "Кратко объясни разницу между метрикой и KPI."
+                ],
+                "uses_expert_inputs": [
+                  "Кратко объясни разницу между метрикой и KPI."
+                ]
+              },
+              {
+                "number": "5",
+                "title": "Подготовить итоговый ответ с реалистичными шагами и оговорками",
+                "substeps": [],
+                "uses_expert_inputs": []
+              }
+            ],
+            "nuances": [],
+            "potential_problems": [],
+            "result": "",
+            "timestamp": "2026-05-06 08:14:05.592062",
+            "depth": "detailed",
+            "parse_warnings": [
+              "json_and_legacy_plan_parse_failed",
+              "json_model_empty_or_error_attempt_1",
+              "json_retry_after_invalid_json",
+              "json_model_empty_or_error_attempt_2",
+              "json_retry_exhausted"
+            ],
+            "json_attempts": 2,
+            "raw_format": "fallback",
+            "source": "fallback"
+          },
+          "plan_critique": {
+            "scores": {
+              "query_alignment": 8.0,
+              "constraint_coverage": 10.0,
+              "success_criteria_coverage": 10.0,
+              "expert_input_coverage": 10.0,
+              "risk_coverage": 8.0,
+              "conflict_resolution": 8.0,
+              "dynamic_role_coverage": 10.0,
+              "deliberation_revision_coverage": 8.0,
+              "actionability": 8.0,
+              "clarity": 8.0,
+              "expert_risk_coverage": 8.0,
+              "tradeoff_handling": 8.0,
+              "logical_order": 9.2,
+              "missing_perspectives_handling": 8.0
+            },
+            "overall_score": 8.8,
+            "parse_warnings": [
+              "plan_critic_model_failed: plan_critic_model_invalid_json"
+            ],
+            "json_attempts": 0,
+            "source": "rules",
+            "missing_constraints": [],
+            "ignored_success_criteria": [],
+            "ignored_expert_risks": [],
+            "ignored_expert_recommendations": [],
+            "unresolved_tradeoffs": [],
+            "ignored_blind_spots": [],
+            "ignored_dynamic_roles": [],
+            "ignored_deliberation_revisions": [],
+            "premature_consensus_risks": [],
+            "critical_issues": [],
+            "strengths": [
+              "Plan covers the available CMM context."
+            ],
+            "feedback": [
+              "Proceed with answer generation."
+            ],
+            "ignored_must_address": [],
+            "ignored_risks": [],
+            "ignored_tradeoffs": [],
+            "recommendations": [
+              "Proceed with answer generation."
+            ],
+            "critical_blockers": []
+          },
+          "moderation_reports": [
+            {
+              "decision": "REVISE",
+              "scores": {},
+              "balance": {
+                "dominant_perspective_found": false,
+                "missing_perspectives": []
+              },
+              "critical_issues": [
+                "Moderator JSON output could not be parsed after retry."
+              ],
+              "improvements": [
+                "Regenerate answer with stricter structure and shorter sections.",
+                "Ensure constraints, metrics, risks, and trade-offs are explicit."
+              ],
+              "ignored_expert_risks": [],
+              "ignored_expert_recommendations": [],
+              "unresolved_questions": [],
+              "parse_warnings": [
+                "json_model_empty_or_error_attempt_1",
+                "json_retry_after_invalid_json",
+                "json_model_empty_or_error_attempt_2",
+                "json_retry_exhausted",
+                "moderation_json_parse_failed"
+              ],
+              "json_attempts": 2,
+              "timestamp": "2026-05-06 08:14:05.594993",
+              "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+              "source": "fallback",
+              "meta": {
+                "expert_bundle_used": true,
+                "balance_report_used": true,
+                "deliberation_brief_used": true
+              }
+            },
+            {
+              "decision": "REVISE",
+              "scores": {},
+              "balance": {
+                "dominant_perspective_found": false,
+                "missing_perspectives": []
+              },
+              "critical_issues": [
+                "Moderator JSON output could not be parsed after retry."
+              ],
+              "improvements": [
+                "Regenerate answer with stricter structure and shorter sections.",
+                "Ensure constraints, metrics, risks, and trade-offs are explicit."
+              ],
+              "ignored_expert_risks": [],
+              "ignored_expert_recommendations": [],
+              "unresolved_questions": [],
+              "parse_warnings": [
+                "json_model_empty_or_error_attempt_1",
+                "json_retry_after_invalid_json",
+                "json_model_empty_or_error_attempt_2",
+                "json_retry_exhausted",
+                "moderation_json_parse_failed"
+              ],
+              "json_attempts": 2,
+              "timestamp": "2026-05-06 08:14:05.595988",
+              "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+              "source": "fallback",
+              "meta": {
+                "expert_bundle_used": true,
+                "balance_report_used": true,
+                "deliberation_brief_used": true
+              }
+            },
+            {
+              "decision": "REVISE",
+              "scores": {},
+              "balance": {
+                "dominant_perspective_found": false,
+                "missing_perspectives": []
+              },
+              "critical_issues": [
+                "Moderator JSON output could not be parsed after retry."
+              ],
+              "improvements": [
+                "Regenerate answer with stricter structure and shorter sections.",
+                "Ensure constraints, metrics, risks, and trade-offs are explicit."
+              ],
+              "ignored_expert_risks": [],
+              "ignored_expert_recommendations": [],
+              "unresolved_questions": [],
+              "parse_warnings": [
+                "json_model_empty_or_error_attempt_1",
+                "json_retry_after_invalid_json",
+                "json_model_empty_or_error_attempt_2",
+                "json_retry_exhausted",
+                "moderation_json_parse_failed"
+              ],
+              "json_attempts": 2,
+              "timestamp": "2026-05-06 08:14:05.596984",
+              "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+              "source": "fallback",
+              "meta": {
+                "expert_bundle_used": true,
+                "balance_report_used": true,
+                "deliberation_brief_used": true
+              }
+            }
+          ],
+          "answer_moderation_final_decision": "REVISE",
+          "answer_moderation_critical_issues": [],
+          "answer_moderation_revision_count": 3,
+          "answer_moderation_best_effort": true,
+          "quality_gate_decisions": [
+            {
+              "gate": "plan_critique",
+              "decision": "ALLOW",
+              "reason": "plan accepted",
+              "critical_blockers": []
+            },
+            {
+              "gate": "answer_moderation",
+              "decision": "BEST_EFFORT",
+              "reason": "non-critical answer revision exhausted",
+              "critical_issues": []
+            }
+          ],
+          "context_compression": {
+            "meta_context_chars": 7463,
+            "meta_recheck_context_chars": 9372,
+            "planner_context_chars": 4255,
+            "critic_context_chars": 6900,
+            "answer_context_chars": 8959
+          },
+          "revision_count": 2,
+          "final_confidence": null,
+          "meta_moderation_decisions": [
+            {
+              "decision": "ADD_EXPERT",
+              "reason": "Balance Analyzer 2.0 recommends adding expertise for missing or weakly covered perspectives.",
+              "missing_perspectives": [
+                "strategy",
+                "engineering",
+                "risk",
+                "user"
+              ],
+              "conflicts_to_resolve": [
+                "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+                "Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+                "Expert recommendations appear generic or duplicative.",
+                "Selected dynamic role perspective is not meaningfully covered: measurement_expert."
+              ],
+              "risks_to_address": [],
+              "questions_to_answer": [],
+              "next_actions": [
+                "Add targeted expertise before synthesis."
+              ],
+              "confidence": 0.76,
+              "parse_warnings": [
+                "meta_moderator_rule_fallback",
+                "json_model_empty_or_error_attempt_1",
+                "json_retry_after_invalid_json",
+                "json_model_empty_or_error_attempt_2",
+                "json_retry_exhausted",
+                "meta_moderator_model_invalid_json"
+              ],
+              "source": "rules",
+              "json_attempts": 2,
+              "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI."
+            }
+          ],
+          "meta_recheck_count": 1,
+          "meta_recheck_decisions": [
+            {
+              "decision": "ADD_EXPERT",
+              "reason": "Balance Analyzer 2.0 recommends adding expertise for missing or weakly covered perspectives.",
+              "missing_perspectives": [
+                "strategy",
+                "engineering",
+                "risk",
+                "user"
+              ],
+              "conflicts_to_resolve": [
+                "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+                "Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+                "Expert recommendations appear generic or duplicative.",
+                "Selected dynamic role perspective is not meaningfully covered: measurement_expert."
+              ],
+              "risks_to_address": [],
+              "questions_to_answer": [],
+              "next_actions": [
+                "Add targeted expertise before synthesis."
+              ],
+              "confidence": 0.76,
+              "parse_warnings": [
+                "meta_moderator_rule_fallback",
+                "json_model_empty_or_error_attempt_1",
+                "json_retry_after_invalid_json",
+                "json_model_empty_or_error_attempt_2",
+                "json_retry_exhausted",
+                "meta_moderator_model_invalid_json"
+              ],
+              "source": "rules",
+              "json_attempts": 2,
+              "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI."
+            }
+          ],
+          "conflicts_to_resolve": [
+            "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+            "Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+            "Expert recommendations appear generic or duplicative.",
+            "Selected dynamic role perspective is not meaningfully covered: measurement_expert."
+          ],
+          "risks_to_address": [],
+          "warnings": [
+            "query_intake: model_intake_invalid_json",
+            "query_intake: json_model_empty_or_error_attempt_1",
+            "query_intake: json_retry_after_invalid_json",
+            "query_intake: json_model_empty_or_error_attempt_2",
+            "query_intake: json_retry_exhausted",
+            "expert_panel_catastrophic_json_failure: 5/5 experts failed JSON parsing",
+            "cmm_mode_degraded: LIGHT_CMM -> LIGHT_CMM_DEGRADED",
+            "dynamic_roles_extra: json_model_empty_or_error_attempt_1",
+            "dynamic_roles_extra: json_retry_after_invalid_json",
+            "dynamic_roles_extra: json_model_empty_or_error_attempt_2",
+            "dynamic_roles_extra: json_retry_exhausted",
+            "dynamic_roles_extra: dynamic_role_json_parse_failed",
+            "answer_moderation_revise_best_effort"
+          ],
+          "state_history": [
+            {
+              "from": "INTAKE",
+              "to": "ROUTE",
+              "reason": "query intake complete"
+            },
+            {
+              "from": "ROUTE",
+              "to": "PANEL_ROUND_1",
+              "reason": "router selected LIGHT_CMM"
+            },
+            {
+              "from": "PANEL_ROUND_1",
+              "to": "BALANCE",
+              "reason": "initial expert panel complete"
+            },
+            {
+              "from": "BALANCE",
+              "to": "CONFLICT_ANALYSIS",
+              "reason": "balance and brief complete"
+            },
+            {
+              "from": "CONFLICT_ANALYSIS",
+              "to": "META_DECISION",
+              "reason": "conflict analysis complete"
+            },
+            {
+              "from": "META_DECISION",
+              "to": "PANEL_ROUND_EXTRA",
+              "reason": "meta moderator requested additional expert"
+            },
+            {
+              "from": "PANEL_ROUND_EXTRA",
+              "to": "REBALANCE",
+              "reason": "extra panel handled"
+            },
+            {
+              "from": "REBALANCE",
+              "to": "META_RECHECK",
+              "reason": "rebalance complete; meta recheck required"
+            },
+            {
+              "from": "META_RECHECK",
+              "to": "PLAN",
+              "reason": "meta recheck complete; ready to plan"
+            },
+            {
+              "from": "PLAN",
+              "to": "PLAN_CRITIQUE",
+              "reason": "plan generated"
+            },
+            {
+              "from": "PLAN_CRITIQUE",
+              "to": "ANSWER",
+              "reason": "plan critique accepted plan"
+            },
+            {
+              "from": "ANSWER",
+              "to": "ANSWER_MODERATION",
+              "reason": "answer moderation component completed"
+            },
+            {
+              "from": "ANSWER_MODERATION",
+              "to": "FINALIZE",
+              "reason": "answer moderation requested non-critical revision; finalized best effort"
+            }
+          ],
+          "final_state": "FINALIZE",
+          "transition_count": 13,
+          "iteration_count": 0,
+          "plans": [
+            {
+              "query": "Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+              "main_idea": "Ответить на: Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+              "preparation": [],
+              "steps": [
+                {
+                  "number": "1",
+                  "title": "Сформулировать цель и рабочий контекст запроса",
+                  "substeps": [],
+                  "uses_expert_inputs": []
+                },
+                {
+                  "number": "2",
+                  "title": "Проверить решение против ограничений",
+                  "substeps": [
+                    "Контекст: Общий образовательный вопрос без высокого риска.",
+                    "Ограничения: Ответ простым языком."
+                  ],
+                  "uses_expert_inputs": [
+                    "Контекст: Общий образовательный вопрос без высокого риска.",
+                    "Ограничения: Ответ простым языком."
+                  ]
+                },
+                {
+                  "number": "3",
+                  "title": "Закрыть обязательные риски, blind spots и trade-offs",
+                  "substeps": [
+                    "Address balance blind spot: Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+                    "Address balance blind spot: Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+                    "Address balance blind spot: Expert recommendations appear generic or duplicative.",
+                    "Address balance blind spot: Selected dynamic role perspective is not meaningfully covered: measurement_expert.",
+                    "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска.."
+                  ],
+                  "uses_expert_inputs": [
+                    "Address balance blind spot: Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+                    "Address balance blind spot: Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+                    "Address balance blind spot: Expert recommendations appear generic or duplicative.",
+                    "Address balance blind spot: Selected dynamic role perspective is not meaningfully covered: measurement_expert.",
+                    "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска.."
+                  ]
+                },
+                {
+                  "number": "4",
+                  "title": "Связать рекомендации с критериями успеха",
+                  "substeps": [
+                    "Кратко объясни разницу между метрикой и KPI."
+                  ],
+                  "uses_expert_inputs": [
+                    "Кратко объясни разницу между метрикой и KPI."
+                  ]
+                },
+                {
+                  "number": "5",
+                  "title": "Подготовить итоговый ответ с реалистичными шагами и оговорками",
+                  "substeps": [],
+                  "uses_expert_inputs": []
+                }
+              ],
+              "nuances": [],
+              "potential_problems": [],
+              "result": "",
+              "timestamp": "2026-05-06 08:14:05.592062",
+              "depth": "detailed",
+              "parse_warnings": [
+                "json_and_legacy_plan_parse_failed",
+                "json_model_empty_or_error_attempt_1",
+                "json_retry_after_invalid_json",
+                "json_model_empty_or_error_attempt_2",
+                "json_retry_exhausted"
+              ],
+              "json_attempts": 2,
+              "raw_format": "fallback",
+              "source": "fallback"
+            }
+          ],
+          "plan_critiques": [
+            {
+              "status": "ready",
+              "decision": "ACCEPT",
+              "plan": {
+                "query": "Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+                "main_idea": "Ответить на: Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+                "preparation": [],
+                "steps": [
+                  {
+                    "number": "1",
+                    "title": "Сформулировать цель и рабочий контекст запроса",
+                    "substeps": [],
+                    "uses_expert_inputs": []
+                  },
+                  {
+                    "number": "2",
+                    "title": "Проверить решение против ограничений",
+                    "substeps": [
+                      "Контекст: Общий образовательный вопрос без высокого риска.",
+                      "Ограничения: Ответ простым языком."
+                    ],
+                    "uses_expert_inputs": [
+                      "Контекст: Общий образовательный вопрос без высокого риска.",
+                      "Ограничения: Ответ простым языком."
+                    ]
+                  },
+                  {
+                    "number": "3",
+                    "title": "Закрыть обязательные риски, blind spots и trade-offs",
+                    "substeps": [
+                      "Address balance blind spot: Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+                      "Address balance blind spot: Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+                      "Address balance blind spot: Expert recommendations appear generic or duplicative.",
+                      "Address balance blind spot: Selected dynamic role perspective is not meaningfully covered: measurement_expert.",
+                      "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска.."
+                    ],
+                    "uses_expert_inputs": [
+                      "Address balance blind spot: Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+                      "Address balance blind spot: Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+                      "Address balance blind spot: Expert recommendations appear generic or duplicative.",
+                      "Address balance blind spot: Selected dynamic role perspective is not meaningfully covered: measurement_expert.",
+                      "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска.."
+                    ]
+                  },
+                  {
+                    "number": "4",
+                    "title": "Связать рекомендации с критериями успеха",
+                    "substeps": [
+                      "Кратко объясни разницу между метрикой и KPI."
+                    ],
+                    "uses_expert_inputs": [
+                      "Кратко объясни разницу между метрикой и KPI."
+                    ]
+                  },
+                  {
+                    "number": "5",
+                    "title": "Подготовить итоговый ответ с реалистичными шагами и оговорками",
+                    "substeps": [],
+                    "uses_expert_inputs": []
+                  }
+                ],
+                "nuances": [],
+                "potential_problems": [],
+                "result": "",
+                "timestamp": "2026-05-06 08:14:05.592062",
+                "depth": "detailed",
+                "parse_warnings": [
+                  "json_and_legacy_plan_parse_failed",
+                  "json_model_empty_or_error_attempt_1",
+                  "json_retry_after_invalid_json",
+                  "json_model_empty_or_error_attempt_2",
+                  "json_retry_exhausted"
+                ],
+                "json_attempts": 2,
+                "raw_format": "fallback",
+                "source": "fallback"
+              },
+              "critique": {
+                "scores": {
+                  "query_alignment": 8.0,
+                  "constraint_coverage": 10.0,
+                  "success_criteria_coverage": 10.0,
+                  "expert_input_coverage": 10.0,
+                  "risk_coverage": 8.0,
+                  "conflict_resolution": 8.0,
+                  "dynamic_role_coverage": 10.0,
+                  "deliberation_revision_coverage": 8.0,
+                  "actionability": 8.0,
+                  "clarity": 8.0,
+                  "expert_risk_coverage": 8.0,
+                  "tradeoff_handling": 8.0,
+                  "logical_order": 9.2,
+                  "missing_perspectives_handling": 8.0
+                },
+                "overall_score": 8.8,
+                "parse_warnings": [
+                  "plan_critic_model_failed: plan_critic_model_invalid_json"
+                ],
+                "json_attempts": 0,
+                "source": "rules",
+                "missing_constraints": [],
+                "ignored_success_criteria": [],
+                "ignored_expert_risks": [],
+                "ignored_expert_recommendations": [],
+                "unresolved_tradeoffs": [],
+                "ignored_blind_spots": [],
+                "ignored_dynamic_roles": [],
+                "ignored_deliberation_revisions": [],
+                "premature_consensus_risks": [],
+                "critical_issues": [],
+                "strengths": [
+                  "Plan covers the available CMM context."
+                ],
+                "feedback": [
+                  "Proceed with answer generation."
+                ],
+                "ignored_must_address": [],
+                "ignored_risks": [],
+                "ignored_tradeoffs": [],
+                "recommendations": [
+                  "Proceed with answer generation."
+                ],
+                "critical_blockers": []
+              },
+              "feedback": [
+                "Proceed with answer generation."
+              ],
+              "reason": "Plan satisfies the context-aware critique threshold."
+            }
+          ],
+          "plan_critique_statuses": [
+            "ready"
+          ],
+          "plan_replan_reasons": [
+            "Plan satisfies the context-aware critique threshold."
+          ],
+          "plan_critique_decisions": [
+            "ACCEPT"
+          ],
+          "plan_critique_blockers": [],
+          "ignored_must_address": [],
+          "ignored_risks": [],
+          "ignored_tradeoffs": [],
+          "errors": [],
+          "json_health": {
+            "expert_agent": {
+              "calls": 9,
+              "success": 0,
+              "fallbacks": 9,
+              "retry_attempts": 9,
+              "invalid_json_count": 9
+            },
+            "planner": {
+              "called": true,
+              "success": false,
+              "raw_format": "fallback",
+              "source": "fallback",
+              "json_attempts": 2
+            },
+            "moderator": {
+              "invalid_json_count": 3,
+              "retry_attempts": 3,
+              "final_decision": "REVISE"
+            },
+            "conflict_analyzer": {
+              "invalid_json_count": 2,
+              "retry_attempts": 2
+            },
+            "meta_moderator": {
+              "invalid_json_count": 2,
+              "retry_attempts": 2
+            }
+          },
+          "estimated_call_count": 39,
+          "estimated_stage_count": 13,
+          "answer_chars": 691,
+          "warnings_count": 13,
+          "errors_count": 0
+        }
+      },
+      "cmm_trace_report": {
+        "original_query": "Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+        "formalized_query": "Кратко объясни разницу между метрикой и KPI. Контекст: Общий образовательный вопрос без высокого риска. Ограничения: Ответ простым языком.",
+        "query_intake": {
+          "original_query": "Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+          "cleaned_query": "Кратко объясни разницу между метрикой и KPI. Контекст: Общий образовательный вопрос без высокого риска. Ограничения: Ответ простым языком.",
+          "task_goal": "Кратко объясни разницу между метрикой и KPI. Контекст: Общий образовательный вопрос без высокого риска. Ограничения: Ответ простым языком.",
+          "context": [
+            "Контекст: Общий образовательный вопрос без высокого риска."
+          ],
+          "constraints": [
+            "Контекст: Общий образовательный вопрос без высокого риска.",
+            "Ограничения: Ответ простым языком."
+          ],
+          "success_criteria": [
+            "Кратко объясни разницу между метрикой и KPI."
+          ],
+          "unknowns": [],
+          "user_preferences": [],
+          "risk_level": "low",
+          "complexity": "simple",
+          "should_use_cmm": false,
+          "parse_warnings": [
+            "model_intake_invalid_json",
+            "json_model_empty_or_error_attempt_1",
+            "json_retry_after_invalid_json",
+            "json_model_empty_or_error_attempt_2",
+            "json_retry_exhausted"
+          ],
+          "json_attempts": 2,
+          "source": "fallback"
+        },
+        "router_decision": {
+          "mode": "LIGHT_CMM",
+          "reason": "Constrained request with success criteria needs a light CMM pass.",
+          "complexity": "low",
+          "needs_expert_panel": true,
+          "needs_second_round": false,
+          "estimated_cost_class": "M",
+          "signals": {
+            "risk_level": "low",
+            "intake_complexity": "simple",
+            "word_count": 97,
+            "constraints_count": 2,
+            "success_criteria_count": 1,
+            "context_count": 1,
+            "unknowns_count": 0,
+            "preferences_count": 0,
+            "has_constraints": true,
+            "has_success_criteria": true,
+            "should_use_cmm": false,
+            "has_high_risk_markers": false,
+            "has_risk_markers": true,
+            "has_stakeholder_markers": false,
+            "has_tradeoff_markers": false,
+            "has_full_markers": false,
+            "has_light_markers": true,
+            "has_direct_markers": true,
+            "needs_second_round": false
+          },
+          "warnings": []
+        },
+        "cmm_mode": "LIGHT_CMM_DEGRADED",
+        "estimated_cost_class": "M",
+        "routing_warnings": [],
+        "parallel_mode": "SEQUENTIAL",
+        "max_workers": null,
+        "parallelized_stages": [],
+        "roles_used": [
+          {
+            "key": "strategist",
+            "name": "Strategist",
+            "perspective_tag": "strategy",
+            "dynamic": false
+          },
+          {
+            "key": "engineer",
+            "name": "Engineer",
+            "perspective_tag": "engineering",
+            "dynamic": false
+          },
+          {
+            "key": "risk_manager",
+            "name": "Risk Manager",
+            "perspective_tag": "risk",
+            "dynamic": false
+          },
+          {
+            "key": "user_advocate",
+            "name": "User Advocate",
+            "perspective_tag": "user",
+            "dynamic": false
+          },
+          {
+            "key": "measurement_expert",
+            "name": "Measurement Expert",
+            "perspective_tag": "measurement",
+            "dynamic": true,
+            "why_needed": "The task needs metrics, evaluation, or success criteria."
+          },
+          {
+            "key": "strategist",
+            "name": "Strategist",
+            "perspective_tag": "strategy"
+          },
+          {
+            "key": "engineer",
+            "name": "Engineer",
+            "perspective_tag": "engineering"
+          },
+          {
+            "key": "risk_manager",
+            "name": "Risk Manager",
+            "perspective_tag": "risk"
+          },
+          {
+            "key": "user_advocate",
+            "name": "User Advocate",
+            "perspective_tag": "user"
+          }
+        ],
+        "roles_used_unique": [
+          {
+            "key": "strategist",
+            "name": "Strategist",
+            "perspective_tag": "strategy",
+            "rounds": [
+              "initial",
+              "extra"
+            ],
+            "dynamic": false
+          },
+          {
+            "key": "engineer",
+            "name": "Engineer",
+            "perspective_tag": "engineering",
+            "rounds": [
+              "initial",
+              "extra"
+            ],
+            "dynamic": false
+          },
+          {
+            "key": "risk_manager",
+            "name": "Risk Manager",
+            "perspective_tag": "risk",
+            "rounds": [
+              "initial",
+              "extra"
+            ],
+            "dynamic": false
+          },
+          {
+            "key": "user_advocate",
+            "name": "User Advocate",
+            "perspective_tag": "user",
+            "rounds": [
+              "initial",
+              "extra"
+            ],
+            "dynamic": false
+          },
+          {
+            "key": "measurement_expert",
+            "name": "Measurement Expert",
+            "perspective_tag": "measurement",
+            "rounds": [
+              "initial"
+            ],
+            "dynamic": true
+          }
+        ],
+        "expert_rounds": [
+          {
+            "roles": [
+              {
+                "key": "strategist",
+                "name": "Strategist",
+                "perspective_tag": "strategy",
+                "dynamic": false
+              },
+              {
+                "key": "engineer",
+                "name": "Engineer",
+                "perspective_tag": "engineering",
+                "dynamic": false
+              },
+              {
+                "key": "risk_manager",
+                "name": "Risk Manager",
+                "perspective_tag": "risk",
+                "dynamic": false
+              },
+              {
+                "key": "user_advocate",
+                "name": "User Advocate",
+                "perspective_tag": "user",
+                "dynamic": false
+              },
+              {
+                "key": "measurement_expert",
+                "name": "Measurement Expert",
+                "perspective_tag": "measurement",
+                "dynamic": true,
+                "why_needed": "The task needs metrics, evaluation, or success criteria."
+              }
+            ],
+            "contributions": [
+              {
+                "role_key": "strategist",
+                "perspective_tag": "strategy",
+                "insights": [],
+                "risks": [],
+                "questions": [],
+                "recommendations": [],
+                "confidence": 0.0,
+                "parse_warnings": [
+                  "json_model_empty_or_error_attempt_1",
+                  "json_retry_after_invalid_json",
+                  "json_model_empty_or_error_attempt_2",
+                  "json_retry_exhausted",
+                  "expert_json_parse_failed"
+                ],
+                "json_attempts": 2,
+                "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                "source": "fallback"
+              },
+              {
+                "role_key": "engineer",
+                "perspective_tag": "engineering",
+                "insights": [],
+                "risks": [],
+                "questions": [],
+                "recommendations": [],
+                "confidence": 0.0,
+                "parse_warnings": [
+                  "json_model_empty_or_error_attempt_1",
+                  "json_retry_after_invalid_json",
+                  "json_model_empty_or_error_attempt_2",
+                  "json_retry_exhausted",
+                  "expert_json_parse_failed"
+                ],
+                "json_attempts": 2,
+                "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                "source": "fallback"
+              },
+              {
+                "role_key": "risk_manager",
+                "perspective_tag": "risk",
+                "insights": [],
+                "risks": [],
+                "questions": [],
+                "recommendations": [],
+                "confidence": 0.0,
+                "parse_warnings": [
+                  "json_model_empty_or_error_attempt_1",
+                  "json_retry_after_invalid_json",
+                  "json_model_empty_or_error_attempt_2",
+                  "json_retry_exhausted",
+                  "expert_json_parse_failed"
+                ],
+                "json_attempts": 2,
+                "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                "source": "fallback"
+              },
+              {
+                "role_key": "user_advocate",
+                "perspective_tag": "user",
+                "insights": [],
+                "risks": [],
+                "questions": [],
+                "recommendations": [],
+                "confidence": 0.0,
+                "parse_warnings": [
+                  "json_model_empty_or_error_attempt_1",
+                  "json_retry_after_invalid_json",
+                  "json_model_empty_or_error_attempt_2",
+                  "json_retry_exhausted",
+                  "expert_json_parse_failed"
+                ],
+                "json_attempts": 2,
+                "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                "source": "fallback"
+              },
+              {
+                "role_key": "measurement_expert",
+                "perspective_tag": "measurement",
+                "insights": [],
+                "risks": [],
+                "questions": [],
+                "recommendations": [],
+                "confidence": 0.0,
+                "parse_warnings": [
+                  "json_model_empty_or_error_attempt_1",
+                  "json_retry_after_invalid_json",
+                  "json_model_empty_or_error_attempt_2",
+                  "json_retry_exhausted",
+                  "expert_json_parse_failed"
+                ],
+                "json_attempts": 2,
+                "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                "source": "fallback"
+              }
+            ],
+            "synthesis": {
+              "recommendations": [],
+              "risks": [],
+              "questions": [],
+              "perspective_counts": {
+                "strategy": 1,
+                "engineering": 1,
+                "risk": 1,
+                "user": 1,
+                "measurement": 1
+              }
+            }
+          },
+          {
+            "roles": [
+              {
+                "key": "strategist",
+                "name": "Strategist",
+                "perspective_tag": "strategy"
+              },
+              {
+                "key": "engineer",
+                "name": "Engineer",
+                "perspective_tag": "engineering"
+              },
+              {
+                "key": "risk_manager",
+                "name": "Risk Manager",
+                "perspective_tag": "risk"
+              },
+              {
+                "key": "user_advocate",
+                "name": "User Advocate",
+                "perspective_tag": "user"
+              }
+            ],
+            "contributions": [
+              {
+                "role_key": "strategist",
+                "perspective_tag": "strategy",
+                "insights": [],
+                "risks": [],
+                "questions": [],
+                "recommendations": [],
+                "confidence": 0.0,
+                "parse_warnings": [
+                  "json_model_empty_or_error_attempt_1",
+                  "json_retry_after_invalid_json",
+                  "json_model_empty_or_error_attempt_2",
+                  "json_retry_exhausted",
+                  "expert_json_parse_failed"
+                ],
+                "json_attempts": 2,
+                "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                "source": "fallback"
+              },
+              {
+                "role_key": "engineer",
+                "perspective_tag": "engineering",
+                "insights": [],
+                "risks": [],
+                "questions": [],
+                "recommendations": [],
+                "confidence": 0.0,
+                "parse_warnings": [
+                  "json_model_empty_or_error_attempt_1",
+                  "json_retry_after_invalid_json",
+                  "json_model_empty_or_error_attempt_2",
+                  "json_retry_exhausted",
+                  "expert_json_parse_failed"
+                ],
+                "json_attempts": 2,
+                "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                "source": "fallback"
+              },
+              {
+                "role_key": "risk_manager",
+                "perspective_tag": "risk",
+                "insights": [],
+                "risks": [],
+                "questions": [],
+                "recommendations": [],
+                "confidence": 0.0,
+                "parse_warnings": [
+                  "json_model_empty_or_error_attempt_1",
+                  "json_retry_after_invalid_json",
+                  "json_model_empty_or_error_attempt_2",
+                  "json_retry_exhausted",
+                  "expert_json_parse_failed"
+                ],
+                "json_attempts": 2,
+                "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                "source": "fallback"
+              },
+              {
+                "role_key": "user_advocate",
+                "perspective_tag": "user",
+                "insights": [],
+                "risks": [],
+                "questions": [],
+                "recommendations": [],
+                "confidence": 0.0,
+                "parse_warnings": [
+                  "json_model_empty_or_error_attempt_1",
+                  "json_retry_after_invalid_json",
+                  "json_model_empty_or_error_attempt_2",
+                  "json_retry_exhausted",
+                  "expert_json_parse_failed"
+                ],
+                "json_attempts": 2,
+                "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+                "source": "fallback"
+              }
+            ],
+            "synthesis": {
+              "recommendations": [],
+              "risks": [],
+              "questions": [],
+              "perspective_counts": {
+                "strategy": 1,
+                "engineering": 1,
+                "risk": 1,
+                "user": 1
+              }
+            }
+          }
+        ],
+        "deliberation_brief": {
+          "summary": "Expert deliberation for query: Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+          "expert_recommendations": [],
+          "expert_risks": [],
+          "expert_questions": [],
+          "perspective_counts": {
+            "strategy": 2,
+            "engineering": 2,
+            "risk": 2,
+            "user": 2,
+            "measurement": 1
+          },
+          "missing_perspectives": [],
+          "dominant_perspective_found": false,
+          "balance_notes": [
+            "All base perspectives are represented.",
+            "No dominant perspective detected (max share < 60%).",
+            "Balance quality blind spots detected."
+          ],
+          "balance_quality": {
+            "evidence_level": 0.0,
+            "specificity": 0.0,
+            "actionability": 0.0,
+            "novelty": 0.0,
+            "tradeoff_awareness": 0.0
+          },
+          "constraint_coverage": [
+            {
+              "constraint": "Контекст: Общий образовательный вопрос без высокого риска.",
+              "covered": false,
+              "supporting_roles": [],
+              "coverage_score": 0.0
+            },
+            {
+              "constraint": "Ограничения: Ответ простым языком.",
+              "covered": false,
+              "supporting_roles": [],
+              "coverage_score": 0.0
+            }
+          ],
+          "stakeholder_coverage": [],
+          "balance_blind_spots": [
+            "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+            "Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+            "Expert recommendations appear generic or duplicative.",
+            "Selected dynamic role perspective is not meaningfully covered: measurement_expert."
+          ],
+          "recommended_balance_action": "ADD_EXPERT",
+          "must_address": [
+            "Address balance blind spot: Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+            "Address balance blind spot: Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+            "Address balance blind spot: Expert recommendations appear generic or duplicative.",
+            "Address balance blind spot: Selected dynamic role perspective is not meaningfully covered: measurement_expert.",
+            "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+            "Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+            "Expert recommendations appear generic or duplicative.",
+            "Selected dynamic role perspective is not meaningfully covered: measurement_expert."
+          ],
+          "task_goal": "Кратко объясни разницу между метрикой и KPI. Контекст: Общий образовательный вопрос без высокого риска. Ограничения: Ответ простым языком.",
+          "constraints": [
+            "Контекст: Общий образовательный вопрос без высокого риска.",
+            "Ограничения: Ответ простым языком."
+          ],
+          "success_criteria": [
+            "Кратко объясни разницу между метрикой и KPI."
+          ],
+          "unknowns": [],
+          "user_preferences": [],
+          "complexity": "simple",
+          "risk_level": "low",
+          "meta_process_notes": [
+            "ADD_EXPERT: Balance Analyzer 2.0 recommends adding expertise for missing or weakly covered perspectives.",
+            "Add targeted expertise before synthesis."
+          ],
+          "agreements": [],
+          "disagreements": [],
+          "unresolved_tradeoffs": [],
+          "premature_consensus_risks": [],
+          "blind_spots": [],
+          "questions_for_next_round": []
+        },
+        "balance_reports": [
+          {
+            "dominant_perspective_found": false,
+            "dominant_perspective": null,
+            "missing_perspectives": [],
+            "notes": [
+              "All base perspectives are represented.",
+              "No dominant perspective detected (max share < 60%).",
+              "Balance quality blind spots detected."
+            ],
+            "perspective_coverage": {
+              "strategy": 0.2,
+              "engineering": 0.2,
+              "risk": 0.2,
+              "user": 0.2,
+              "measurement": 0.2
+            },
+            "stakeholder_coverage": [],
+            "constraint_coverage": [
+              {
+                "constraint": "Контекст: Общий образовательный вопрос без высокого риска.",
+                "covered": false,
+                "supporting_roles": [],
+                "coverage_score": 0.0
+              },
+              {
+                "constraint": "Ограничения: Ответ простым языком.",
+                "covered": false,
+                "supporting_roles": [],
+                "coverage_score": 0.0
+              }
+            ],
+            "risk_severity_distribution": {
+              "low": 0,
+              "medium": 0,
+              "high": 0,
+              "unknown": 0
+            },
+            "argument_quality": {
+              "evidence_level": 0.0,
+              "specificity": 0.0,
+              "actionability": 0.0,
+              "novelty": 0.0,
+              "tradeoff_awareness": 0.0
+            },
+            "dominance": {
+              "dominant_perspective": "strategy",
+              "dominant_ratio": 0.2,
+              "counts": {
+                "strategy": 1,
+                "engineering": 1,
+                "risk": 1,
+                "user": 1,
+                "measurement": 1
+              },
+              "total_contributions": 5
+            },
+            "blind_spots": [
+              "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+              "Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+              "Expert recommendations appear generic or duplicative.",
+              "Selected dynamic role perspective is not meaningfully covered: measurement_expert."
+            ],
+            "recommended_action": "ADD_EXPERT"
+          },
+          {
+            "dominant_perspective_found": false,
+            "dominant_perspective": null,
+            "missing_perspectives": [],
+            "notes": [
+              "All base perspectives are represented.",
+              "No dominant perspective detected (max share < 60%).",
+              "Balance quality blind spots detected."
+            ],
+            "perspective_coverage": {
+              "strategy": 0.2,
+              "engineering": 0.2,
+              "risk": 0.2,
+              "user": 0.2,
+              "measurement": 0.2
+            },
+            "stakeholder_coverage": [],
+            "constraint_coverage": [
+              {
+                "constraint": "Контекст: Общий образовательный вопрос без высокого риска.",
+                "covered": false,
+                "supporting_roles": [],
+                "coverage_score": 0.0
+              },
+              {
+                "constraint": "Ограничения: Ответ простым языком.",
+                "covered": false,
+                "supporting_roles": [],
+                "coverage_score": 0.0
+              }
+            ],
+            "risk_severity_distribution": {
+              "low": 0,
+              "medium": 0,
+              "high": 0,
+              "unknown": 0
+            },
+            "argument_quality": {
+              "evidence_level": 0.0,
+              "specificity": 0.0,
+              "actionability": 0.0,
+              "novelty": 0.0,
+              "tradeoff_awareness": 0.0
+            },
+            "dominance": {
+              "dominant_perspective": "strategy",
+              "dominant_ratio": 0.2222,
+              "counts": {
+                "strategy": 2,
+                "engineering": 2,
+                "risk": 2,
+                "user": 2,
+                "measurement": 1
+              },
+              "total_contributions": 9
+            },
+            "blind_spots": [
+              "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+              "Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+              "Expert recommendations appear generic or duplicative.",
+              "Selected dynamic role perspective is not meaningfully covered: measurement_expert."
+            ],
+            "recommended_action": "ADD_EXPERT"
+          }
+        ],
+        "conflict_reports": [
+          {
+            "agreements": [],
+            "disagreements": [],
+            "unresolved_tradeoffs": [],
+            "premature_consensus_risks": [],
+            "blind_spots": [],
+            "minority_positions": [],
+            "questions_for_next_round": [],
+            "confidence": 0.45,
+            "parse_warnings": [
+              "conflict_model_invalid_json",
+              "json_model_empty_or_error_attempt_1",
+              "json_retry_after_invalid_json",
+              "json_model_empty_or_error_attempt_2",
+              "json_retry_exhausted"
+            ],
+            "json_attempts": 2,
+            "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+            "source": "rules"
+          },
+          {
+            "agreements": [],
+            "disagreements": [],
+            "unresolved_tradeoffs": [],
+            "premature_consensus_risks": [],
+            "blind_spots": [],
+            "minority_positions": [],
+            "questions_for_next_round": [],
+            "confidence": 0.45,
+            "parse_warnings": [
+              "conflict_model_invalid_json",
+              "json_model_empty_or_error_attempt_1",
+              "json_retry_after_invalid_json",
+              "json_model_empty_or_error_attempt_2",
+              "json_retry_exhausted"
+            ],
+            "json_attempts": 2,
+            "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+            "source": "rules"
+          }
+        ],
+        "deliberation_rounds": [],
+        "deliberation_revisions": [],
+        "deliberation_round_count": 0,
+        "max_deliberation_rounds": 1,
+        "consensus_checks": [],
+        "deliberation_position_changes": [],
+        "dynamic_role_reports": [
+          {
+            "role_views": [
+              {
+                "key": "measurement_expert",
+                "name": "Measurement Expert",
+                "perspective_tag": "measurement",
+                "responsibility": "Metrics, evaluation, KPIs, experiments, and success criteria.",
+                "why_needed": "The task needs metrics, evaluation, or success criteria."
+              }
+            ],
+            "rejected_suggestions": [],
+            "warnings": [],
+            "source": "rules",
+            "round": "initial",
+            "model_called": false,
+            "json_attempts": 0
+          },
+          {
+            "role_views": [],
+            "rejected_suggestions": [
+              {
+                "raw_key": "measurement_expert",
+                "reason": "duplicate"
+              }
+            ],
+            "warnings": [
+              "json_model_empty_or_error_attempt_1",
+              "json_retry_after_invalid_json",
+              "json_model_empty_or_error_attempt_2",
+              "json_retry_exhausted",
+              "dynamic_role_json_parse_failed"
+            ],
+            "source": "fallback",
+            "round": "extra",
+            "model_called": true,
+            "json_attempts": 2
+          }
+        ],
+        "dynamic_roles_generated": [
+          {
+            "key": "measurement_expert",
+            "name": "Measurement Expert",
+            "perspective_tag": "measurement",
+            "why_needed": "The task needs metrics, evaluation, or success criteria.",
+            "round": "initial"
+          }
+        ],
+        "dynamic_roles_executed": [
+          {
+            "key": "measurement_expert",
+            "name": "Measurement Expert",
+            "perspective_tag": "measurement",
+            "why_needed": "The task needs metrics, evaluation, or success criteria.",
+            "round": "initial"
+          }
+        ],
+        "dynamic_roles_rejected": [
+          {
+            "raw_key": "measurement_expert",
+            "reason": "duplicate",
+            "round": "extra"
+          }
+        ],
+        "dynamic_roles_used": [
+          {
+            "key": "measurement_expert",
+            "name": "Measurement Expert",
+            "perspective_tag": "measurement",
+            "why_needed": "The task needs metrics, evaluation, or success criteria.",
+            "round": "initial"
+          }
+        ],
+        "unresolved_tradeoffs": [],
+        "premature_consensus_risks": [],
+        "blind_spots": [],
+        "plan": {
+          "query": "Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+          "main_idea": "Ответить на: Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+          "preparation": [],
+          "steps": [
+            {
+              "number": "1",
+              "title": "Сформулировать цель и рабочий контекст запроса",
+              "substeps": [],
+              "uses_expert_inputs": []
+            },
+            {
+              "number": "2",
+              "title": "Проверить решение против ограничений",
+              "substeps": [
+                "Контекст: Общий образовательный вопрос без высокого риска.",
+                "Ограничения: Ответ простым языком."
+              ],
+              "uses_expert_inputs": [
+                "Контекст: Общий образовательный вопрос без высокого риска.",
+                "Ограничения: Ответ простым языком."
+              ]
+            },
+            {
+              "number": "3",
+              "title": "Закрыть обязательные риски, blind spots и trade-offs",
+              "substeps": [
+                "Address balance blind spot: Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+                "Address balance blind spot: Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+                "Address balance blind spot: Expert recommendations appear generic or duplicative.",
+                "Address balance blind spot: Selected dynamic role perspective is not meaningfully covered: measurement_expert.",
+                "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска.."
+              ],
+              "uses_expert_inputs": [
+                "Address balance blind spot: Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+                "Address balance blind spot: Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+                "Address balance blind spot: Expert recommendations appear generic or duplicative.",
+                "Address balance blind spot: Selected dynamic role perspective is not meaningfully covered: measurement_expert.",
+                "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска.."
+              ]
+            },
+            {
+              "number": "4",
+              "title": "Связать рекомендации с критериями успеха",
+              "substeps": [
+                "Кратко объясни разницу между метрикой и KPI."
+              ],
+              "uses_expert_inputs": [
+                "Кратко объясни разницу между метрикой и KPI."
+              ]
+            },
+            {
+              "number": "5",
+              "title": "Подготовить итоговый ответ с реалистичными шагами и оговорками",
+              "substeps": [],
+              "uses_expert_inputs": []
+            }
+          ],
+          "nuances": [],
+          "potential_problems": [],
+          "result": "",
+          "timestamp": "2026-05-06 08:14:05.592062",
+          "depth": "detailed",
+          "parse_warnings": [
+            "json_and_legacy_plan_parse_failed",
+            "json_model_empty_or_error_attempt_1",
+            "json_retry_after_invalid_json",
+            "json_model_empty_or_error_attempt_2",
+            "json_retry_exhausted"
+          ],
+          "json_attempts": 2,
+          "raw_format": "fallback",
+          "source": "fallback"
+        },
+        "plan_critique": {
+          "scores": {
+            "query_alignment": 8.0,
+            "constraint_coverage": 10.0,
+            "success_criteria_coverage": 10.0,
+            "expert_input_coverage": 10.0,
+            "risk_coverage": 8.0,
+            "conflict_resolution": 8.0,
+            "dynamic_role_coverage": 10.0,
+            "deliberation_revision_coverage": 8.0,
+            "actionability": 8.0,
+            "clarity": 8.0,
+            "expert_risk_coverage": 8.0,
+            "tradeoff_handling": 8.0,
+            "logical_order": 9.2,
+            "missing_perspectives_handling": 8.0
+          },
+          "overall_score": 8.8,
+          "parse_warnings": [
+            "plan_critic_model_failed: plan_critic_model_invalid_json"
+          ],
+          "json_attempts": 0,
+          "source": "rules",
+          "missing_constraints": [],
+          "ignored_success_criteria": [],
+          "ignored_expert_risks": [],
+          "ignored_expert_recommendations": [],
+          "unresolved_tradeoffs": [],
+          "ignored_blind_spots": [],
+          "ignored_dynamic_roles": [],
+          "ignored_deliberation_revisions": [],
+          "premature_consensus_risks": [],
+          "critical_issues": [],
+          "strengths": [
+            "Plan covers the available CMM context."
+          ],
+          "feedback": [
+            "Proceed with answer generation."
+          ],
+          "ignored_must_address": [],
+          "ignored_risks": [],
+          "ignored_tradeoffs": [],
+          "recommendations": [
+            "Proceed with answer generation."
+          ],
+          "critical_blockers": []
+        },
+        "moderation_reports": [
+          {
+            "decision": "REVISE",
+            "scores": {},
+            "balance": {
+              "dominant_perspective_found": false,
+              "missing_perspectives": []
+            },
+            "critical_issues": [
+              "Moderator JSON output could not be parsed after retry."
+            ],
+            "improvements": [
+              "Regenerate answer with stricter structure and shorter sections.",
+              "Ensure constraints, metrics, risks, and trade-offs are explicit."
+            ],
+            "ignored_expert_risks": [],
+            "ignored_expert_recommendations": [],
+            "unresolved_questions": [],
+            "parse_warnings": [
+              "json_model_empty_or_error_attempt_1",
+              "json_retry_after_invalid_json",
+              "json_model_empty_or_error_attempt_2",
+              "json_retry_exhausted",
+              "moderation_json_parse_failed"
+            ],
+            "json_attempts": 2,
+            "timestamp": "2026-05-06 08:14:05.594993",
+            "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+            "source": "fallback",
+            "meta": {
+              "expert_bundle_used": true,
+              "balance_report_used": true,
+              "deliberation_brief_used": true
+            }
+          },
+          {
+            "decision": "REVISE",
+            "scores": {},
+            "balance": {
+              "dominant_perspective_found": false,
+              "missing_perspectives": []
+            },
+            "critical_issues": [
+              "Moderator JSON output could not be parsed after retry."
+            ],
+            "improvements": [
+              "Regenerate answer with stricter structure and shorter sections.",
+              "Ensure constraints, metrics, risks, and trade-offs are explicit."
+            ],
+            "ignored_expert_risks": [],
+            "ignored_expert_recommendations": [],
+            "unresolved_questions": [],
+            "parse_warnings": [
+              "json_model_empty_or_error_attempt_1",
+              "json_retry_after_invalid_json",
+              "json_model_empty_or_error_attempt_2",
+              "json_retry_exhausted",
+              "moderation_json_parse_failed"
+            ],
+            "json_attempts": 2,
+            "timestamp": "2026-05-06 08:14:05.595988",
+            "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+            "source": "fallback",
+            "meta": {
+              "expert_bundle_used": true,
+              "balance_report_used": true,
+              "deliberation_brief_used": true
+            }
+          },
+          {
+            "decision": "REVISE",
+            "scores": {},
+            "balance": {
+              "dominant_perspective_found": false,
+              "missing_perspectives": []
+            },
+            "critical_issues": [
+              "Moderator JSON output could not be parsed after retry."
+            ],
+            "improvements": [
+              "Regenerate answer with stricter structure and shorter sections.",
+              "Ensure constraints, metrics, risks, and trade-offs are explicit."
+            ],
+            "ignored_expert_risks": [],
+            "ignored_expert_recommendations": [],
+            "unresolved_questions": [],
+            "parse_warnings": [
+              "json_model_empty_or_error_attempt_1",
+              "json_retry_after_invalid_json",
+              "json_model_empty_or_error_attempt_2",
+              "json_retry_exhausted",
+              "moderation_json_parse_failed"
+            ],
+            "json_attempts": 2,
+            "timestamp": "2026-05-06 08:14:05.596984",
+            "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+            "source": "fallback",
+            "meta": {
+              "expert_bundle_used": true,
+              "balance_report_used": true,
+              "deliberation_brief_used": true
+            }
+          }
+        ],
+        "answer_moderation_final_decision": "REVISE",
+        "answer_moderation_critical_issues": [],
+        "answer_moderation_revision_count": 3,
+        "answer_moderation_best_effort": true,
+        "quality_gate_decisions": [
+          {
+            "gate": "plan_critique",
+            "decision": "ALLOW",
+            "reason": "plan accepted",
+            "critical_blockers": []
+          },
+          {
+            "gate": "answer_moderation",
+            "decision": "BEST_EFFORT",
+            "reason": "non-critical answer revision exhausted",
+            "critical_issues": []
+          }
+        ],
+        "context_compression": {
+          "meta_context_chars": 7463,
+          "meta_recheck_context_chars": 9372,
+          "planner_context_chars": 4255,
+          "critic_context_chars": 6900,
+          "answer_context_chars": 8959
+        },
+        "revision_count": 2,
+        "final_confidence": null,
+        "meta_moderation_decisions": [
+          {
+            "decision": "ADD_EXPERT",
+            "reason": "Balance Analyzer 2.0 recommends adding expertise for missing or weakly covered perspectives.",
+            "missing_perspectives": [
+              "strategy",
+              "engineering",
+              "risk",
+              "user"
+            ],
+            "conflicts_to_resolve": [
+              "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+              "Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+              "Expert recommendations appear generic or duplicative.",
+              "Selected dynamic role perspective is not meaningfully covered: measurement_expert."
+            ],
+            "risks_to_address": [],
+            "questions_to_answer": [],
+            "next_actions": [
+              "Add targeted expertise before synthesis."
+            ],
+            "confidence": 0.76,
+            "parse_warnings": [
+              "meta_moderator_rule_fallback",
+              "json_model_empty_or_error_attempt_1",
+              "json_retry_after_invalid_json",
+              "json_model_empty_or_error_attempt_2",
+              "json_retry_exhausted",
+              "meta_moderator_model_invalid_json"
+            ],
+            "source": "rules",
+            "json_attempts": 2,
+            "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI."
+          }
+        ],
+        "meta_recheck_count": 1,
+        "meta_recheck_decisions": [
+          {
+            "decision": "ADD_EXPERT",
+            "reason": "Balance Analyzer 2.0 recommends adding expertise for missing or weakly covered perspectives.",
+            "missing_perspectives": [
+              "strategy",
+              "engineering",
+              "risk",
+              "user"
+            ],
+            "conflicts_to_resolve": [
+              "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+              "Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+              "Expert recommendations appear generic or duplicative.",
+              "Selected dynamic role perspective is not meaningfully covered: measurement_expert."
+            ],
+            "risks_to_address": [],
+            "questions_to_answer": [],
+            "next_actions": [
+              "Add targeted expertise before synthesis."
+            ],
+            "confidence": 0.76,
+            "parse_warnings": [
+              "meta_moderator_rule_fallback",
+              "json_model_empty_or_error_attempt_1",
+              "json_retry_after_invalid_json",
+              "json_model_empty_or_error_attempt_2",
+              "json_retry_exhausted",
+              "meta_moderator_model_invalid_json"
+            ],
+            "source": "rules",
+            "json_attempts": 2,
+            "raw": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI."
+          }
+        ],
+        "conflicts_to_resolve": [
+          "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+          "Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+          "Expert recommendations appear generic or duplicative.",
+          "Selected dynamic role perspective is not meaningfully covered: measurement_expert."
+        ],
+        "risks_to_address": [],
+        "warnings": [
+          "query_intake: model_intake_invalid_json",
+          "query_intake: json_model_empty_or_error_attempt_1",
+          "query_intake: json_retry_after_invalid_json",
+          "query_intake: json_model_empty_or_error_attempt_2",
+          "query_intake: json_retry_exhausted",
+          "expert_panel_catastrophic_json_failure: 5/5 experts failed JSON parsing",
+          "cmm_mode_degraded: LIGHT_CMM -> LIGHT_CMM_DEGRADED",
+          "dynamic_roles_extra: json_model_empty_or_error_attempt_1",
+          "dynamic_roles_extra: json_retry_after_invalid_json",
+          "dynamic_roles_extra: json_model_empty_or_error_attempt_2",
+          "dynamic_roles_extra: json_retry_exhausted",
+          "dynamic_roles_extra: dynamic_role_json_parse_failed",
+          "answer_moderation_revise_best_effort"
+        ],
+        "state_history": [
+          {
+            "from": "INTAKE",
+            "to": "ROUTE",
+            "reason": "query intake complete"
+          },
+          {
+            "from": "ROUTE",
+            "to": "PANEL_ROUND_1",
+            "reason": "router selected LIGHT_CMM"
+          },
+          {
+            "from": "PANEL_ROUND_1",
+            "to": "BALANCE",
+            "reason": "initial expert panel complete"
+          },
+          {
+            "from": "BALANCE",
+            "to": "CONFLICT_ANALYSIS",
+            "reason": "balance and brief complete"
+          },
+          {
+            "from": "CONFLICT_ANALYSIS",
+            "to": "META_DECISION",
+            "reason": "conflict analysis complete"
+          },
+          {
+            "from": "META_DECISION",
+            "to": "PANEL_ROUND_EXTRA",
+            "reason": "meta moderator requested additional expert"
+          },
+          {
+            "from": "PANEL_ROUND_EXTRA",
+            "to": "REBALANCE",
+            "reason": "extra panel handled"
+          },
+          {
+            "from": "REBALANCE",
+            "to": "META_RECHECK",
+            "reason": "rebalance complete; meta recheck required"
+          },
+          {
+            "from": "META_RECHECK",
+            "to": "PLAN",
+            "reason": "meta recheck complete; ready to plan"
+          },
+          {
+            "from": "PLAN",
+            "to": "PLAN_CRITIQUE",
+            "reason": "plan generated"
+          },
+          {
+            "from": "PLAN_CRITIQUE",
+            "to": "ANSWER",
+            "reason": "plan critique accepted plan"
+          },
+          {
+            "from": "ANSWER",
+            "to": "ANSWER_MODERATION",
+            "reason": "answer moderation component completed"
+          },
+          {
+            "from": "ANSWER_MODERATION",
+            "to": "FINALIZE",
+            "reason": "answer moderation requested non-critical revision; finalized best effort"
+          }
+        ],
+        "final_state": "FINALIZE",
+        "transition_count": 13,
+        "iteration_count": 0,
+        "plans": [
+          {
+            "query": "Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+            "main_idea": "Ответить на: Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+            "preparation": [],
+            "steps": [
+              {
+                "number": "1",
+                "title": "Сформулировать цель и рабочий контекст запроса",
+                "substeps": [],
+                "uses_expert_inputs": []
+              },
+              {
+                "number": "2",
+                "title": "Проверить решение против ограничений",
+                "substeps": [
+                  "Контекст: Общий образовательный вопрос без высокого риска.",
+                  "Ограничения: Ответ простым языком."
+                ],
+                "uses_expert_inputs": [
+                  "Контекст: Общий образовательный вопрос без высокого риска.",
+                  "Ограничения: Ответ простым языком."
+                ]
+              },
+              {
+                "number": "3",
+                "title": "Закрыть обязательные риски, blind spots и trade-offs",
+                "substeps": [
+                  "Address balance blind spot: Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+                  "Address balance blind spot: Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+                  "Address balance blind spot: Expert recommendations appear generic or duplicative.",
+                  "Address balance blind spot: Selected dynamic role perspective is not meaningfully covered: measurement_expert.",
+                  "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска.."
+                ],
+                "uses_expert_inputs": [
+                  "Address balance blind spot: Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+                  "Address balance blind spot: Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+                  "Address balance blind spot: Expert recommendations appear generic or duplicative.",
+                  "Address balance blind spot: Selected dynamic role perspective is not meaningfully covered: measurement_expert.",
+                  "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска.."
+                ]
+              },
+              {
+                "number": "4",
+                "title": "Связать рекомендации с критериями успеха",
+                "substeps": [
+                  "Кратко объясни разницу между метрикой и KPI."
+                ],
+                "uses_expert_inputs": [
+                  "Кратко объясни разницу между метрикой и KPI."
+                ]
+              },
+              {
+                "number": "5",
+                "title": "Подготовить итоговый ответ с реалистичными шагами и оговорками",
+                "substeps": [],
+                "uses_expert_inputs": []
+              }
+            ],
+            "nuances": [],
+            "potential_problems": [],
+            "result": "",
+            "timestamp": "2026-05-06 08:14:05.592062",
+            "depth": "detailed",
+            "parse_warnings": [
+              "json_and_legacy_plan_parse_failed",
+              "json_model_empty_or_error_attempt_1",
+              "json_retry_after_invalid_json",
+              "json_model_empty_or_error_attempt_2",
+              "json_retry_exhausted"
+            ],
+            "json_attempts": 2,
+            "raw_format": "fallback",
+            "source": "fallback"
+          }
+        ],
+        "plan_critiques": [
+          {
+            "status": "ready",
+            "decision": "ACCEPT",
+            "plan": {
+              "query": "Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+              "main_idea": "Ответить на: Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+              "preparation": [],
+              "steps": [
+                {
+                  "number": "1",
+                  "title": "Сформулировать цель и рабочий контекст запроса",
+                  "substeps": [],
+                  "uses_expert_inputs": []
+                },
+                {
+                  "number": "2",
+                  "title": "Проверить решение против ограничений",
+                  "substeps": [
+                    "Контекст: Общий образовательный вопрос без высокого риска.",
+                    "Ограничения: Ответ простым языком."
+                  ],
+                  "uses_expert_inputs": [
+                    "Контекст: Общий образовательный вопрос без высокого риска.",
+                    "Ограничения: Ответ простым языком."
+                  ]
+                },
+                {
+                  "number": "3",
+                  "title": "Закрыть обязательные риски, blind spots и trade-offs",
+                  "substeps": [
+                    "Address balance blind spot: Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+                    "Address balance blind spot: Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+                    "Address balance blind spot: Expert recommendations appear generic or duplicative.",
+                    "Address balance blind spot: Selected dynamic role perspective is not meaningfully covered: measurement_expert.",
+                    "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска.."
+                  ],
+                  "uses_expert_inputs": [
+                    "Address balance blind spot: Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска..",
+                    "Address balance blind spot: Constraint not covered by expert contributions: Ограничения: Ответ простым языком..",
+                    "Address balance blind spot: Expert recommendations appear generic or duplicative.",
+                    "Address balance blind spot: Selected dynamic role perspective is not meaningfully covered: measurement_expert.",
+                    "Constraint not covered by expert contributions: Контекст: Общий образовательный вопрос без высокого риска.."
+                  ]
+                },
+                {
+                  "number": "4",
+                  "title": "Связать рекомендации с критериями успеха",
+                  "substeps": [
+                    "Кратко объясни разницу между метрикой и KPI."
+                  ],
+                  "uses_expert_inputs": [
+                    "Кратко объясни разницу между метрикой и KPI."
+                  ]
+                },
+                {
+                  "number": "5",
+                  "title": "Подготовить итоговый ответ с реалистичными шагами и оговорками",
+                  "substeps": [],
+                  "uses_expert_inputs": []
+                }
+              ],
+              "nuances": [],
+              "potential_problems": [],
+              "result": "",
+              "timestamp": "2026-05-06 08:14:05.592062",
+              "depth": "detailed",
+              "parse_warnings": [
+                "json_and_legacy_plan_parse_failed",
+                "json_model_empty_or_error_attempt_1",
+                "json_retry_after_invalid_json",
+                "json_model_empty_or_error_attempt_2",
+                "json_retry_exhausted"
+              ],
+              "json_attempts": 2,
+              "raw_format": "fallback",
+              "source": "fallback"
+            },
+            "critique": {
+              "scores": {
+                "query_alignment": 8.0,
+                "constraint_coverage": 10.0,
+                "success_criteria_coverage": 10.0,
+                "expert_input_coverage": 10.0,
+                "risk_coverage": 8.0,
+                "conflict_resolution": 8.0,
+                "dynamic_role_coverage": 10.0,
+                "deliberation_revision_coverage": 8.0,
+                "actionability": 8.0,
+                "clarity": 8.0,
+                "expert_risk_coverage": 8.0,
+                "tradeoff_handling": 8.0,
+                "logical_order": 9.2,
+                "missing_perspectives_handling": 8.0
+              },
+              "overall_score": 8.8,
+              "parse_warnings": [
+                "plan_critic_model_failed: plan_critic_model_invalid_json"
+              ],
+              "json_attempts": 0,
+              "source": "rules",
+              "missing_constraints": [],
+              "ignored_success_criteria": [],
+              "ignored_expert_risks": [],
+              "ignored_expert_recommendations": [],
+              "unresolved_tradeoffs": [],
+              "ignored_blind_spots": [],
+              "ignored_dynamic_roles": [],
+              "ignored_deliberation_revisions": [],
+              "premature_consensus_risks": [],
+              "critical_issues": [],
+              "strengths": [
+                "Plan covers the available CMM context."
+              ],
+              "feedback": [
+                "Proceed with answer generation."
+              ],
+              "ignored_must_address": [],
+              "ignored_risks": [],
+              "ignored_tradeoffs": [],
+              "recommendations": [
+                "Proceed with answer generation."
+              ],
+              "critical_blockers": []
+            },
+            "feedback": [
+              "Proceed with answer generation."
+            ],
+            "reason": "Plan satisfies the context-aware critique threshold."
+          }
+        ],
+        "plan_critique_statuses": [
+          "ready"
+        ],
+        "plan_replan_reasons": [
+          "Plan satisfies the context-aware critique threshold."
+        ],
+        "plan_critique_decisions": [
+          "ACCEPT"
+        ],
+        "plan_critique_blockers": [],
+        "ignored_must_address": [],
+        "ignored_risks": [],
+        "ignored_tradeoffs": [],
+        "errors": [],
+        "json_health": {
+          "expert_agent": {
+            "calls": 9,
+            "success": 0,
+            "fallbacks": 9,
+            "retry_attempts": 9,
+            "invalid_json_count": 9
+          },
+          "planner": {
+            "called": true,
+            "success": false,
+            "raw_format": "fallback",
+            "source": "fallback",
+            "json_attempts": 2
+          },
+          "moderator": {
+            "invalid_json_count": 3,
+            "retry_attempts": 3,
+            "final_decision": "REVISE"
+          },
+          "conflict_analyzer": {
+            "invalid_json_count": 2,
+            "retry_attempts": 2
+          },
+          "meta_moderator": {
+            "invalid_json_count": 2,
+            "retry_attempts": 2
+          }
+        },
+        "estimated_call_count": 39,
+        "estimated_stage_count": 13,
+        "answer_chars": 691,
+        "warnings_count": 13,
+        "errors_count": 0
+      },
+      "answer_a_source": "CMM",
+      "answer_b_source": "BASELINE",
+      "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-002\", \"query\": \"Кратко объясни разницу между метрикой и KPI.\", \"context\": \"Общий образовательный вопрос без высокого риска.\", \"constraints\": \"Ответ простым языком.\", \"rubric_must_cover\": [\"разница между метрикой и KPI\", \"короткий пример\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"избыточный консалтинг\", \"нет примера\"], \"answer_a\": \"Не удалось получить стабильный ответ от модели. Ниже — краткий fallback на основе уже построенного плана.\\n\\nЗапрос: Кратко объясни разницу между метрикой и KPI.\\nКонтекст: Общий образовательный вопрос без высокого риска.\\nОграничения: Ответ простым языком.\\nОсновная идея: Ответить на: Кратко объясни разницу между метрикой и KPI.\\nКонтекст: Общий образовательный вопрос без высокого риска.\\nОграничения: Ответ простым языком.\\nКлючевые шаги:\\n1. Сформулировать цель и рабочий контекст запроса\\n2. Проверить решение против ограничений\\n3. Закрыть обязательные риски, blind spots и trade-offs\\n4. Связать рекомендации с критериями успеха\\n5. Подготовить итоговый ответ с реалистичными шагами и оговорками\", \"answer_b\": \"Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.\"}",
+      "raw_judge_output": "",
+      "normalized_judge_result": {
+        "case_id": "V2-002",
+        "baseline_scores": {
+          "rubric_coverage": 0.0,
+          "perspective_coverage": 0.0,
+          "risk_handling": 0.0,
+          "actionability": 0.0,
+          "clarity": 0.0,
+          "overall": 0.0
+        },
+        "cmm_scores": {
+          "rubric_coverage": 0.0,
+          "perspective_coverage": 0.0,
+          "risk_handling": 0.0,
+          "actionability": 0.0,
+          "clarity": 0.0,
+          "overall": 0.0
+        },
+        "winner": "UNJUDGED",
+        "reason": "judge_mode=none; exported for human review",
+        "cmm_failure_modes": [],
+        "baseline_failure_modes": [],
+        "parse_warnings": [
+          "human_review_required",
+          "judge_json_parse_failed"
+        ],
+        "raw": ""
+      }
+    },
+    {
+      "case_id": "V2-003",
+      "case": {
+        "id": "V2-003",
+        "query": "What is a trade-off in product design?",
+        "context": "Simple explanation request.",
+        "constraints": "Keep it concise.",
+        "expected_perspectives": "",
+        "rubric_must_cover": "plain definition | product design example | mention competing goals",
+        "rubric_desirable": "one sentence summary",
+        "expected_single_model_failure_modes": "too broad | no product example",
+        "expected_mode": "DIRECT",
+        "case_id": "V2-003",
+        "schema_warnings": []
+      },
+      "baseline": {
+        "answer": "Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.",
+        "trace_report": {
+          "mode": "real_baseline"
+        }
+      },
+      "cmm": {
+        "answer": "Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: What is a trade-off in product design? Контекст: Simple explanation request. Ограничения: Keep it concise.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\"LIGHT_CMM\")`.",
+        "final_answer": "Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: What is a trade-off in product design? Контекст: Simple explanation request. Ограничения: Keep it concise.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\"LIGHT_CMM\")`.",
+        "trace_report": {
+          "original_query": "What is a trade-off in product design?\nКонтекст: Simple explanation request.\nОграничения: Keep it concise.",
+          "formalized_query": "What is a trade-off in product design? Контекст: Simple explanation request. Ограничения: Keep it concise.",
+          "query_intake": {
+            "original_query": "What is a trade-off in product design?\nКонтекст: Simple explanation request.\nОграничения: Keep it concise.",
+            "cleaned_query": "What is a trade-off in product design? Контекст: Simple explanation request. Ограничения: Keep it concise.",
+            "task_goal": "What is a trade-off in product design? Контекст: Simple explanation request. Ограничения: Keep it concise.",
+            "context": [
+              "Контекст: Simple explanation request."
+            ],
+            "constraints": [
+              "Ограничения: Keep it concise."
+            ],
+            "success_criteria": [],
+            "unknowns": [],
+            "user_preferences": [],
+            "risk_level": "low",
+            "complexity": "simple",
+            "should_use_cmm": false,
+            "parse_warnings": [
+              "model_intake_invalid_json",
+              "json_model_empty_or_error_attempt_1",
+              "json_retry_after_invalid_json",
+              "json_model_empty_or_error_attempt_2",
+              "json_retry_exhausted"
+            ],
+            "json_attempts": 2,
+            "source": "fallback"
+          },
+          "router_decision": {
+            "mode": "DIRECT",
+            "reason": "Simple low-risk explanation request has only formatting constraints.",
+            "complexity": "low",
+            "needs_expert_panel": false,
+            "needs_second_round": false,
+            "estimated_cost_class": "S",
+            "signals": {
+              "risk_level": "low",
+              "intake_complexity": "simple",
+              "word_count": 72,
+              "constraints_count": 1,
+              "success_criteria_count": 0,
+              "context_count": 1,
+              "unknowns_count": 0,
+              "preferences_count": 0,
+              "has_constraints": true,
+              "has_success_criteria": false,
+              "should_use_cmm": false,
+              "has_high_risk_markers": false,
+              "has_risk_markers": false,
+              "has_stakeholder_markers": false,
+              "has_tradeoff_markers": true,
+              "has_full_markers": false,
+              "has_light_markers": true,
+              "has_direct_markers": true,
+              "needs_second_round": false
+            },
+            "warnings": []
+          },
+          "cmm_mode": "DIRECT",
+          "estimated_cost_class": "S",
+          "routing_warnings": [],
+          "parallel_mode": "SEQUENTIAL",
+          "max_workers": null,
+          "parallelized_stages": [],
+          "roles_used": [],
+          "roles_used_unique": [],
+          "expert_rounds": [],
+          "deliberation_brief": {},
+          "balance_reports": [],
+          "conflict_reports": [],
+          "deliberation_rounds": [],
+          "deliberation_revisions": [],
+          "deliberation_round_count": 0,
+          "max_deliberation_rounds": 1,
+          "consensus_checks": [],
+          "deliberation_position_changes": [],
+          "dynamic_role_reports": [],
+          "dynamic_roles_generated": [],
+          "dynamic_roles_executed": [],
+          "dynamic_roles_rejected": [],
+          "dynamic_roles_used": [],
+          "unresolved_tradeoffs": [],
+          "premature_consensus_risks": [],
+          "blind_spots": [],
+          "plan": {},
+          "plan_critique": {},
+          "moderation_reports": [],
+          "answer_moderation_final_decision": "",
+          "answer_moderation_critical_issues": [],
+          "answer_moderation_revision_count": 0,
+          "answer_moderation_best_effort": false,
+          "quality_gate_decisions": [],
+          "context_compression": {
+            "planner_context_chars": 0,
+            "critic_context_chars": 0,
+            "answer_context_chars": 0,
+            "meta_context_chars": 0
+          },
+          "revision_count": 0,
+          "final_confidence": null,
+          "meta_moderation_decisions": [],
+          "meta_recheck_count": 0,
+          "meta_recheck_decisions": [],
+          "conflicts_to_resolve": [],
+          "risks_to_address": [],
+          "warnings": [
+            "query_intake: model_intake_invalid_json",
+            "query_intake: json_model_empty_or_error_attempt_1",
+            "query_intake: json_retry_after_invalid_json",
+            "query_intake: json_model_empty_or_error_attempt_2",
+            "query_intake: json_retry_exhausted",
+            "direct_answer: direct_answer_failed"
+          ],
+          "state_history": [
+            {
+              "from": "INTAKE",
+              "to": "ROUTE",
+              "reason": "query intake complete"
+            },
+            {
+              "from": "ROUTE",
+              "to": "DIRECT_ANSWER",
+              "reason": "router selected direct answer"
+            },
+            {
+              "from": "DIRECT_ANSWER",
+              "to": "FINALIZE",
+              "reason": "direct answer finalized"
+            }
+          ],
+          "final_state": "FINALIZE",
+          "transition_count": 3,
+          "iteration_count": 0,
+          "plans": [],
+          "plan_critiques": [],
+          "plan_critique_statuses": [],
+          "plan_replan_reasons": [],
+          "plan_critique_decisions": [],
+          "plan_critique_blockers": [],
+          "ignored_must_address": [],
+          "ignored_risks": [],
+          "ignored_tradeoffs": [],
+          "errors": [],
+          "json_health": {
+            "expert_agent": {
+              "calls": 0,
+              "success": 0,
+              "fallbacks": 0,
+              "retry_attempts": 0,
+              "invalid_json_count": 0
+            },
+            "planner": {
+              "called": false,
+              "success": false,
+              "raw_format": "",
+              "source": "",
+              "json_attempts": 0
+            },
+            "moderator": {
+              "invalid_json_count": 0,
+              "retry_attempts": 0,
+              "final_decision": ""
+            },
+            "conflict_analyzer": {
+              "invalid_json_count": 0,
+              "retry_attempts": 0
+            },
+            "meta_moderator": {
+              "invalid_json_count": 0,
+              "retry_attempts": 0
+            }
+          },
+          "estimated_call_count": 3,
+          "estimated_stage_count": 3,
+          "answer_chars": 339,
+          "warnings_count": 6,
+          "errors_count": 0
+        }
+      },
+      "cmm_trace_report": {
+        "original_query": "What is a trade-off in product design?\nКонтекст: Simple explanation request.\nОграничения: Keep it concise.",
+        "formalized_query": "What is a trade-off in product design? Контекст: Simple explanation request. Ограничения: Keep it concise.",
+        "query_intake": {
+          "original_query": "What is a trade-off in product design?\nКонтекст: Simple explanation request.\nОграничения: Keep it concise.",
+          "cleaned_query": "What is a trade-off in product design? Контекст: Simple explanation request. Ограничения: Keep it concise.",
+          "task_goal": "What is a trade-off in product design? Контекст: Simple explanation request. Ограничения: Keep it concise.",
+          "context": [
+            "Контекст: Simple explanation request."
+          ],
+          "constraints": [
+            "Ограничения: Keep it concise."
+          ],
+          "success_criteria": [],
+          "unknowns": [],
+          "user_preferences": [],
+          "risk_level": "low",
+          "complexity": "simple",
+          "should_use_cmm": false,
+          "parse_warnings": [
+            "model_intake_invalid_json",
+            "json_model_empty_or_error_attempt_1",
+            "json_retry_after_invalid_json",
+            "json_model_empty_or_error_attempt_2",
+            "json_retry_exhausted"
+          ],
+          "json_attempts": 2,
+          "source": "fallback"
+        },
+        "router_decision": {
+          "mode": "DIRECT",
+          "reason": "Simple low-risk explanation request has only formatting constraints.",
+          "complexity": "low",
+          "needs_expert_panel": false,
+          "needs_second_round": false,
+          "estimated_cost_class": "S",
+          "signals": {
+            "risk_level": "low",
+            "intake_complexity": "simple",
+            "word_count": 72,
+            "constraints_count": 1,
+            "success_criteria_count": 0,
+            "context_count": 1,
+            "unknowns_count": 0,
+            "preferences_count": 0,
+            "has_constraints": true,
+            "has_success_criteria": false,
+            "should_use_cmm": false,
+            "has_high_risk_markers": false,
+            "has_risk_markers": false,
+            "has_stakeholder_markers": false,
+            "has_tradeoff_markers": true,
+            "has_full_markers": false,
+            "has_light_markers": true,
+            "has_direct_markers": true,
+            "needs_second_round": false
+          },
+          "warnings": []
+        },
+        "cmm_mode": "DIRECT",
+        "estimated_cost_class": "S",
+        "routing_warnings": [],
+        "parallel_mode": "SEQUENTIAL",
+        "max_workers": null,
+        "parallelized_stages": [],
+        "roles_used": [],
+        "roles_used_unique": [],
+        "expert_rounds": [],
+        "deliberation_brief": {},
+        "balance_reports": [],
+        "conflict_reports": [],
+        "deliberation_rounds": [],
+        "deliberation_revisions": [],
+        "deliberation_round_count": 0,
+        "max_deliberation_rounds": 1,
+        "consensus_checks": [],
+        "deliberation_position_changes": [],
+        "dynamic_role_reports": [],
+        "dynamic_roles_generated": [],
+        "dynamic_roles_executed": [],
+        "dynamic_roles_rejected": [],
+        "dynamic_roles_used": [],
+        "unresolved_tradeoffs": [],
+        "premature_consensus_risks": [],
+        "blind_spots": [],
+        "plan": {},
+        "plan_critique": {},
+        "moderation_reports": [],
+        "answer_moderation_final_decision": "",
+        "answer_moderation_critical_issues": [],
+        "answer_moderation_revision_count": 0,
+        "answer_moderation_best_effort": false,
+        "quality_gate_decisions": [],
+        "context_compression": {
+          "planner_context_chars": 0,
+          "critic_context_chars": 0,
+          "answer_context_chars": 0,
+          "meta_context_chars": 0
+        },
+        "revision_count": 0,
+        "final_confidence": null,
+        "meta_moderation_decisions": [],
+        "meta_recheck_count": 0,
+        "meta_recheck_decisions": [],
+        "conflicts_to_resolve": [],
+        "risks_to_address": [],
+        "warnings": [
+          "query_intake: model_intake_invalid_json",
+          "query_intake: json_model_empty_or_error_attempt_1",
+          "query_intake: json_retry_after_invalid_json",
+          "query_intake: json_model_empty_or_error_attempt_2",
+          "query_intake: json_retry_exhausted",
+          "direct_answer: direct_answer_failed"
+        ],
+        "state_history": [
+          {
+            "from": "INTAKE",
+            "to": "ROUTE",
+            "reason": "query intake complete"
+          },
+          {
+            "from": "ROUTE",
+            "to": "DIRECT_ANSWER",
+            "reason": "router selected direct answer"
+          },
+          {
+            "from": "DIRECT_ANSWER",
+            "to": "FINALIZE",
+            "reason": "direct answer finalized"
+          }
+        ],
+        "final_state": "FINALIZE",
+        "transition_count": 3,
+        "iteration_count": 0,
+        "plans": [],
+        "plan_critiques": [],
+        "plan_critique_statuses": [],
+        "plan_replan_reasons": [],
+        "plan_critique_decisions": [],
+        "plan_critique_blockers": [],
+        "ignored_must_address": [],
+        "ignored_risks": [],
+        "ignored_tradeoffs": [],
+        "errors": [],
+        "json_health": {
+          "expert_agent": {
+            "calls": 0,
+            "success": 0,
+            "fallbacks": 0,
+            "retry_attempts": 0,
+            "invalid_json_count": 0
+          },
+          "planner": {
+            "called": false,
+            "success": false,
+            "raw_format": "",
+            "source": "",
+            "json_attempts": 0
+          },
+          "moderator": {
+            "invalid_json_count": 0,
+            "retry_attempts": 0,
+            "final_decision": ""
+          },
+          "conflict_analyzer": {
+            "invalid_json_count": 0,
+            "retry_attempts": 0
+          },
+          "meta_moderator": {
+            "invalid_json_count": 0,
+            "retry_attempts": 0
+          }
+        },
+        "estimated_call_count": 3,
+        "estimated_stage_count": 3,
+        "answer_chars": 339,
+        "warnings_count": 6,
+        "errors_count": 0
+      },
+      "answer_a_source": "BASELINE",
+      "answer_b_source": "CMM",
+      "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-003\", \"query\": \"What is a trade-off in product design?\", \"context\": \"Simple explanation request.\", \"constraints\": \"Keep it concise.\", \"rubric_must_cover\": [\"plain definition\", \"product design example\", \"mention competing goals\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"too broad\", \"no product example\"], \"answer_a\": \"Error: API key is not configured. Set DEEPSEEK_API_KEY in the environment or in a local .env file before calling send_to_AI.\", \"answer_b\": \"Не удалось получить прямой ответ от модели в DIRECT mode, поэтому возвращён безопасный fallback. Запрос сохранён без изменений: What is a trade-off in product design? Контекст: Simple explanation request. Ограничения: Keep it concise.. Для более содержательного ответа повторите запрос или запустите `run_cmm(..., route_mode=\\\"LIGHT_CMM\\\")`.\"}",
+      "raw_judge_output": "",
+      "normalized_judge_result": {
+        "case_id": "V2-003",
+        "baseline_scores": {
+          "rubric_coverage": 0.0,
+          "perspective_coverage": 0.0,
+          "risk_handling": 0.0,
+          "actionability": 0.0,
+          "clarity": 0.0,
+          "overall": 0.0
+        },
+        "cmm_scores": {
+          "rubric_coverage": 0.0,
+          "perspective_coverage": 0.0,
+          "risk_handling": 0.0,
+          "actionability": 0.0,
+          "clarity": 0.0,
+          "overall": 0.0
+        },
+        "winner": "UNJUDGED",
+        "reason": "judge_mode=none; exported for human review",
+        "cmm_failure_modes": [],
+        "baseline_failure_modes": [],
+        "parse_warnings": [
+          "human_review_required",
+          "judge_json_parse_failed"
+        ],
+        "raw": ""
+      }
+    }
+  ]
+}

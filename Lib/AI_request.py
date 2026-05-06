@@ -15,7 +15,7 @@ DEFAULT_MODEL = "deepseek-chat"
 DEFAULT_TOKEN_LIMIT = 850
 
 _ENV_FILENAMES = (".env",)
-_API_KEY_ENV_NAMES = ("DEEPSEEK_API_KEY", "OPENAI_API_KEY", "apy_key")
+_API_KEY_ENV_NAMES = ("OMNIROUTE_API_KEY", "CLAUDE_API_KEY", "DEEPSEEK_API_KEY", "OPENAI_API_KEY", "apy_key")
 
 
 def _load_local_env_files() -> None:
@@ -71,8 +71,19 @@ def _get_api_key(explicit_api_key: str | None = None) -> str:
             return value
 
     raise RuntimeError(
-        "API key is not configured. Set DEEPSEEK_API_KEY in the environment "
-        "or in a local .env file before calling send_to_AI."
+        "API key is not configured. Set OMNIROUTE_API_KEY, CLAUDE_API_KEY, or DEEPSEEK_API_KEY "
+        "in the environment or in a local .env file before calling send_to_AI."
+    )
+
+
+def _get_base_url() -> str:
+    """Return base URL from env or default."""
+    _load_local_env_files()
+    return (
+        os.getenv("OMNIROUTE_BASE_URL")
+        or os.getenv("CLAUDE_BASE_URL")
+        or os.getenv("OPENAI_BASE_URL")
+        or DEFAULT_BASE_URL
     )
 
 
@@ -119,7 +130,7 @@ def send_to_AI(
         except Exception as exc:
             return f"Error: openai package is not available: {exc}"
 
-        client = OpenAI(api_key=resolved_api_key, base_url=DEFAULT_BASE_URL)
+        client = OpenAI(api_key=resolved_api_key, base_url=_get_base_url())
 
         messages = []
         if system_prompt:

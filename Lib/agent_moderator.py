@@ -202,7 +202,10 @@ def moderate_answer(
         user_prompt="\n\n".join(user_prompt_parts),
         system_prompt=system_prompt,
         temp=0.25,
-        tokens=650,
+        # DeepSeek often returns a valid but long moderation object. 650 tokens
+        # truncated real JSON in eval smoke runs, so keep this stage roomy
+        # enough for the declared schema before falling back.
+        tokens=1200,
         model=model,
         max_retries=1,
     )

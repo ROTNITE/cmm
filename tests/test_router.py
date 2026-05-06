@@ -91,6 +91,36 @@ class RouterTests(unittest.TestCase):
 
         self.assertEqual(decision["mode"], "FULL_CMM")
 
+    def test_direct_explanation_allows_format_constraints_and_context(self):
+        from Lib.router import route_query
+
+        decision = route_query(
+            _intake(
+                context=["Пользователь просит короткое объяснение термина."],
+                constraints=["Ответ кратко до 5 предложений."],
+                success_criteria=["Объяснение термина в пределах 5 предложений."],
+                should_use_cmm=False,
+            ),
+            original_query="Что такое коллективная метамодерация?",
+        )
+
+        self.assertEqual(decision["mode"], "DIRECT")
+
+    def test_direct_definition_of_tradeoff_does_not_trigger_full_cmm(self):
+        from Lib.router import route_query
+
+        decision = route_query(
+            _intake(
+                context=["Simple explanation request."],
+                constraints=["Keep it concise."],
+                success_criteria=["Explanation is concise and accurate."],
+                should_use_cmm=False,
+            ),
+            original_query="What is a trade-off in product design?",
+        )
+
+        self.assertEqual(decision["mode"], "DIRECT")
+
     def test_high_risk_never_routes_direct(self):
         from Lib.router import route_query
 

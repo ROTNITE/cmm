@@ -1,0 +1,21 @@
+case_id,query,context,constraints,expected_mode,answer_a,answer_b,manual_winner,review_notes,price_justified,lost_constraints,too_many_agents,too_long
+V2-001,Что такое коллективная метамодерация?,Пользователь просит короткое объяснение термина.,Ответ кратко до 5 предложений.,DIRECT,"Коллективная метамодерация — это процесс, в котором участники сообщества оценивают действия других модераторов или пользователей, чтобы улучшить качество модерации. Она позволяет сообществу влиять на правила и их применение, снижая риск злоупотреблений. Обычно это реализуется через голосование или рейтинги решений модераторов. Цель — сделать модерацию более прозрачной и демократичной.","Коллективная метамодерация — это процесс, в котором сообщество пользователей совместно оценивает и контролирует качество модерации контента. Участники обсуждают и голосуют за решения модераторов, чтобы обеспечить справедливость и прозрачность. Такой подход помогает избежать злоупотреблений властью со стороны отдельных модераторов. Он также повышает доверие к платформе, так как правила применяются коллегиально. В итоге коллективная метамодерация делает управление контентом более демократичным.",,,,,,
+V2-002,Кратко объясни разницу между метрикой и KPI.,Общий образовательный вопрос без высокого риска.,Ответ простым языком.,DIRECT,,"Метрика — это просто число, которое показывает какой-то факт (например, «100 человек зашли на сайт»).  
+
+KPI (ключевой показатель эффективности) — это метрика, которая привязана к конкретной цели бизнеса. Она отвечает на вопрос «Достигли ли мы успеха?».  
+
+**Пример:**  
+- Метрика: «Количество звонков в день — 50».  
+- KPI: «Цель — 70 звонков в день, а сделали 50 → план не выполнен».  
+
+**Коротко:** Любой KPI — это метрика, но не любая метрика является KPI. KPI всегда имеет целевое значение и влияет на принятие решений.",,,,,,
+V2-003,What is a trade-off in product design?,Simple explanation request.,Keep it concise.,DIRECT,"A trade-off in product design is when you must give up one desirable feature to gain another. For example, making a phone lighter might mean using a smaller battery, which reduces its battery life.","In product design, a **trade-off** is the deliberate choice to sacrifice one desirable quality (like speed, cost, or simplicity) to gain another that better serves your users. Trade-offs are inevitable—ignoring them leads to unfocused, bloated products.
+
+**Simple example:** Choosing between **faster performance** and **lower cost**. You can’t maximize both, so you prioritize the user need that matters most. If you pick speed, you accept higher cost; if you pick affordability, you accept slower performance.
+
+**Key points to remember:**
+- Base trade-offs on **clear product goals** and user research, not assumptions.
+- Poor decisions can **alienate key user segments** or increase **technical debt** over time.
+- Always document your reasoning to guide future choices.
+
+**In short:** Trade-offs are smart, user-focused compromises—not random cuts.",,,,,,

@@ -84,6 +84,25 @@ _DIRECT_MARKERS = (
     "кратко",
     "дай определение",
 )
+_FORMAT_ONLY_MARKERS = (
+    "brief",
+    "briefly",
+    "concise",
+    "short",
+    "simple language",
+    "plain language",
+    "sentences",
+    "words",
+    "keep it concise",
+    "кратко",
+    "коротко",
+    "простым языком",
+    "до 5 предлож",
+    "до пяти предлож",
+    "в пределах 5 предлож",
+    "не более 5 предлож",
+    "без деталей",
+)
 _STAKEHOLDER_MARKERS = (
     "stakeholder",
     "multi-stakeholder",
@@ -135,6 +154,31 @@ def _normalize_text(value: Any) -> str:
 
 def _contains_any(text: str, markers: tuple[str, ...]) -> bool:
     return any(marker in text for marker in markers)
+
+
+def _format_only_items(items: list) -> bool:
+    """Return True when constraints are just answer-shape preferences.
+
+    Real eval datasets often include DIRECT cases with constraints like
+    "keep it concise" or "answer in 5 sentences". Those should not promote a
+    definition/explanation request into LIGHT/FULL CMM.
+    """
+    if not items:
+        return True
+    for item in items:
+        text = _normalize_text(item)
+        if not text or not _contains_any(text, _FORMAT_ONLY_MARKERS):
+            return False
+    return True
+
+
+def _direct_request_text(query_intake: dict, original_query: str) -> str:
+    parts = [original_query]
+    for key in ("original_query", "cleaned_query", "task_goal"):
+        value = query_intake.get(key)
+        if isinstance(value, str):
+            parts.append(value)
+    return _normalize_text(" ".join(parts))
 
 
 def _intake_text(query_intake: dict, original_query: str) -> str:
@@ -216,10 +260,47 @@ def route_query(query_intake: dict, *, original_query: str = "") -> dict:
     }
 
     high_risk = risk_level == "high" or signals["has_high_risk_markers"]
+    direct_text = _direct_request_text(intake, original_query)
+
+    # Check if this is a definition/explanation question (e.g., "What is X?", "Explain Y")
+    # These should go DIRECT even if they mention stakeholders/tradeoffs in the question itself
+    is_definition_question = (
+        _contains_any(direct_text, _DIRECT_MARKERS)
+        and complexity == "low"
+        and not high_risk
+        and word_count <= 80
+        and _format_only_items(constraints)
+        and _format_only_items(success_criteria)
+        and not unknowns
+        and not preferences
+    )
+
+    direct_explanation = (
+        complexity == "low"
+        and not high_risk
+        and risk_level in {"", "low", "unknown"}
+        and (should_use_cmm is False or _contains_any(direct_text, _DIRECT_MARKERS))
+        and _contains_any(direct_text, _DIRECT_MARKERS)
+        and _format_only_items(constraints)
+        and _format_only_items(success_criteria)
+        and not unknowns
+        and not preferences
+    )
+    if direct_explanation or is_definition_question:
+        return _normalize_decision(
+            "DIRECT",
+            "Simple low-risk explanation request has only formatting constraints.",
+            complexity,
+            signals,
+            warnings,
+        )
+
     many_constraints = len(constraints) >= 3 or len(success_criteria) >= 3
     constrained_plan = len(constraints) >= 2 and len(success_criteria) >= 1
-    multi_stakeholder = len(context) >= 2 or signals["has_stakeholder_markers"]
-    conflict_heavy = signals["has_tradeoff_markers"] or signals["has_full_markers"]
+
+    # Only consider stakeholder/tradeoff markers if NOT a definition question
+    multi_stakeholder = (len(context) >= 2 or signals["has_stakeholder_markers"]) and not is_definition_question
+    conflict_heavy = (signals["has_tradeoff_markers"] or signals["has_full_markers"]) and not is_definition_question
     full_signals = high_risk or complexity == "high" or many_constraints or multi_stakeholder or conflict_heavy
     if full_signals:
         signals["needs_second_round"] = high_risk or complexity == "high" or many_constraints or multi_stakeholder

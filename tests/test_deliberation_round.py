@@ -95,6 +95,57 @@ class DeliberationRoundTests(unittest.TestCase):
         self.assertIn("risk_manager", [role.key for role in roles])
         self.assertIn("strategist", [role.key for role in roles])
 
+    def test_select_high_conflict_deliberation_roles_only_named_high_roles(self):
+        from Lib.deliberation_round import select_high_conflict_deliberation_roles
+
+        conflict = dict(_conflict_report())
+        conflict["disagreements"] = [
+            {
+                "issue": "Launch speed",
+                "positions": [
+                    {"role": "engineer", "position": "Ship quickly"},
+                    {"role": "risk_manager", "position": "Add controls"},
+                ],
+                "severity": "high",
+            },
+            {
+                "issue": "Messaging",
+                "positions": [{"role": "strategist", "position": "Keep it broad"}],
+                "severity": "medium",
+            },
+        ]
+
+        roles = select_high_conflict_deliberation_roles(_expert_bundle(), conflict)
+
+        self.assertEqual([role.key for role in roles], ["engineer", "risk_manager"])
+
+    def test_conflicting_only_round_skips_when_no_high_roles(self):
+        from Lib.deliberation_round import run_deliberation_round
+
+        conflict = dict(_conflict_report())
+        conflict["disagreements"] = [
+            {
+                "issue": "High severity issue without named roles",
+                "severity": "high",
+            }
+        ]
+
+        with patch("Lib.json_retry.send_to_AI") as send_mock:
+            bundle = run_deliberation_round(
+                query="raw query",
+                query_intake={},
+                expert_bundle=_expert_bundle(),
+                deliberation_brief={},
+                conflict_report=conflict,
+                max_roles=2,
+                conflicting_only=True,
+            )
+
+        self.assertTrue(bundle["skipped"])
+        self.assertEqual(bundle["roles"], [])
+        self.assertEqual(bundle["responses"], [])
+        send_mock.assert_not_called()
+
     def test_run_deliberation_round_passes_other_roles_synthesis(self):
         from Lib.deliberation_round import run_deliberation_round
 
@@ -105,7 +156,7 @@ class DeliberationRoundTests(unittest.TestCase):
             captured["system_prompt"] = system_prompt
             return json.dumps(_model_payload())
 
-        with patch("Lib.deliberation_round.send_to_AI", side_effect=fake_send):
+        with patch("Lib.json_retry.send_to_AI", side_effect=fake_send):
             bundle = run_deliberation_round(
                 query="raw query",
                 query_intake={"cleaned_query": "cleaned"},
@@ -123,7 +174,7 @@ class DeliberationRoundTests(unittest.TestCase):
     def test_run_deliberation_round_parses_valid_json(self):
         from Lib.deliberation_round import run_deliberation_round
 
-        with patch("Lib.deliberation_round.send_to_AI", return_value=json.dumps(_model_payload())):
+        with patch("Lib.json_retry.send_to_AI", return_value=json.dumps(_model_payload())):
             bundle = run_deliberation_round(
                 query="raw query",
                 query_intake={},
@@ -140,12 +191,13 @@ class DeliberationRoundTests(unittest.TestCase):
         self.assertEqual(response["new_risks"], ["Rollback ownership may be unclear"])
         self.assertEqual(response["confidence_change"], -0.2)
         self.assertEqual(response["source"], "model")
+        self.assertEqual(response["json_attempts"], 1)
 
     def test_run_deliberation_round_parses_markdown_json(self):
         from Lib.deliberation_round import run_deliberation_round
 
         raw = "```json\n" + json.dumps(_model_payload()) + "\n```"
-        with patch("Lib.deliberation_round.send_to_AI", return_value=raw):
+        with patch("Lib.json_retry.send_to_AI", return_value=raw):
             bundle = run_deliberation_round(
                 query="raw query",
                 query_intake={},
@@ -157,10 +209,28 @@ class DeliberationRoundTests(unittest.TestCase):
 
         self.assertEqual(bundle["responses"][0]["questions_for_group"], ["Who owns rollback?"])
 
+    def test_run_deliberation_round_retries_invalid_then_valid_json(self):
+        from Lib.deliberation_round import run_deliberation_round
+
+        with patch("Lib.json_retry.send_to_AI", side_effect=["not json", json.dumps(_model_payload())]):
+            bundle = run_deliberation_round(
+                query="raw query",
+                query_intake={},
+                expert_bundle=_expert_bundle(),
+                deliberation_brief={},
+                conflict_report=_conflict_report(),
+                max_roles=1,
+            )
+
+        response = bundle["responses"][0]
+        self.assertEqual(response["source"], "model")
+        self.assertEqual(response["json_attempts"], 2)
+        self.assertIn("json_retry_after_invalid_json", response["parse_warnings"])
+
     def test_run_deliberation_round_invalid_json_fallback(self):
         from Lib.deliberation_round import run_deliberation_round
 
-        with patch("Lib.deliberation_round.send_to_AI", return_value="not json"):
+        with patch("Lib.json_retry.send_to_AI", return_value="not json"):
             bundle = run_deliberation_round(
                 query="raw query",
                 query_intake={},
@@ -174,6 +244,7 @@ class DeliberationRoundTests(unittest.TestCase):
         self.assertEqual(response["source"], "fallback")
         self.assertEqual(response["new_risks"], ["deliberation_response_failed"])
         self.assertIn("deliberation_json_parse_failed", response["parse_warnings"])
+        self.assertEqual(response["json_attempts"], 2)
 
     def test_merge_deliberation_into_bundle_adds_revised_recommendations(self):
         from Lib.deliberation_round import merge_deliberation_into_bundle

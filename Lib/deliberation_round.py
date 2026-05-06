@@ -5,9 +5,9 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from Lib.AI_request import send_to_AI
 from Lib.expert_roles import BASE_EXPERT_ROLES, ExpertRole
-from Lib.json_utils import safe_json_loads, to_number, to_string_list
+from Lib.json_retry import call_json_model
+from Lib.json_utils import to_number, to_string_list
 
 
 _ROLE_BY_KEY = {role.key: role for role in BASE_EXPERT_ROLES}
@@ -37,6 +37,23 @@ _STRATEGY_MARKERS = (
     "стратег",
     "приоритет",
     "план",
+)
+_HIGH_SEVERITY_MARKERS = (
+    "high",
+    "critical",
+    "severe",
+    "safety",
+    "security",
+    "privacy",
+    "legal",
+    "compliance",
+    "harm",
+    "failure",
+    "высок",
+    "критическ",
+    "безопас",
+    "закон",
+    "вред",
 )
 
 
@@ -95,6 +112,22 @@ def _add_role(selected: list[ExpertRole], key: str) -> None:
 def _text_has_any(items: list[str], markers: tuple[str, ...]) -> bool:
     text = " ".join(items).lower()
     return any(marker in text for marker in markers)
+
+
+def _item_text(value: Any) -> str:
+    try:
+        return json.dumps(value, ensure_ascii=False, sort_keys=True).lower()
+    except Exception:
+        return str(value or "").lower()
+
+
+def _is_high_severity_item(value: Any) -> bool:
+    if isinstance(value, dict):
+        severity = str(value.get("severity") or "").strip().lower()
+        if severity == "high":
+            return True
+    text = _item_text(value)
+    return any(marker in text for marker in _HIGH_SEVERITY_MARKERS)
 
 
 def _contributions(expert_bundle: dict | None) -> list[dict]:
@@ -187,6 +220,47 @@ def select_deliberation_roles(
     return _unique_roles(fallback, max_roles=max_roles)
 
 
+def select_high_conflict_deliberation_roles(
+    expert_bundle: dict,
+    conflict_report: dict,
+    max_roles: int = 4,
+) -> list[ExpertRole]:
+    """Select only roles explicitly involved in high-severity conflicts.
+
+    Unlike ``select_deliberation_roles`` this has no broad fallback. It is used
+    by Deliberation 2.0 so a second round cannot become a free-form debate.
+    """
+    selected: list[ExpertRole] = []
+    conflict = _as_dict(conflict_report)
+
+    def add_value(value: Any) -> None:
+        role = _role_from_value(value)
+        if role:
+            selected.append(role)
+
+    for disagreement in _as_list(conflict.get("disagreements")):
+        if not _is_high_severity_item(disagreement):
+            continue
+        if isinstance(disagreement, dict):
+            add_value(disagreement.get("role"))
+            for position in _as_list(disagreement.get("positions")):
+                if isinstance(position, dict):
+                    add_value(position.get("role"))
+
+    for tradeoff in _as_list(conflict.get("unresolved_tradeoffs")):
+        if not _is_high_severity_item(tradeoff):
+            continue
+        if isinstance(tradeoff, dict):
+            add_value(tradeoff.get("role"))
+            for role_value in _as_list(tradeoff.get("roles_involved")):
+                add_value(role_value)
+
+    if selected:
+        return _unique_roles(selected, max_roles=max_roles)
+
+    return []
+
+
 def build_other_roles_synthesis(expert_bundle: dict, current_role_key: str) -> dict:
     """Build compact synthesis of other expert positions for one role."""
     others: list[dict] = []
@@ -236,10 +310,16 @@ def normalize_deliberation_response(
     payload: dict | None,
     raw: str = "",
     warning: str | None = None,
+    warnings: list[str] | None = None,
+    json_attempts: int = 0,
 ) -> dict:
     """Normalize one deliberation model response into the stable schema."""
+    parse_warnings = list(warnings or [])
+    if warning:
+        parse_warnings.append(warning)
     if not isinstance(payload, dict):
-        warnings = [warning or "deliberation_json_parse_failed"]
+        if not parse_warnings:
+            parse_warnings = ["deliberation_json_parse_failed"]
         return {
             "role_key": role.key,
             "perspective_tag": role.perspective_tag,
@@ -250,11 +330,12 @@ def normalize_deliberation_response(
             "new_risks": ["deliberation_response_failed"],
             "questions_for_group": [],
             "confidence_change": 0.0,
-            "parse_warnings": warnings,
+            "parse_warnings": parse_warnings,
+            "json_attempts": int(json_attempts or 0),
+            "raw": str(raw or "")[:2000],
             "source": "fallback",
         }
 
-    parse_warnings = [warning] if warning else []
     return {
         "role_key": role.key,
         "perspective_tag": role.perspective_tag,
@@ -266,6 +347,8 @@ def normalize_deliberation_response(
         "questions_for_group": to_string_list(payload.get("questions_for_group"), max_items=8),
         "confidence_change": to_number(payload.get("confidence_change"), default=0.0, min_value=-1.0, max_value=1.0),
         "parse_warnings": parse_warnings,
+        "json_attempts": int(json_attempts or 0),
+        "raw": str(raw or "")[:2000],
         "source": "model",
     }
 
@@ -345,18 +428,33 @@ def _run_role_deliberation(
         + json.dumps(state, ensure_ascii=False)
     )
     try:
-        raw = send_to_AI(
+        result = call_json_model(
             user_prompt=user_prompt,
             system_prompt=system_prompt,
             temp=0.25,
-            tokens=550,
+            tokens=750,
             model=model,
+            max_retries=1,
         )
-        raw_text = raw if isinstance(raw, str) else ""
-        parsed = safe_json_loads(raw_text)
+        parsed = result.get("payload") if isinstance(result, dict) else None
+        raw_text = result.get("raw") if isinstance(result, dict) and isinstance(result.get("raw"), str) else ""
+        warnings = result.get("warnings") if isinstance(result, dict) and isinstance(result.get("warnings"), list) else []
+        attempts = result.get("attempts") if isinstance(result, dict) and isinstance(result.get("attempts"), int) else 0
         if not parsed:
-            return normalize_deliberation_response(role, None, raw=raw_text)
-        return normalize_deliberation_response(role, parsed, raw=raw_text)
+            return normalize_deliberation_response(
+                role,
+                None,
+                raw=raw_text,
+                warnings=warnings + ["deliberation_json_parse_failed"],
+                json_attempts=attempts,
+            )
+        return normalize_deliberation_response(
+            role,
+            parsed,
+            raw=raw_text,
+            warnings=warnings,
+            json_attempts=attempts,
+        )
     except Exception as exc:
         return normalize_deliberation_response(role, None, warning=f"deliberation_model_failed: {exc}")
 
@@ -371,14 +469,31 @@ def run_deliberation_round(
     meta_decision: dict | None = None,
     max_roles: int = 4,
     model: str = "deepseek-chat",
+    conflicting_only: bool = False,
 ) -> dict:
     """Run selected experts through one structured deliberation round."""
-    roles = select_deliberation_roles(
-        expert_bundle=expert_bundle,
-        conflict_report=conflict_report,
-        meta_decision=meta_decision,
-        max_roles=max_roles,
-    )
+    if conflicting_only:
+        roles = select_high_conflict_deliberation_roles(
+            expert_bundle=expert_bundle,
+            conflict_report=conflict_report,
+            max_roles=max_roles,
+        )
+    else:
+        roles = select_deliberation_roles(
+            expert_bundle=expert_bundle,
+            conflict_report=conflict_report,
+            meta_decision=meta_decision,
+            max_roles=max_roles,
+        )
+    if not roles:
+        return {
+            "type": "deliberation_round",
+            "roles": [],
+            "responses": [],
+            "synthesis": deliberation_bundle_to_synthesis([]),
+            "skipped": True,
+            "skip_reason": "no_high_conflict_roles",
+        }
     responses: list[dict] = []
     for role in roles:
         responses.append(

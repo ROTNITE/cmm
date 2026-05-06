@@ -46,6 +46,9 @@ class TraceFormatterTests(unittest.TestCase):
                 }
             ],
             "deliberation_revisions": ["revise rollout"],
+            "deliberation_round_count": 2,
+            "consensus_checks": [{"after_round": 1, "decision": "DELIBERATION_ROUND_2"}],
+            "deliberation_position_changes": [{"role_key": "risk_manager", "position_changed": True}],
             "plan_critique_decisions": ["ACCEPT"],
             "plan_critique_blockers": [],
             "plan_replan_reasons": [],
@@ -65,6 +68,8 @@ class TraceFormatterTests(unittest.TestCase):
         self.assertIn("INTAKE -> ROUTE -> PANEL_ROUND_1", summary)
         self.assertIn("strategist (strategy) [initial]", summary)
         self.assertIn("legal_reviewer [extra]", summary)
+        self.assertIn("Round count: 2", summary)
+        self.assertIn("DELIBERATION_ROUND_2", summary)
         self.assertIn("minor warning", summary)
         self.assertNotIn("expert_bundle", summary)
         self.assertNotIn('"raw"', summary)

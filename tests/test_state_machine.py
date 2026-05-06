@@ -290,9 +290,13 @@ class StateMachineTests(unittest.TestCase):
         trace = result["trace_report"]
         transitions = [(item["from"], item["to"]) for item in trace["state_history"]]
 
-        self.assertIn(("REBALANCE", "META_RECHECK"), transitions)
+        self.assertIn(("DELIBERATION_ROUND", "CONSENSUS_CHECK"), transitions)
+        self.assertIn(("CONSENSUS_CHECK", "META_RECHECK"), transitions)
         self.assertIn(("META_RECHECK", "PLAN"), transitions)
         self.assertEqual(trace["meta_recheck_count"], 1)
+        self.assertEqual(trace["deliberation_round_count"], 1)
+        self.assertEqual(trace["max_deliberation_rounds"], 1)
+        self.assertEqual(trace["consensus_checks"][0]["decision"], "META_RECHECK")
         self.assertEqual(trace["meta_recheck_decisions"][0]["decision"], "SYNTHESIZE")
         self.assertEqual(trace["final_state"], "FINALIZE")
 
@@ -339,9 +343,10 @@ class StateMachineTests(unittest.TestCase):
         trace = result["trace_report"]
         transitions = [(item["from"], item["to"]) for item in trace["state_history"]]
 
-        self.assertIn(("REBALANCE", "META_RECHECK"), transitions)
+        self.assertIn(("CONSENSUS_CHECK", "META_RECHECK"), transitions)
         self.assertIn(("META_RECHECK", "PANEL_ROUND_EXTRA"), transitions)
         self.assertEqual(trace["meta_recheck_count"], 1)
+        self.assertEqual(trace["consensus_checks"][0]["decision"], "META_RECHECK")
         self.assertEqual(trace["meta_recheck_decisions"][0]["decision"], "ADD_EXPERT")
         mocks["run_targeted_expert_round"].assert_called()
 
@@ -372,8 +377,82 @@ class StateMachineTests(unittest.TestCase):
         transitions = [(item["from"], item["to"]) for item in trace["state_history"]]
 
         self.assertEqual(trace["meta_recheck_count"], 1)
-        self.assertEqual(transitions.count(("REBALANCE", "META_RECHECK")), 1)
+        self.assertEqual(transitions.count(("CONSENSUS_CHECK", "META_RECHECK")), 1)
+        self.assertEqual(trace["deliberation_round_count"], 1)
+        self.assertEqual(len(trace["consensus_checks"]), 1)
         self.assertNotIn("max_transitions_exceeded", trace["errors"])
+
+    def test_deliberation_round_two_runs_only_for_high_unresolved_conflict(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        persistent_conflict = _conflict(
+            disagreements=[
+                {
+                    "issue": "Launch speed",
+                    "positions": [
+                        {"role": "strategist", "position": "ship"},
+                        {"role": "risk_manager", "position": "guard"},
+                    ],
+                    "severity": "high",
+                }
+            ]
+        )
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["run_meta_moderator"].return_value = _meta("DEEPEN")
+            mocks["analyze_conflicts"].side_effect = [persistent_conflict, persistent_conflict, _conflict()]
+            mocks["run_deliberation_round"].side_effect = [_deliberation_bundle(), _deliberation_bundle()]
+            mocks["merge_deliberation_into_bundle"].return_value = _deliberated_bundle()
+
+            result = run_cmm_state_machine("raw query", max_deliberation_rounds=2)
+
+        trace = result["trace_report"]
+        transitions = [(item["from"], item["to"]) for item in trace["state_history"]]
+
+        self.assertEqual(mocks["run_deliberation_round"].call_count, 2)
+        self.assertEqual(trace["deliberation_round_count"], 2)
+        self.assertEqual(trace["max_deliberation_rounds"], 2)
+        self.assertEqual(trace["consensus_checks"][0]["decision"], "DELIBERATION_ROUND_2")
+        self.assertEqual(trace["consensus_checks"][1]["decision"], "META_RECHECK")
+        self.assertIn(("CONSENSUS_CHECK", "DELIBERATION_ROUND"), transitions)
+
+    def test_deliberation_round_two_skips_for_medium_conflict(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        first_conflict = _conflict(
+            disagreements=[
+                {
+                    "issue": "Launch speed",
+                    "positions": [{"role": "strategist", "position": "ship"}],
+                    "severity": "high",
+                }
+            ]
+        )
+        medium_conflict = _conflict(
+            disagreements=[
+                {
+                    "issue": "Launch speed",
+                    "positions": [{"role": "strategist", "position": "ship"}],
+                    "severity": "medium",
+                }
+            ]
+        )
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["run_meta_moderator"].return_value = _meta("DEEPEN")
+            mocks["analyze_conflicts"].side_effect = [first_conflict, medium_conflict]
+            mocks["run_deliberation_round"].return_value = _deliberation_bundle()
+            mocks["merge_deliberation_into_bundle"].return_value = _deliberated_bundle()
+
+            result = run_cmm_state_machine("raw query", max_deliberation_rounds=2)
+
+        trace = result["trace_report"]
+
+        self.assertEqual(mocks["run_deliberation_round"].call_count, 1)
+        self.assertEqual(trace["deliberation_round_count"], 1)
+        self.assertEqual(trace["consensus_checks"][0]["decision"], "META_RECHECK")
 
     def test_direct_mode_skips_full_cmm_stages(self):
         from Lib.state_machine import run_cmm_state_machine

@@ -327,7 +327,7 @@ def _mock_cmm(case: dict) -> dict:
     }
 
 
-def _real_baseline(case: dict) -> dict:
+def _real_baseline(case: dict, model: str = "deepseek-chat") -> dict:
     from Lib.AI_request import send_to_AI
 
     prompt = "\n".join(
@@ -342,11 +342,12 @@ def _real_baseline(case: dict) -> dict:
         system_prompt="Answer the user query directly.",
         temp=0.4,
         tokens=850,
+        model=model,
     )
     return {"answer": answer or "", "trace_report": {"mode": "real_baseline"}}
 
 
-def _real_cmm(case: dict) -> dict:
+def _real_cmm(case: dict, model: str = "deepseek-chat") -> dict:
     from Lib.orchestrator import run_cmm
 
     query_parts = [
@@ -354,7 +355,7 @@ def _real_cmm(case: dict) -> dict:
         f"Контекст: {case.get('context', '')}" if case.get("context") else "",
         f"Ограничения: {case.get('constraints', '')}" if case.get("constraints") else "",
     ]
-    result = run_cmm("\n".join(part for part in query_parts if part))
+    result = run_cmm("\n".join(part for part in query_parts if part), model=model)
     return {
         "answer": result.get("final_answer", ""),
         "final_answer": result.get("final_answer", ""),
@@ -1012,14 +1013,15 @@ def _run_real_judged_eval(
     output_dir: str,
     judge_mode: str,
     judge_model: str,
+    model: str = "deepseek-chat",
 ) -> dict:
     results: list[dict] = []
     artifacts: list[dict] = []
     human_packets: list[dict] = []
 
     for case in rows:
-        baseline_output = _real_baseline(case)
-        cmm_output = _real_cmm(case)
+        baseline_output = _real_baseline(case, model=model)
+        cmm_output = _real_cmm(case, model=model)
         scored = score_case_judged(
             case,
             baseline_output,
@@ -1058,6 +1060,7 @@ def run_eval(
     output_dir: str = "eval_results",
     judge_mode: str = "none",
     judge_model: str = "deepseek-chat",
+    model: str = "deepseek-chat",
 ) -> dict:
     if mode not in {"mock", "real"}:
         raise ValueError("mode must be 'mock' or 'real'")
@@ -1075,6 +1078,7 @@ def run_eval(
             output_dir=output_dir,
             judge_mode=judge_mode,
             judge_model=judge_model,
+            model=model,
         )
 
     baseline_runner = _mock_baseline
@@ -1111,6 +1115,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--mode", choices=["mock", "real"], default="mock", help="Evaluation mode")
     parser.add_argument("--judge-mode", choices=["none", "llm"], default="none", help="Judge mode for real eval")
     parser.add_argument("--judge-model", default="deepseek-chat", help="Model for --judge-mode llm")
+    parser.add_argument("--model", default="deepseek-chat", help="Model for CMM and baseline")
     parser.add_argument("--output-dir", default="eval_results", help="Directory for CSV/JSON outputs")
     args = parser.parse_args(argv)
 
@@ -1121,6 +1126,7 @@ def main(argv: list[str] | None = None) -> int:
         output_dir=args.output_dir,
         judge_mode=args.judge_mode,
         judge_model=args.judge_model,
+        model=args.model,
     )
     summary = result["summary"]
     print(

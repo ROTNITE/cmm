@@ -1,0 +1,912 @@
+{
+  "schema_report": {
+    "path": "cmm_dataset_v2.csv",
+    "columns": [
+      "id",
+      "query",
+      "context",
+      "constraints",
+      "expected_perspectives",
+      "rubric_must_cover",
+      "rubric_desirable",
+      "expected_single_model_failure_modes",
+      "expected_mode"
+    ],
+    "row_count": 20,
+    "missing_optional_columns": [
+      "expected_domain_expert",
+      "rubric_should_cover",
+      "reference_outline"
+    ],
+    "warnings": []
+  },
+  "judge_mode": "llm",
+  "results": [
+    {
+      "case_id": "V2-001",
+      "expected_mode": "DIRECT",
+      "actual_mode": "DIRECT",
+      "router_mode_match": true,
+      "winner": "TIE",
+      "baseline_overall": 9.0,
+      "cmm_overall": 9.0,
+      "overall_delta": 0.0,
+      "baseline_rubric_coverage": 10.0,
+      "cmm_rubric_coverage": 10.0,
+      "baseline_perspective_coverage": 8.0,
+      "cmm_perspective_coverage": 9.0,
+      "baseline_risk_handling": 9.0,
+      "cmm_risk_handling": 9.0,
+      "baseline_actionability": 9.0,
+      "cmm_actionability": 9.0,
+      "baseline_clarity": 10.0,
+      "cmm_clarity": 9.0,
+      "reason": "Both answers meet all rubric requirements excellently. They provide clear definitions, distinguish metamoderation from regular moderation, and mention multiple perspectives (community, moderators, platform). Answer A is more concise (5 sentences exactly) and mentions two concrete examples. Answer B provides slightly more depth on the checks-and-balances aspect and includes a detailed Stack Overflow example, but uses 6 sentences across two paragraphs. Both handle the constraint well enough, with Answer A being marginally tighter on length while Answer B provides marginally more perspective detail. The quality difference is negligible.",
+      "baseline_failure_modes": "",
+      "cmm_failure_modes": "slightly exceeds 5-sentence constraint (6 sentences total)",
+      "baseline_answer_chars": 552,
+      "cmm_answer_chars": 559,
+      "cmm_trace_available": true,
+      "cmm_mode": "DIRECT",
+      "router_complexity": "low",
+      "estimated_cost_class": "S",
+      "cmm_final_state": "FINALIZE",
+      "cmm_warning_count": 0,
+      "cmm_error_count": 0,
+      "cmm_warnings": "",
+      "cmm_errors": "",
+      "cmm_json_warnings": "",
+      "cmm_json_fallback_count": 0,
+      "expert_valid_contributions": 0,
+      "expert_invalid_json_contributions": 0,
+      "planner_raw_format": "",
+      "planner_json_attempts": 0,
+      "plan_critique_statuses": "",
+      "answer_moderation_final_decision": "",
+      "answer_moderation_best_effort": false,
+      "roles_used_unique": "[]",
+      "estimated_call_count": 2,
+      "estimated_stage_count": 3,
+      "answer_chars": 559,
+      "warnings_count": 0,
+      "errors_count": 0
+    },
+    {
+      "case_id": "V2-002",
+      "expected_mode": "DIRECT",
+      "actual_mode": "DIRECT",
+      "router_mode_match": true,
+      "winner": "TIE",
+      "baseline_overall": 9.0,
+      "cmm_overall": 9.0,
+      "overall_delta": 0.0,
+      "baseline_rubric_coverage": 10.0,
+      "cmm_rubric_coverage": 10.0,
+      "baseline_perspective_coverage": 8.0,
+      "cmm_perspective_coverage": 9.0,
+      "baseline_risk_handling": 10.0,
+      "cmm_risk_handling": 10.0,
+      "baseline_actionability": 8.0,
+      "cmm_actionability": 9.0,
+      "baseline_clarity": 10.0,
+      "cmm_clarity": 9.0,
+      "reason": "Both answers correctly explain the difference between метрика and KPI with clear examples. Answer A provides more examples (two pairs vs one pair) and adds a practical rule about typical KPI counts (5-10), making it slightly more comprehensive. Answer B is more concise while still covering all required rubric points effectively. Answer A's additional examples show broader application (website + customer service), while Answer B stays focused with a single, clear example. Both avoid consulting jargon and use simple language as required. The difference in depth vs conciseness represents valid trade-offs rather than clear superiority.",
+      "baseline_failure_modes": "Could benefit from one more example to show variety of applications",
+      "cmm_failure_modes": "Slightly verbose for a 'краткий' (brief) request, though still reasonable",
+      "baseline_answer_chars": 627,
+      "cmm_answer_chars": 943,
+      "cmm_trace_available": true,
+      "cmm_mode": "DIRECT",
+      "router_complexity": "low",
+      "estimated_cost_class": "S",
+      "cmm_final_state": "FINALIZE",
+      "cmm_warning_count": 0,
+      "cmm_error_count": 0,
+      "cmm_warnings": "",
+      "cmm_errors": "",
+      "cmm_json_warnings": "",
+      "cmm_json_fallback_count": 0,
+      "expert_valid_contributions": 0,
+      "expert_invalid_json_contributions": 0,
+      "planner_raw_format": "",
+      "planner_json_attempts": 0,
+      "plan_critique_statuses": "",
+      "answer_moderation_final_decision": "",
+      "answer_moderation_best_effort": false,
+      "roles_used_unique": "[]",
+      "estimated_call_count": 2,
+      "estimated_stage_count": 3,
+      "answer_chars": 943,
+      "warnings_count": 0,
+      "errors_count": 0
+    }
+  ],
+  "artifacts": [
+    {
+      "case_id": "V2-001",
+      "case": {
+        "id": "V2-001",
+        "query": "Что такое коллективная метамодерация?",
+        "context": "Пользователь просит короткое объяснение термина.",
+        "constraints": "Ответ кратко до 5 предложений.",
+        "expected_perspectives": "",
+        "rubric_must_cover": "простое определение | отличие от обычной модерации | упоминание нескольких перспектив",
+        "rubric_desirable": "пример применения",
+        "expected_single_model_failure_modes": "слишком длинное объяснение | уход в абстракции",
+        "expected_mode": "DIRECT",
+        "case_id": "V2-001",
+        "schema_warnings": []
+      },
+      "baseline": {
+        "answer": "Коллективная метамодерация — это процесс, при котором сообщество оценивает качество самой модерации, а не только контента. Участники проверяют решения модераторов, голосуют за их справедливость и помогают выявлять ошибки или злоупотребления. Это создаёт дополнительный уровень контроля и повышает прозрачность модерационных действий. Система часто используется на платформах с пользовательским контентом для поддержания баланса между свободой высказываний и качеством обсуждений. Примеры — системы апелляций на Reddit или Community Notes в X (Twitter).",
+        "trace_report": {
+          "mode": "real_baseline"
+        }
+      },
+      "cmm": {
+        "answer": "Коллективная метамодерация — это процесс оценки качества работы модераторов самим сообществом. Пользователи проверяют решения модераторов (удаление контента, баны, предупреждения) и голосуют за их правильность или обоснованность. Это создает систему сдержек и противовесов, где модераторы подотчетны сообществу.\n\nНапример, на Stack Overflow пользователи с высокой репутацией могут пересматривать действия модераторов через специальные очереди. Такой подход помогает выявлять предвзятость, ошибки и злоупотребления властью, повышая доверие к системе модерации.",
+        "final_answer": "Коллективная метамодерация — это процесс оценки качества работы модераторов самим сообществом. Пользователи проверяют решения модераторов (удаление контента, баны, предупреждения) и голосуют за их правильность или обоснованность. Это создает систему сдержек и противовесов, где модераторы подотчетны сообществу.\n\nНапример, на Stack Overflow пользователи с высокой репутацией могут пересматривать действия модераторов через специальные очереди. Такой подход помогает выявлять предвзятость, ошибки и злоупотребления властью, повышая доверие к системе модерации.",
+        "trace_report": {
+          "original_query": "Что такое коллективная метамодерация?\nКонтекст: Пользователь просит короткое объяснение термина.\nОграничения: Ответ кратко до 5 предложений.",
+          "formalized_query": "Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.",
+          "query_intake": {
+            "original_query": "Что такое коллективная метамодерация?\nКонтекст: Пользователь просит короткое объяснение термина.\nОграничения: Ответ кратко до 5 предложений.",
+            "cleaned_query": "Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.",
+            "task_goal": "Explain what collective meta-moderation is",
+            "context": [],
+            "constraints": [
+              "Response must be brief, up to 5 sentences"
+            ],
+            "success_criteria": [],
+            "unknowns": [],
+            "user_preferences": [],
+            "risk_level": "low",
+            "complexity": "simple",
+            "should_use_cmm": false,
+            "parse_warnings": [],
+            "json_attempts": 1,
+            "source": "model"
+          },
+          "router_decision": {
+            "mode": "DIRECT",
+            "reason": "Simple low-risk explanation request has only formatting constraints.",
+            "complexity": "low",
+            "needs_expert_panel": false,
+            "needs_second_round": false,
+            "estimated_cost_class": "S",
+            "signals": {
+              "risk_level": "low",
+              "intake_complexity": "simple",
+              "word_count": 62,
+              "constraints_count": 1,
+              "success_criteria_count": 0,
+              "context_count": 0,
+              "unknowns_count": 0,
+              "preferences_count": 0,
+              "has_constraints": true,
+              "has_success_criteria": false,
+              "should_use_cmm": false,
+              "has_high_risk_markers": false,
+              "has_risk_markers": false,
+              "has_stakeholder_markers": true,
+              "has_tradeoff_markers": false,
+              "has_full_markers": false,
+              "has_light_markers": false,
+              "has_direct_markers": true,
+              "needs_second_round": false
+            },
+            "warnings": []
+          },
+          "cmm_mode": "DIRECT",
+          "estimated_cost_class": "S",
+          "routing_warnings": [],
+          "parallel_mode": "SEQUENTIAL",
+          "max_workers": null,
+          "parallelized_stages": [],
+          "roles_used": [],
+          "roles_used_unique": [],
+          "expert_rounds": [],
+          "deliberation_brief": {},
+          "balance_reports": [],
+          "conflict_reports": [],
+          "deliberation_rounds": [],
+          "deliberation_revisions": [],
+          "deliberation_round_count": 0,
+          "max_deliberation_rounds": 1,
+          "consensus_checks": [],
+          "deliberation_position_changes": [],
+          "dynamic_role_reports": [],
+          "dynamic_roles_generated": [],
+          "dynamic_roles_executed": [],
+          "dynamic_roles_rejected": [],
+          "dynamic_roles_used": [],
+          "unresolved_tradeoffs": [],
+          "premature_consensus_risks": [],
+          "blind_spots": [],
+          "plan": {},
+          "plan_critique": {},
+          "moderation_reports": [],
+          "answer_moderation_final_decision": "",
+          "answer_moderation_critical_issues": [],
+          "answer_moderation_revision_count": 0,
+          "answer_moderation_best_effort": false,
+          "quality_gate_decisions": [],
+          "context_compression": {
+            "planner_context_chars": 0,
+            "critic_context_chars": 0,
+            "answer_context_chars": 0,
+            "meta_context_chars": 0
+          },
+          "revision_count": 0,
+          "final_confidence": null,
+          "meta_moderation_decisions": [],
+          "meta_recheck_count": 0,
+          "meta_recheck_decisions": [],
+          "conflicts_to_resolve": [],
+          "risks_to_address": [],
+          "warnings": [],
+          "state_history": [
+            {
+              "from": "INTAKE",
+              "to": "ROUTE",
+              "reason": "query intake complete"
+            },
+            {
+              "from": "ROUTE",
+              "to": "DIRECT_ANSWER",
+              "reason": "router selected direct answer"
+            },
+            {
+              "from": "DIRECT_ANSWER",
+              "to": "FINALIZE",
+              "reason": "direct answer finalized"
+            }
+          ],
+          "final_state": "FINALIZE",
+          "transition_count": 3,
+          "iteration_count": 0,
+          "plans": [],
+          "plan_critiques": [],
+          "plan_critique_statuses": [],
+          "plan_replan_reasons": [],
+          "plan_critique_decisions": [],
+          "plan_critique_blockers": [],
+          "ignored_must_address": [],
+          "ignored_risks": [],
+          "ignored_tradeoffs": [],
+          "errors": [],
+          "json_health": {
+            "expert_agent": {
+              "calls": 0,
+              "success": 0,
+              "fallbacks": 0,
+              "retry_attempts": 0,
+              "invalid_json_count": 0
+            },
+            "planner": {
+              "called": false,
+              "success": false,
+              "raw_format": "",
+              "source": "",
+              "json_attempts": 0
+            },
+            "moderator": {
+              "invalid_json_count": 0,
+              "retry_attempts": 0,
+              "final_decision": ""
+            },
+            "conflict_analyzer": {
+              "invalid_json_count": 0,
+              "retry_attempts": 0
+            },
+            "meta_moderator": {
+              "invalid_json_count": 0,
+              "retry_attempts": 0
+            }
+          },
+          "estimated_call_count": 2,
+          "estimated_stage_count": 3,
+          "answer_chars": 559,
+          "warnings_count": 0,
+          "errors_count": 0
+        }
+      },
+      "cmm_trace_report": {
+        "original_query": "Что такое коллективная метамодерация?\nКонтекст: Пользователь просит короткое объяснение термина.\nОграничения: Ответ кратко до 5 предложений.",
+        "formalized_query": "Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.",
+        "query_intake": {
+          "original_query": "Что такое коллективная метамодерация?\nКонтекст: Пользователь просит короткое объяснение термина.\nОграничения: Ответ кратко до 5 предложений.",
+          "cleaned_query": "Что такое коллективная метамодерация? Контекст: Пользователь просит короткое объяснение термина. Ограничения: Ответ кратко до 5 предложений.",
+          "task_goal": "Explain what collective meta-moderation is",
+          "context": [],
+          "constraints": [
+            "Response must be brief, up to 5 sentences"
+          ],
+          "success_criteria": [],
+          "unknowns": [],
+          "user_preferences": [],
+          "risk_level": "low",
+          "complexity": "simple",
+          "should_use_cmm": false,
+          "parse_warnings": [],
+          "json_attempts": 1,
+          "source": "model"
+        },
+        "router_decision": {
+          "mode": "DIRECT",
+          "reason": "Simple low-risk explanation request has only formatting constraints.",
+          "complexity": "low",
+          "needs_expert_panel": false,
+          "needs_second_round": false,
+          "estimated_cost_class": "S",
+          "signals": {
+            "risk_level": "low",
+            "intake_complexity": "simple",
+            "word_count": 62,
+            "constraints_count": 1,
+            "success_criteria_count": 0,
+            "context_count": 0,
+            "unknowns_count": 0,
+            "preferences_count": 0,
+            "has_constraints": true,
+            "has_success_criteria": false,
+            "should_use_cmm": false,
+            "has_high_risk_markers": false,
+            "has_risk_markers": false,
+            "has_stakeholder_markers": true,
+            "has_tradeoff_markers": false,
+            "has_full_markers": false,
+            "has_light_markers": false,
+            "has_direct_markers": true,
+            "needs_second_round": false
+          },
+          "warnings": []
+        },
+        "cmm_mode": "DIRECT",
+        "estimated_cost_class": "S",
+        "routing_warnings": [],
+        "parallel_mode": "SEQUENTIAL",
+        "max_workers": null,
+        "parallelized_stages": [],
+        "roles_used": [],
+        "roles_used_unique": [],
+        "expert_rounds": [],
+        "deliberation_brief": {},
+        "balance_reports": [],
+        "conflict_reports": [],
+        "deliberation_rounds": [],
+        "deliberation_revisions": [],
+        "deliberation_round_count": 0,
+        "max_deliberation_rounds": 1,
+        "consensus_checks": [],
+        "deliberation_position_changes": [],
+        "dynamic_role_reports": [],
+        "dynamic_roles_generated": [],
+        "dynamic_roles_executed": [],
+        "dynamic_roles_rejected": [],
+        "dynamic_roles_used": [],
+        "unresolved_tradeoffs": [],
+        "premature_consensus_risks": [],
+        "blind_spots": [],
+        "plan": {},
+        "plan_critique": {},
+        "moderation_reports": [],
+        "answer_moderation_final_decision": "",
+        "answer_moderation_critical_issues": [],
+        "answer_moderation_revision_count": 0,
+        "answer_moderation_best_effort": false,
+        "quality_gate_decisions": [],
+        "context_compression": {
+          "planner_context_chars": 0,
+          "critic_context_chars": 0,
+          "answer_context_chars": 0,
+          "meta_context_chars": 0
+        },
+        "revision_count": 0,
+        "final_confidence": null,
+        "meta_moderation_decisions": [],
+        "meta_recheck_count": 0,
+        "meta_recheck_decisions": [],
+        "conflicts_to_resolve": [],
+        "risks_to_address": [],
+        "warnings": [],
+        "state_history": [
+          {
+            "from": "INTAKE",
+            "to": "ROUTE",
+            "reason": "query intake complete"
+          },
+          {
+            "from": "ROUTE",
+            "to": "DIRECT_ANSWER",
+            "reason": "router selected direct answer"
+          },
+          {
+            "from": "DIRECT_ANSWER",
+            "to": "FINALIZE",
+            "reason": "direct answer finalized"
+          }
+        ],
+        "final_state": "FINALIZE",
+        "transition_count": 3,
+        "iteration_count": 0,
+        "plans": [],
+        "plan_critiques": [],
+        "plan_critique_statuses": [],
+        "plan_replan_reasons": [],
+        "plan_critique_decisions": [],
+        "plan_critique_blockers": [],
+        "ignored_must_address": [],
+        "ignored_risks": [],
+        "ignored_tradeoffs": [],
+        "errors": [],
+        "json_health": {
+          "expert_agent": {
+            "calls": 0,
+            "success": 0,
+            "fallbacks": 0,
+            "retry_attempts": 0,
+            "invalid_json_count": 0
+          },
+          "planner": {
+            "called": false,
+            "success": false,
+            "raw_format": "",
+            "source": "",
+            "json_attempts": 0
+          },
+          "moderator": {
+            "invalid_json_count": 0,
+            "retry_attempts": 0,
+            "final_decision": ""
+          },
+          "conflict_analyzer": {
+            "invalid_json_count": 0,
+            "retry_attempts": 0
+          },
+          "meta_moderator": {
+            "invalid_json_count": 0,
+            "retry_attempts": 0
+          }
+        },
+        "estimated_call_count": 2,
+        "estimated_stage_count": 3,
+        "answer_chars": 559,
+        "warnings_count": 0,
+        "errors_count": 0
+      },
+      "answer_a_source": "BASELINE",
+      "answer_b_source": "CMM",
+      "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-001\", \"query\": \"Что такое коллективная метамодерация?\", \"context\": \"Пользователь просит короткое объяснение термина.\", \"constraints\": \"Ответ кратко до 5 предложений.\", \"rubric_must_cover\": [\"простое определение\", \"отличие от обычной модерации\", \"упоминание нескольких перспектив\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"слишком длинное объяснение\", \"уход в абстракции\"], \"answer_a\": \"Коллективная метамодерация — это процесс, при котором сообщество оценивает качество самой модерации, а не только контента. Участники проверяют решения модераторов, голосуют за их справедливость и помогают выявлять ошибки или злоупотребления. Это создаёт дополнительный уровень контроля и повышает прозрачность модерационных действий. Система часто используется на платформах с пользовательским контентом для поддержания баланса между свободой высказываний и качеством обсуждений. Примеры — системы апелляций на Reddit или Community Notes в X (Twitter).\", \"answer_b\": \"Коллективная метамодерация — это процесс оценки качества работы модераторов самим сообществом. Пользователи проверяют решения модераторов (удаление контента, баны, предупреждения) и голосуют за их правильность или обоснованность. Это создает систему сдержек и противовесов, где модераторы подотчетны сообществу.\\n\\nНапример, на Stack Overflow пользователи с высокой репутацией могут пересматривать действия модераторов через специальные очереди. Такой подход помогает выявлять предвзятость, ошибки и злоупотребления властью, повышая доверие к системе модерации.\"}",
+      "raw_judge_output": "```json\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 10,\n    \"perspective_coverage\": 8,\n    \"risk_handling\": 9,\n    \"actionability\": 9,\n    \"clarity\": 10,\n    \"overall\": 9\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 10,\n    \"perspective_coverage\": 9,\n    \"risk_handling\": 9,\n    \"actionability\": 9,\n    \"clarity\": 9,\n    \"overall\": 9\n  },\n  \"winner\": \"TIE\",\n  \"reason\": \"Both answers meet all rubric requirements excellently. They provide clear definitions, distinguish metamoderation from regular moderation, and mention multiple perspectives (community, moderators, platform). Answer A is more concise (5 sentences exactly) and mentions two concrete examples. Answer B provides slightly more depth on the checks-and-balances aspect and includes a detailed Stack Overflow example, but uses 6 sentences across two paragraphs. Both handle the constraint well enough, with Answer A being marginally tighter on length while Answer B provides marginally more perspective detail. The quality difference is negligible.\",\n  \"answer_a_failure_modes\": [],\n  \"answer_b_failure_modes\": [\n    \"slightly exceeds 5-sentence constraint (6 sentences total)\"\n  ]\n}\n```",
+      "normalized_judge_result": {
+        "case_id": "V2-001",
+        "baseline_scores": {
+          "rubric_coverage": 10.0,
+          "perspective_coverage": 8.0,
+          "risk_handling": 9.0,
+          "actionability": 9.0,
+          "clarity": 10.0,
+          "overall": 9.0
+        },
+        "cmm_scores": {
+          "rubric_coverage": 10.0,
+          "perspective_coverage": 9.0,
+          "risk_handling": 9.0,
+          "actionability": 9.0,
+          "clarity": 9.0,
+          "overall": 9.0
+        },
+        "winner": "TIE",
+        "reason": "Both answers meet all rubric requirements excellently. They provide clear definitions, distinguish metamoderation from regular moderation, and mention multiple perspectives (community, moderators, platform). Answer A is more concise (5 sentences exactly) and mentions two concrete examples. Answer B provides slightly more depth on the checks-and-balances aspect and includes a detailed Stack Overflow example, but uses 6 sentences across two paragraphs. Both handle the constraint well enough, with Answer A being marginally tighter on length while Answer B provides marginally more perspective detail. The quality difference is negligible.",
+        "cmm_failure_modes": [
+          "slightly exceeds 5-sentence constraint (6 sentences total)"
+        ],
+        "baseline_failure_modes": [],
+        "parse_warnings": [],
+        "raw": "```json\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 10,\n    \"perspective_coverage\": 8,\n    \"risk_handling\": 9,\n    \"actionability\": 9,\n    \"clarity\": 10,\n    \"overall\": 9\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 10,\n    \"perspective_coverage\": 9,\n    \"risk_handling\": 9,\n    \"actionability\": 9,\n    \"clarity\": 9,\n    \"overall\": 9\n  },\n  \"winner\": \"TIE\",\n  \"reason\": \"Both answers meet all rubric requirements excellently. They provide clear definitions, distinguish metamoderation from regular moderation, and mention multiple perspectives (community, moderators, platform). Answer A is more concise (5 sentences exactly) and mentions two concrete examples. Answer B provides slightly more depth on the checks-and-balances aspect and includes a detailed Stack Overflow example, but uses 6 sentences across two paragraphs. Both handle the constraint well enough, with Answer A being marginally tighter on length while Answer B provides marginally more perspective detail. The quality difference is negligible.\",\n  \"answer_a_failure_modes\": [],\n  \"answer_b_failure_modes\": [\n    \"slightly exceeds 5-sentence constraint (6 sentences total)\"\n  ]\n}\n```",
+        "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-001\", \"query\": \"Что такое коллективная метамодерация?\", \"context\": \"Пользователь просит короткое объяснение термина.\", \"constraints\": \"Ответ кратко до 5 предложений.\", \"rubric_must_cover\": [\"простое определение\", \"отличие от обычной модерации\", \"упоминание нескольких перспектив\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"слишком длинное объяснение\", \"уход в абстракции\"], \"answer_a\": \"Коллективная метамодерация — это процесс, при котором сообщество оценивает качество самой модерации, а не только контента. Участники проверяют решения модераторов, голосуют за их справедливость и помогают выявлять ошибки или злоупотребления. Это создаёт дополнительный уровень контроля и повышает прозрачность модерационных действий. Система часто используется на платформах с пользовательским контентом для поддержания баланса между свободой высказываний и качеством обсуждений. Примеры — системы апелляций на Reddit или Community Notes в X (Twitter).\", \"answer_b\": \"Коллективная метамодерация — это процесс оценки качества работы модераторов самим сообществом. Пользователи проверяют решения модераторов (удаление контента, баны, предупреждения) и голосуют за их правильность или обоснованность. Это создает систему сдержек и противовесов, где модераторы подотчетны сообществу.\\n\\nНапример, на Stack Overflow пользователи с высокой репутацией могут пересматривать действия модераторов через специальные очереди. Такой подход помогает выявлять предвзятость, ошибки и злоупотребления властью, повышая доверие к системе модерации.\"}",
+        "blind_mapping": {
+          "answer_a_source": "BASELINE",
+          "answer_b_source": "CMM"
+        }
+      }
+    },
+    {
+      "case_id": "V2-002",
+      "case": {
+        "id": "V2-002",
+        "query": "Кратко объясни разницу между метрикой и KPI.",
+        "context": "Общий образовательный вопрос без высокого риска.",
+        "constraints": "Ответ простым языком.",
+        "expected_perspectives": "",
+        "rubric_must_cover": "разница между метрикой и KPI | короткий пример",
+        "rubric_desirable": "предупреждение что KPI является выбранной ключевой метрикой",
+        "expected_single_model_failure_modes": "избыточный консалтинг | нет примера",
+        "expected_mode": "DIRECT",
+        "case_id": "V2-002",
+        "schema_warnings": []
+      },
+      "baseline": {
+        "answer": "**Метрика** — это любое измеримое значение. Например, количество посетителей сайта, время загрузки страницы, число строк кода.\n\n**KPI (Key Performance Indicator)** — это ключевой показатель эффективности. Это метрика, которая напрямую связана с бизнес-целями и показывает, насколько успешно достигается результат.\n\nПроще говоря: все KPI — это метрики, но не все метрики — KPI. Метрик может быть сотни, а KPI выбирают несколько самых важных, которые действительно влияют на успех проекта или бизнеса.\n\n**Пример:**\n- Метрика: на сайт зашло 10 000 человек\n- KPI: из них 500 совершили покупку (конверсия 5%) — это важно для бизнеса",
+        "trace_report": {
+          "mode": "real_baseline"
+        }
+      },
+      "cmm": {
+        "answer": "**Метрика** — это любой измеримый показатель, который отслеживает какой-то аспект работы. Например: количество посетителей сайта, время загрузки страницы, число звонков в поддержку.\n\n**KPI (Key Performance Indicator)** — это ключевой показатель эффективности, который напрямую связан со стратегическими целями бизнеса и показывает, достигаете ли вы важных результатов.\n\n**Главное различие:** все KPI — это метрики, но не все метрики — это KPI.\n\n**Примеры:**\n- **Метрика:** На сайт зашло 10 000 человек за месяц (просто факт)\n- **KPI:** Конверсия в покупку составила 3% (важно для цели увеличения продаж)\n\n- **Метрика:** Сотрудник ответил на 50 писем за день\n- **KPI:** 95% клиентов получили ответ в течение 24 часов (связано с целью качества сервиса)\n\n**Простое правило:** KPI отвечает на вопрос \"достигаем ли мы цели?\", а обычная метрика просто что-то измеряет. В компании может быть сотни метрик, но KPI обычно 5-10 самых важных показателей.",
+        "final_answer": "**Метрика** — это любой измеримый показатель, который отслеживает какой-то аспект работы. Например: количество посетителей сайта, время загрузки страницы, число звонков в поддержку.\n\n**KPI (Key Performance Indicator)** — это ключевой показатель эффективности, который напрямую связан со стратегическими целями бизнеса и показывает, достигаете ли вы важных результатов.\n\n**Главное различие:** все KPI — это метрики, но не все метрики — это KPI.\n\n**Примеры:**\n- **Метрика:** На сайт зашло 10 000 человек за месяц (просто факт)\n- **KPI:** Конверсия в покупку составила 3% (важно для цели увеличения продаж)\n\n- **Метрика:** Сотрудник ответил на 50 писем за день\n- **KPI:** 95% клиентов получили ответ в течение 24 часов (связано с целью качества сервиса)\n\n**Простое правило:** KPI отвечает на вопрос \"достигаем ли мы цели?\", а обычная метрика просто что-то измеряет. В компании может быть сотни метрик, но KPI обычно 5-10 самых важных показателей.",
+        "trace_report": {
+          "original_query": "Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+          "formalized_query": "Кратко объясни разницу между метрикой и KPI. Контекст: Общий образовательный вопрос без высокого риска. Ограничения: Ответ простым языком.",
+          "query_intake": {
+            "original_query": "Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+            "cleaned_query": "Кратко объясни разницу между метрикой и KPI. Контекст: Общий образовательный вопрос без высокого риска. Ограничения: Ответ простым языком.",
+            "task_goal": "Объяснить разницу между метрикой и KPI",
+            "context": [
+              "Общий образовательный вопрос без высокого риска"
+            ],
+            "constraints": [
+              "Ответ простым языком"
+            ],
+            "success_criteria": [],
+            "unknowns": [],
+            "user_preferences": [],
+            "risk_level": "low",
+            "complexity": "simple",
+            "should_use_cmm": false,
+            "parse_warnings": [],
+            "json_attempts": 1,
+            "source": "model"
+          },
+          "router_decision": {
+            "mode": "DIRECT",
+            "reason": "Simple low-risk explanation request has only formatting constraints.",
+            "complexity": "low",
+            "needs_expert_panel": false,
+            "needs_second_round": false,
+            "estimated_cost_class": "S",
+            "signals": {
+              "risk_level": "low",
+              "intake_complexity": "simple",
+              "word_count": 69,
+              "constraints_count": 1,
+              "success_criteria_count": 0,
+              "context_count": 1,
+              "unknowns_count": 0,
+              "preferences_count": 0,
+              "has_constraints": true,
+              "has_success_criteria": false,
+              "should_use_cmm": false,
+              "has_high_risk_markers": false,
+              "has_risk_markers": true,
+              "has_stakeholder_markers": false,
+              "has_tradeoff_markers": false,
+              "has_full_markers": false,
+              "has_light_markers": true,
+              "has_direct_markers": true,
+              "needs_second_round": false
+            },
+            "warnings": []
+          },
+          "cmm_mode": "DIRECT",
+          "estimated_cost_class": "S",
+          "routing_warnings": [],
+          "parallel_mode": "SEQUENTIAL",
+          "max_workers": null,
+          "parallelized_stages": [],
+          "roles_used": [],
+          "roles_used_unique": [],
+          "expert_rounds": [],
+          "deliberation_brief": {},
+          "balance_reports": [],
+          "conflict_reports": [],
+          "deliberation_rounds": [],
+          "deliberation_revisions": [],
+          "deliberation_round_count": 0,
+          "max_deliberation_rounds": 1,
+          "consensus_checks": [],
+          "deliberation_position_changes": [],
+          "dynamic_role_reports": [],
+          "dynamic_roles_generated": [],
+          "dynamic_roles_executed": [],
+          "dynamic_roles_rejected": [],
+          "dynamic_roles_used": [],
+          "unresolved_tradeoffs": [],
+          "premature_consensus_risks": [],
+          "blind_spots": [],
+          "plan": {},
+          "plan_critique": {},
+          "moderation_reports": [],
+          "answer_moderation_final_decision": "",
+          "answer_moderation_critical_issues": [],
+          "answer_moderation_revision_count": 0,
+          "answer_moderation_best_effort": false,
+          "quality_gate_decisions": [],
+          "context_compression": {
+            "planner_context_chars": 0,
+            "critic_context_chars": 0,
+            "answer_context_chars": 0,
+            "meta_context_chars": 0
+          },
+          "revision_count": 0,
+          "final_confidence": null,
+          "meta_moderation_decisions": [],
+          "meta_recheck_count": 0,
+          "meta_recheck_decisions": [],
+          "conflicts_to_resolve": [],
+          "risks_to_address": [],
+          "warnings": [],
+          "state_history": [
+            {
+              "from": "INTAKE",
+              "to": "ROUTE",
+              "reason": "query intake complete"
+            },
+            {
+              "from": "ROUTE",
+              "to": "DIRECT_ANSWER",
+              "reason": "router selected direct answer"
+            },
+            {
+              "from": "DIRECT_ANSWER",
+              "to": "FINALIZE",
+              "reason": "direct answer finalized"
+            }
+          ],
+          "final_state": "FINALIZE",
+          "transition_count": 3,
+          "iteration_count": 0,
+          "plans": [],
+          "plan_critiques": [],
+          "plan_critique_statuses": [],
+          "plan_replan_reasons": [],
+          "plan_critique_decisions": [],
+          "plan_critique_blockers": [],
+          "ignored_must_address": [],
+          "ignored_risks": [],
+          "ignored_tradeoffs": [],
+          "errors": [],
+          "json_health": {
+            "expert_agent": {
+              "calls": 0,
+              "success": 0,
+              "fallbacks": 0,
+              "retry_attempts": 0,
+              "invalid_json_count": 0
+            },
+            "planner": {
+              "called": false,
+              "success": false,
+              "raw_format": "",
+              "source": "",
+              "json_attempts": 0
+            },
+            "moderator": {
+              "invalid_json_count": 0,
+              "retry_attempts": 0,
+              "final_decision": ""
+            },
+            "conflict_analyzer": {
+              "invalid_json_count": 0,
+              "retry_attempts": 0
+            },
+            "meta_moderator": {
+              "invalid_json_count": 0,
+              "retry_attempts": 0
+            }
+          },
+          "estimated_call_count": 2,
+          "estimated_stage_count": 3,
+          "answer_chars": 943,
+          "warnings_count": 0,
+          "errors_count": 0
+        }
+      },
+      "cmm_trace_report": {
+        "original_query": "Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+        "formalized_query": "Кратко объясни разницу между метрикой и KPI. Контекст: Общий образовательный вопрос без высокого риска. Ограничения: Ответ простым языком.",
+        "query_intake": {
+          "original_query": "Кратко объясни разницу между метрикой и KPI.\nКонтекст: Общий образовательный вопрос без высокого риска.\nОграничения: Ответ простым языком.",
+          "cleaned_query": "Кратко объясни разницу между метрикой и KPI. Контекст: Общий образовательный вопрос без высокого риска. Ограничения: Ответ простым языком.",
+          "task_goal": "Объяснить разницу между метрикой и KPI",
+          "context": [
+            "Общий образовательный вопрос без высокого риска"
+          ],
+          "constraints": [
+            "Ответ простым языком"
+          ],
+          "success_criteria": [],
+          "unknowns": [],
+          "user_preferences": [],
+          "risk_level": "low",
+          "complexity": "simple",
+          "should_use_cmm": false,
+          "parse_warnings": [],
+          "json_attempts": 1,
+          "source": "model"
+        },
+        "router_decision": {
+          "mode": "DIRECT",
+          "reason": "Simple low-risk explanation request has only formatting constraints.",
+          "complexity": "low",
+          "needs_expert_panel": false,
+          "needs_second_round": false,
+          "estimated_cost_class": "S",
+          "signals": {
+            "risk_level": "low",
+            "intake_complexity": "simple",
+            "word_count": 69,
+            "constraints_count": 1,
+            "success_criteria_count": 0,
+            "context_count": 1,
+            "unknowns_count": 0,
+            "preferences_count": 0,
+            "has_constraints": true,
+            "has_success_criteria": false,
+            "should_use_cmm": false,
+            "has_high_risk_markers": false,
+            "has_risk_markers": true,
+            "has_stakeholder_markers": false,
+            "has_tradeoff_markers": false,
+            "has_full_markers": false,
+            "has_light_markers": true,
+            "has_direct_markers": true,
+            "needs_second_round": false
+          },
+          "warnings": []
+        },
+        "cmm_mode": "DIRECT",
+        "estimated_cost_class": "S",
+        "routing_warnings": [],
+        "parallel_mode": "SEQUENTIAL",
+        "max_workers": null,
+        "parallelized_stages": [],
+        "roles_used": [],
+        "roles_used_unique": [],
+        "expert_rounds": [],
+        "deliberation_brief": {},
+        "balance_reports": [],
+        "conflict_reports": [],
+        "deliberation_rounds": [],
+        "deliberation_revisions": [],
+        "deliberation_round_count": 0,
+        "max_deliberation_rounds": 1,
+        "consensus_checks": [],
+        "deliberation_position_changes": [],
+        "dynamic_role_reports": [],
+        "dynamic_roles_generated": [],
+        "dynamic_roles_executed": [],
+        "dynamic_roles_rejected": [],
+        "dynamic_roles_used": [],
+        "unresolved_tradeoffs": [],
+        "premature_consensus_risks": [],
+        "blind_spots": [],
+        "plan": {},
+        "plan_critique": {},
+        "moderation_reports": [],
+        "answer_moderation_final_decision": "",
+        "answer_moderation_critical_issues": [],
+        "answer_moderation_revision_count": 0,
+        "answer_moderation_best_effort": false,
+        "quality_gate_decisions": [],
+        "context_compression": {
+          "planner_context_chars": 0,
+          "critic_context_chars": 0,
+          "answer_context_chars": 0,
+          "meta_context_chars": 0
+        },
+        "revision_count": 0,
+        "final_confidence": null,
+        "meta_moderation_decisions": [],
+        "meta_recheck_count": 0,
+        "meta_recheck_decisions": [],
+        "conflicts_to_resolve": [],
+        "risks_to_address": [],
+        "warnings": [],
+        "state_history": [
+          {
+            "from": "INTAKE",
+            "to": "ROUTE",
+            "reason": "query intake complete"
+          },
+          {
+            "from": "ROUTE",
+            "to": "DIRECT_ANSWER",
+            "reason": "router selected direct answer"
+          },
+          {
+            "from": "DIRECT_ANSWER",
+            "to": "FINALIZE",
+            "reason": "direct answer finalized"
+          }
+        ],
+        "final_state": "FINALIZE",
+        "transition_count": 3,
+        "iteration_count": 0,
+        "plans": [],
+        "plan_critiques": [],
+        "plan_critique_statuses": [],
+        "plan_replan_reasons": [],
+        "plan_critique_decisions": [],
+        "plan_critique_blockers": [],
+        "ignored_must_address": [],
+        "ignored_risks": [],
+        "ignored_tradeoffs": [],
+        "errors": [],
+        "json_health": {
+          "expert_agent": {
+            "calls": 0,
+            "success": 0,
+            "fallbacks": 0,
+            "retry_attempts": 0,
+            "invalid_json_count": 0
+          },
+          "planner": {
+            "called": false,
+            "success": false,
+            "raw_format": "",
+            "source": "",
+            "json_attempts": 0
+          },
+          "moderator": {
+            "invalid_json_count": 0,
+            "retry_attempts": 0,
+            "final_decision": ""
+          },
+          "conflict_analyzer": {
+            "invalid_json_count": 0,
+            "retry_attempts": 0
+          },
+          "meta_moderator": {
+            "invalid_json_count": 0,
+            "retry_attempts": 0
+          }
+        },
+        "estimated_call_count": 2,
+        "estimated_stage_count": 3,
+        "answer_chars": 943,
+        "warnings_count": 0,
+        "errors_count": 0
+      },
+      "answer_a_source": "CMM",
+      "answer_b_source": "BASELINE",
+      "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-002\", \"query\": \"Кратко объясни разницу между метрикой и KPI.\", \"context\": \"Общий образовательный вопрос без высокого риска.\", \"constraints\": \"Ответ простым языком.\", \"rubric_must_cover\": [\"разница между метрикой и KPI\", \"короткий пример\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"избыточный консалтинг\", \"нет примера\"], \"answer_a\": \"**Метрика** — это любой измеримый показатель, который отслеживает какой-то аспект работы. Например: количество посетителей сайта, время загрузки страницы, число звонков в поддержку.\\n\\n**KPI (Key Performance Indicator)** — это ключевой показатель эффективности, который напрямую связан со стратегическими целями бизнеса и показывает, достигаете ли вы важных результатов.\\n\\n**Главное различие:** все KPI — это метрики, но не все метрики — это KPI.\\n\\n**Примеры:**\\n- **Метрика:** На сайт зашло 10 000 человек за месяц (просто факт)\\n- **KPI:** Конверсия в покупку составила 3% (важно для цели увеличения продаж)\\n\\n- **Метрика:** Сотрудник ответил на 50 писем за день\\n- **KPI:** 95% клиентов получили ответ в течение 24 часов (связано с целью качества сервиса)\\n\\n**Простое правило:** KPI отвечает на вопрос \\\"достигаем ли мы цели?\\\", а обычная метрика просто что-то измеряет. В компании может быть сотни метрик, но KPI обычно 5-10 самых важных показателей.\", \"answer_b\": \"**Метрика** — это любое измеримое значение. Например, количество посетителей сайта, время загрузки страницы, число строк кода.\\n\\n**KPI (Key Performance Indicator)** — это ключевой показатель эффективности. Это метрика, которая напрямую связана с бизнес-целями и показывает, насколько успешно достигается результат.\\n\\nПроще говоря: все KPI — это метрики, но не все метрики — KPI. Метрик может быть сотни, а KPI выбирают несколько самых важных, которые действительно влияют на успех проекта или бизнеса.\\n\\n**Пример:**\\n- Метрика: на сайт зашло 10 000 человек\\n- KPI: из них 500 совершили покупку (конверсия 5%) — это важно для бизнеса\"}",
+      "raw_judge_output": "```json\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 10,\n    \"perspective_coverage\": 9,\n    \"risk_handling\": 10,\n    \"actionability\": 9,\n    \"clarity\": 9,\n    \"overall\": 9\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 10,\n    \"perspective_coverage\": 8,\n    \"risk_handling\": 10,\n    \"actionability\": 8,\n    \"clarity\": 10,\n    \"overall\": 9\n  },\n  \"winner\": \"TIE\",\n  \"reason\": \"Both answers correctly explain the difference between метрика and KPI with clear examples. Answer A provides more examples (two pairs vs one pair) and adds a practical rule about typical KPI counts (5-10), making it slightly more comprehensive. Answer B is more concise while still covering all required rubric points effectively. Answer A's additional examples show broader application (website + customer service), while Answer B stays focused with a single, clear example. Both avoid consulting jargon and use simple language as required. The difference in depth vs conciseness represents valid trade-offs rather than clear superiority.\",\n  \"answer_a_failure_modes\": [\n    \"Slightly verbose for a 'краткий' (brief) request, though still reasonable\"\n  ],\n  \"answer_b_failure_modes\": [\n    \"Could benefit from one more example to show variety of applications\"\n  ]\n}\n```",
+      "normalized_judge_result": {
+        "case_id": "V2-002",
+        "baseline_scores": {
+          "rubric_coverage": 10.0,
+          "perspective_coverage": 8.0,
+          "risk_handling": 10.0,
+          "actionability": 8.0,
+          "clarity": 10.0,
+          "overall": 9.0
+        },
+        "cmm_scores": {
+          "rubric_coverage": 10.0,
+          "perspective_coverage": 9.0,
+          "risk_handling": 10.0,
+          "actionability": 9.0,
+          "clarity": 9.0,
+          "overall": 9.0
+        },
+        "winner": "TIE",
+        "reason": "Both answers correctly explain the difference between метрика and KPI with clear examples. Answer A provides more examples (two pairs vs one pair) and adds a practical rule about typical KPI counts (5-10), making it slightly more comprehensive. Answer B is more concise while still covering all required rubric points effectively. Answer A's additional examples show broader application (website + customer service), while Answer B stays focused with a single, clear example. Both avoid consulting jargon and use simple language as required. The difference in depth vs conciseness represents valid trade-offs rather than clear superiority.",
+        "cmm_failure_modes": [
+          "Slightly verbose for a 'краткий' (brief) request, though still reasonable"
+        ],
+        "baseline_failure_modes": [
+          "Could benefit from one more example to show variety of applications"
+        ],
+        "parse_warnings": [],
+        "raw": "```json\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 10,\n    \"perspective_coverage\": 9,\n    \"risk_handling\": 10,\n    \"actionability\": 9,\n    \"clarity\": 9,\n    \"overall\": 9\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 10,\n    \"perspective_coverage\": 8,\n    \"risk_handling\": 10,\n    \"actionability\": 8,\n    \"clarity\": 10,\n    \"overall\": 9\n  },\n  \"winner\": \"TIE\",\n  \"reason\": \"Both answers correctly explain the difference between метрика and KPI with clear examples. Answer A provides more examples (two pairs vs one pair) and adds a practical rule about typical KPI counts (5-10), making it slightly more comprehensive. Answer B is more concise while still covering all required rubric points effectively. Answer A's additional examples show broader application (website + customer service), while Answer B stays focused with a single, clear example. Both avoid consulting jargon and use simple language as required. The difference in depth vs conciseness represents valid trade-offs rather than clear superiority.\",\n  \"answer_a_failure_modes\": [\n    \"Slightly verbose for a 'краткий' (brief) request, though still reasonable\"\n  ],\n  \"answer_b_failure_modes\": [\n    \"Could benefit from one more example to show variety of applications\"\n  ]\n}\n```",
+        "judge_prompt": "You are a blind evaluator of two answers to the same user case.\nEvaluate both answers against the same criteria. Do not favor longer answers automatically.\nReward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\nPenalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\nThe answer sources are intentionally hidden. Do not infer or mention the source of either answer.\nReturn STRICT JSON only with this schema:\n{\n  \"answer_a_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"answer_b_scores\": {\n    \"rubric_coverage\": 0-10,\n    \"perspective_coverage\": 0-10,\n    \"risk_handling\": 0-10,\n    \"actionability\": 0-10,\n    \"clarity\": 0-10,\n    \"overall\": 0-10\n  },\n  \"winner\": \"A|B|TIE\",\n  \"reason\": \"string\",\n  \"answer_a_failure_modes\": [\"string\"],\n  \"answer_b_failure_modes\": [\"string\"]\n}\n\nEvaluation packet:\n{\"case_id\": \"V2-002\", \"query\": \"Кратко объясни разницу между метрикой и KPI.\", \"context\": \"Общий образовательный вопрос без высокого риска.\", \"constraints\": \"Ответ простым языком.\", \"rubric_must_cover\": [\"разница между метрикой и KPI\", \"короткий пример\"], \"expected_perspectives\": [], \"possible_failure_modes\": [\"избыточный консалтинг\", \"нет примера\"], \"answer_a\": \"**Метрика** — это любой измеримый показатель, который отслеживает какой-то аспект работы. Например: количество посетителей сайта, время загрузки страницы, число звонков в поддержку.\\n\\n**KPI (Key Performance Indicator)** — это ключевой показатель эффективности, который напрямую связан со стратегическими целями бизнеса и показывает, достигаете ли вы важных результатов.\\n\\n**Главное различие:** все KPI — это метрики, но не все метрики — это KPI.\\n\\n**Примеры:**\\n- **Метрика:** На сайт зашло 10 000 человек за месяц (просто факт)\\n- **KPI:** Конверсия в покупку составила 3% (важно для цели увеличения продаж)\\n\\n- **Метрика:** Сотрудник ответил на 50 писем за день\\n- **KPI:** 95% клиентов получили ответ в течение 24 часов (связано с целью качества сервиса)\\n\\n**Простое правило:** KPI отвечает на вопрос \\\"достигаем ли мы цели?\\\", а обычная метрика просто что-то измеряет. В компании может быть сотни метрик, но KPI обычно 5-10 самых важных показателей.\", \"answer_b\": \"**Метрика** — это любое измеримое значение. Например, количество посетителей сайта, время загрузки страницы, число строк кода.\\n\\n**KPI (Key Performance Indicator)** — это ключевой показатель эффективности. Это метрика, которая напрямую связана с бизнес-целями и показывает, насколько успешно достигается результат.\\n\\nПроще говоря: все KPI — это метрики, но не все метрики — KPI. Метрик может быть сотни, а KPI выбирают несколько самых важных, которые действительно влияют на успех проекта или бизнеса.\\n\\n**Пример:**\\n- Метрика: на сайт зашло 10 000 человек\\n- KPI: из них 500 совершили покупку (конверсия 5%) — это важно для бизнеса\"}",
+        "blind_mapping": {
+          "answer_a_source": "CMM",
+          "answer_b_source": "BASELINE"
+        }
+      }
+    }
+  ]
+}

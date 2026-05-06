@@ -225,6 +225,18 @@ class JsonContractTests(unittest.TestCase):
         self.assertEqual(report["json_attempts"], 1)
         self.assertEqual(report["source"], "model")
 
+    def test_moderator_uses_roomy_token_budget_for_json_schema(self):
+        from Lib.agent_moderator import moderate_answer
+
+        with patch("Lib.json_retry.send_to_AI", return_value=json.dumps(_moderation_payload())) as mocked_send:
+            moderate_answer(
+                original_query="query",
+                plan={"main_idea": "Idea", "steps": []},
+                answer="answer",
+            )
+
+        self.assertGreaterEqual(mocked_send.call_args.kwargs["tokens"], 1000)
+
     def test_moderator_invalid_json_fallback_records_warning(self):
         from Lib.agent_moderator import moderate_answer
 

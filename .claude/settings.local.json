@@ -20,7 +20,15 @@
       "Bash(python -m unittest tests.test_plan_critic)",
       "Bash(python -m unittest tests.test_state_machine)",
       "Bash(python -m cmm.eval --dataset cmm_dataset_v1.csv --limit 1 --mode real --judge-mode none --output-dir eval_real_replan_fix)",
-      "Bash(python -m cmm.eval --dataset cmm_dataset_v1.csv --limit 1 --mode real --judge-mode none --output-dir eval_real_replan_fix_v2)"
+      "Bash(python -m cmm.eval --dataset cmm_dataset_v1.csv --limit 1 --mode real --judge-mode none --output-dir eval_real_replan_fix_v2)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'Add complete CMM stabilization report *)",
+      "Bash(iconv -f UTF-8 -t UTF-8 -c)",
+      "Bash(python -m unittest tests.test_eval_harness)",
+      "Bash(git commit -m 'Fix eval semantics: TIE → UNJUDGED for judge-mode none *)",
+      "Bash(python *)",
+      "Bash(git reset *)",
+      "Bash(git commit *)"
     ]
   }
 }

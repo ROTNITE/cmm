@@ -14,6 +14,8 @@ INTAKE
    or CONFLICT_ANALYSIS for FULL_CMM
 -> META_DECISION
 -> DELIBERATION_ROUND when deeper structured discussion is needed
+-> CONSENSUS_CHECK, with an optional second DELIBERATION_ROUND only for unresolved high-severity conflicts
+-> META_RECHECK after deliberation changes
 -> PANEL_ROUND_EXTRA when targeted follow-up is still useful
 -> REBALANCE
 -> PLAN
@@ -28,7 +30,9 @@ INTAKE
 
 - `main.py` is a thin CLI wrapper around `Lib.orchestrator.run_cmm`.
 - `Lib/orchestrator.py` exposes the stable public `run_cmm(...)` entrypoint.
-- `Lib/state_machine.py` owns the bounded CMM state machine, transition history, and trace/result assembly.
+- `Lib/state_machine.py` owns the bounded CMM state machine, transition history, and most orchestration handlers.
+- `Lib/state_fallbacks.py` holds fallback report builders used by the state machine.
+- `Lib/state_trace.py` holds small result-payload assembly helpers.
 - `Lib/router.py` deterministically selects `DIRECT`, `LIGHT_CMM`, or `FULL_CMM`.
 - `Lib/direct_answer.py` handles simple low-risk direct answers.
 - `Lib/query_intake.py` preserves `original_query` as the authoritative source and extracts helper fields such as `cleaned_query`, context, constraints, success criteria, unknowns, and user preferences.
@@ -40,7 +44,7 @@ INTAKE
 - `Lib/balance_analyzer.py` identifies missing/dominant perspectives and adds deterministic quality heuristics for coverage, risk severity, argument quality, blind spots, and recommended balance action.
 - `Lib/conflict_analyzer.py` identifies semantic agreements, disagreements, unresolved trade-offs, blind spots, minority positions, and premature consensus risks.
 - `Lib/deliberation.py` converts expert output and balance data into a compact downstream context.
-- `Lib/deliberation_round.py` runs one structured deliberation pass where selected experts answer other roles' positions and revise recommendations.
+- `Lib/deliberation_round.py` runs one structured deliberation pass where selected experts answer other roles' positions and revise recommendations. If explicitly enabled, a second pass is limited to roles named in unresolved high-severity conflicts.
 - `Lib/meta_moderator.py` evaluates process quality and can request deeper treatment.
 - `Lib/plan_development.py`, `Lib/plan_critic.py`, `Lib/agent_improver.py`, and `Lib/agent_moderator.py` build, critique, answer, moderate, and revise.
 - `cmm/eval.py` provides the offline-first evaluation CLI plus opt-in real judged evaluation with blind Answer A/B packets.
@@ -77,7 +81,9 @@ This is intentional: expert work must influence downstream stages to matter.
 
 When `meta_moderator` returns `DEEPEN` or `ADD_EXPERT`, the state machine can select targeted base roles and safe dynamic templates, run one second expert round, merge both bundles, re-run balance analysis, and rebuild the final deliberation brief before planning. This round is sequential by default and may use opt-in thread execution only for independent expert calls.
 
-Before planning, the state machine can also run one structured deliberation round when conflict or meta-moderation state shows disagreements, unresolved trade-offs, blind spots, or premature consensus. This pass is not another gap-filling expert round: each selected expert sees its own first contribution, compact positions from other roles, and the conflict report, then returns agreements, disagreements, missed points, revised recommendations, new risks, and group questions. The revisions are merged into expert context and conflict analysis is recomputed.
+Before planning, the state machine can also run one structured deliberation round when conflict or meta-moderation state shows disagreements, unresolved trade-offs, blind spots, or premature consensus. This pass is not another gap-filling expert round: each selected expert sees its own first contribution, compact positions from other roles, and the conflict report, then returns agreements, disagreements, missed points, revised recommendations, new risks, and group questions. The revisions are merged into expert context and conflict analysis is recomputed through `CONSENSUS_CHECK`.
+
+The default remains `max_deliberation_rounds=1`. When callers explicitly set `max_deliberation_rounds=2`, `CONSENSUS_CHECK` may trigger one more deliberation round, but only if a high-severity unresolved disagreement or trade-off remains and the conflicting roles are identifiable. Otherwise the state machine proceeds to the existing `META_RECHECK` / planning path.
 
 Dynamic roles are generated only through a fixed template catalog. Rules run first and can fill obvious roles without any model call. If open slots remain and the context is complex, the model may suggest allowed role keys or perspective tags, but code rejects arbitrary keys, arbitrary tags, unsafe text, duplicates, over-limit suggestions, and any attempt to provide `system_prompt`.
 
@@ -103,6 +109,7 @@ The trace report is a structured audit object, not just debug logs. It includes:
 - balance reports
 - conflict reports
 - deliberation rounds and revisions
+- deliberation round count, consensus checks, and compact position-change summaries
 - meta moderation decisions
 - plan and critique
 - moderation reports
@@ -133,7 +140,7 @@ The MVP favors explicit fallback structures over crashes:
 ## Known Gaps
 
 - The second expert round is implemented as a targeted pass over existing safe base roles plus whitelisted dynamic role templates.
-- Experts can now respond to other roles in one structured deliberation round, but there is no fully free-form debate state machine.
+- Experts can now respond to other roles in one structured deliberation round. An optional second round is capped and high-conflict-only; there is no fully free-form debate state machine.
 - The state machine is bounded and MVP-level; it does not implement async, parallel state mutation, or unbounded autonomous control.
 - Router decisions are deterministic heuristics and can misclassify borderline tasks; routing should be evaluated by mode and complexity.
 - Router trace signals include word count, constraints/success-criteria flags, risk/stakeholder/trade-off markers, intake complexity, and risk level. These diagnostics support calibration against datasets with `expected_mode`.

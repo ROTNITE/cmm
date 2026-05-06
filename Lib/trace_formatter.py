@@ -33,6 +33,8 @@ def _item_text(item: Any) -> str:
             "constraint",
             "tradeoff",
             "raw_key",
+            "decision",
+            "role_key",
         ):
             value = item.get(key)
             if isinstance(value, str) and value.strip():
@@ -163,6 +165,9 @@ def format_trace_report(trace_report: dict, *, max_items: int = 8) -> str:
             _list_line("Blind spots", conflict.get("blind_spots"), max_items=max_items),
             "",
             "6. Deliberation",
+            _line("Round count", trace.get("deliberation_round_count")),
+            _list_line("Consensus checks", trace.get("consensus_checks"), max_items=max_items),
+            _list_line("Position changes", trace.get("deliberation_position_changes"), max_items=max_items),
             _list_line("Revised recommendations", trace.get("deliberation_revisions"), max_items=max_items),
             _list_line("New risks", _safe_dict(_latest_report(trace, "deliberation_rounds")).get("new_risks"), max_items=max_items),
             "",
