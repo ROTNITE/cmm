@@ -1,0 +1,4 @@
+case_id,expected_mode,actual_mode,router_mode_match,estimated_cost_class,answer_chars,warnings,errors,cmm_final_state
+V2-006,LIGHT_CMM,LIGHT_CMM,True,M,6590,plan_needs_revision_after_max_iters; proceeding_with_best_effort_plan,,FINALIZE
+V2-007,LIGHT_CMM,LIGHT_CMM,True,M,8447,plan_needs_revision_after_max_iters; proceeding_with_best_effort_plan,,FINALIZE
+V2-010,FULL_CMM,FULL_CMM,True,L,12616,meta_recheck_budget_exhausted_after_rebalance | plan_needs_revision_after_max_iters; proceeding_with_best_effort_plan | answer_moderation_revise_best_effort,,FINALIZE

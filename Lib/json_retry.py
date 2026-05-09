@@ -5,7 +5,8 @@ from __future__ import annotations
 import re
 from typing import Any, Callable
 
-from Lib.AI_request import send_to_AI
+from Lib.AI_request_instrumented import send_to_AI
+from Lib.config import get_default_model, get_json_strategy
 from Lib.json_utils import safe_json_loads
 
 
@@ -40,19 +41,32 @@ def call_json_model(
     *,
     user_prompt: str,
     system_prompt: str,
-    model: str,
+    model: str | None,
     temp: float,
     tokens: int,
     parser: Callable[[Any], dict | None] = safe_json_loads,
-    max_retries: int = 1,
+    max_retries: int | None = None,
+    log_purpose: str = "",
+    json_profile: dict | None = None,
 ) -> dict:
     """Call a model for strict JSON and retry once with a repair prompt."""
+    profile = get_json_strategy()
+    if isinstance(json_profile, dict):
+        profile.update({key: value for key, value in json_profile.items() if value is not None})
     warnings: list[str] = []
     attempts = 0
     raw = ""
-    max_attempts = max(1, int(max_retries) + 1)
+    effective_retries = profile.get("max_retries") if max_retries is None else max_retries
+    max_attempts = max(1, int(effective_retries) + 1)
+    repair_prompt = str(
+        profile.get("repair_prompt")
+        or "Your previous output was invalid JSON. Return one valid JSON object only. No markdown. No prose."
+    )
+    retry_tokens_factor = float(profile.get("retry_tokens_factor") or 1.0)
     current_user_prompt = user_prompt
     current_system_prompt = system_prompt
+    resolved_model = get_default_model(model)
+    current_tokens = int(tokens)
 
     for attempt_index in range(1, max_attempts + 1):
         attempts = attempt_index
@@ -61,8 +75,9 @@ def call_json_model(
                 user_prompt=current_user_prompt,
                 system_prompt=current_system_prompt,
                 temp=temp,
-                tokens=tokens,
-                model=model,
+                tokens=current_tokens,
+                model=resolved_model,
+                log_purpose=log_purpose,
             )
         except Exception as exc:
             raw = ""
@@ -82,27 +97,16 @@ def call_json_model(
 
         if attempt_index < max_attempts:
             warnings.append("json_retry_after_invalid_json")
-            current_system_prompt = (
-                f"{system_prompt}\n\n"
-                "CRITICAL: Your previous output was INVALID JSON.\n"
-                "Return ONLY a valid JSON object. Start with { and end with }.\n"
-                "Do NOT use markdown code blocks (```json).\n"
-                "Do NOT add explanations before or after the JSON.\n"
-                "Close ALL brackets and braces properly."
-            )
+            current_system_prompt = f"{system_prompt}\n\n{repair_prompt}"
             current_user_prompt = (
-                "Your previous output was INVALID JSON and could not be parsed.\n\n"
-                "CRITICAL REQUIREMENTS:\n"
-                "1. Return ONLY valid JSON\n"
-                "2. Start with { and end with }\n"
-                "3. NO markdown blocks\n"
-                "4. NO text before or after JSON\n"
-                "5. Close all brackets properly\n\n"
+                "Your previous output could not be parsed as JSON.\n"
+                "Return one valid JSON object only.\n\n"
                 "Original request:\n"
                 f"{user_prompt}\n\n"
-                "Your previous invalid output (first 1000 chars):\n"
+                "Previous invalid output excerpt:\n"
                 f"{raw[:1000]}"
             )
+            current_tokens = max(120, int(tokens * retry_tokens_factor))
 
     warnings.append("json_retry_exhausted")
     return {"payload": None, "raw": raw, "attempts": attempts, "warnings": warnings}

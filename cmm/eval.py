@@ -6,9 +6,12 @@ import argparse
 import csv
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from Lib.config import get_default_model, get_judge_model, get_judge_settings, get_stage_settings
+from Lib.json_retry import call_json_model
 from Lib.json_utils import safe_json_loads, to_number, to_string_list
 
 
@@ -50,8 +53,12 @@ RESULT_FIELDS = [
     "planner_raw_format",
     "planner_json_attempts",
     "plan_critique_statuses",
+    "plan_critique_score_source",
+    "plan_critique_stall_reason",
     "answer_moderation_final_decision",
     "answer_moderation_best_effort",
+    "answer_generation_source",
+    "best_effort_trigger_reason",
     "roles_used_unique",
     "estimated_call_count",
     "estimated_stage_count",
@@ -109,8 +116,12 @@ JUDGED_RESULT_FIELDS = [
     "planner_raw_format",
     "planner_json_attempts",
     "plan_critique_statuses",
+    "plan_critique_score_source",
+    "plan_critique_stall_reason",
     "answer_moderation_final_decision",
     "answer_moderation_best_effort",
+    "answer_generation_source",
+    "best_effort_trigger_reason",
     "roles_used_unique",
     "estimated_call_count",
     "estimated_stage_count",
@@ -144,7 +155,7 @@ ROUTING_REVIEW_FIELDS = [
     "errors",
     "cmm_final_state",
 ]
-_TIE_DELTA = 0.5
+_TIE_DELTA = 1.0  # Increased from 0.5 to reduce excessive ties
 
 
 def parse_pipe_list(value: Any) -> list[str]:
@@ -327,8 +338,8 @@ def _mock_cmm(case: dict) -> dict:
     }
 
 
-def _real_baseline(case: dict, model: str = "deepseek-chat") -> dict:
-    from Lib.AI_request import send_to_AI
+def _real_baseline(case: dict, model: str | None = None) -> dict:
+    from Lib.AI_request_instrumented import send_to_AI
     from Lib.eval_logger import get_logger
 
     logger = get_logger()
@@ -346,18 +357,21 @@ def _real_baseline(case: dict, model: str = "deepseek-chat") -> dict:
         system_prompt="Answer the user query directly.",
         temp=0.4,
         tokens=850,
-        model=model,
+        model=get_default_model(model),
+        log_purpose="baseline",
     )
 
     logger.stage_end("baseline")
     return {"answer": answer or "", "trace_report": {"mode": "real_baseline"}}
 
 
-def _real_cmm(case: dict, model: str = "deepseek-chat") -> dict:
+def _real_cmm(case: dict, model: str | None = None) -> dict:
     from Lib.orchestrator import run_cmm
     from Lib.eval_logger import get_logger
+    from Lib.eval_logger_enhanced import get_enhanced_logger
 
     logger = get_logger()
+    enhanced_logger = get_enhanced_logger()
     logger.stage_start("cmm")
 
     query_parts = [
@@ -365,7 +379,7 @@ def _real_cmm(case: dict, model: str = "deepseek-chat") -> dict:
         f"Контекст: {case.get('context', '')}" if case.get("context") else "",
         f"Ограничения: {case.get('constraints', '')}" if case.get("constraints") else "",
     ]
-    result = run_cmm("\n".join(part for part in query_parts if part), model=model)
+    result = run_cmm("\n".join(part for part in query_parts if part), model=get_default_model(model))
 
     # Log trace information
     trace = result.get("trace_report", {})
@@ -376,7 +390,12 @@ def _real_cmm(case: dict, model: str = "deepseek-chat") -> dict:
             logger.router_decision(
                 mode=router.get("mode", ""),
                 complexity=router.get("complexity", ""),
-                reasoning=router.get("reasoning", ""),
+                reasoning=router.get("reason", ""),
+            )
+            enhanced_logger.router_decision(
+                mode=router.get("mode", ""),
+                complexity=router.get("complexity", ""),
+                reasoning=router.get("reason", ""),
             )
 
         # Log expert contributions
@@ -387,10 +406,31 @@ def _real_cmm(case: dict, model: str = "deepseek-chat") -> dict:
                     perspective=role.get("perspective_tag", ""),
                     valid=True,
                 )
+                enhanced_logger.expert_contribution(
+                    role=role.get("key", ""),
+                    perspective=role.get("perspective_tag", ""),
+                    valid=True,
+                )
 
-        # Log plan critiques
-        for status in trace.get("plan_critique_statuses", []) or []:
-            logger.plan_critique(status=str(status))
+        # Log plan details
+        plan = trace.get("plan", {})
+        if plan:
+            enhanced_logger.plan_generated(plan)
+
+        # Log plan critiques with detailed breakdown
+        plan_critiques = trace.get("plan_critiques", [])
+        for critique_result in plan_critiques:
+            if isinstance(critique_result, dict):
+                status = critique_result.get("status", "unknown")
+                critique = critique_result.get("critique", {})
+                logger.plan_critique(status=str(status))
+                enhanced_logger.plan_critique(status=str(status), critique=critique)
+
+        # Log balance analysis
+        balance_reports = trace.get("balance_reports", [])
+        if balance_reports:
+            latest_balance = balance_reports[-1] if isinstance(balance_reports[-1], dict) else {}
+            enhanced_logger.balance_analysis(latest_balance)
 
         # Log moderation
         if trace.get("answer_moderation_final_decision"):
@@ -398,12 +438,18 @@ def _real_cmm(case: dict, model: str = "deepseek-chat") -> dict:
                 decision=trace.get("answer_moderation_final_decision", ""),
                 best_effort=bool(trace.get("answer_moderation_best_effort")),
             )
+            enhanced_logger.moderation_decision(
+                decision=trace.get("answer_moderation_final_decision", ""),
+                best_effort=bool(trace.get("answer_moderation_best_effort")),
+            )
 
         # Log warnings and errors
         for warning in trace.get("warnings", []) or []:
             logger.warning(str(warning))
+            enhanced_logger.warning(str(warning))
         for error in trace.get("errors", []) or []:
             logger.error(str(error))
+            enhanced_logger.error(str(error))
 
     logger.stage_end("cmm")
     return {
@@ -475,8 +521,12 @@ def _cmm_diagnostic_fields(run_output: dict) -> dict:
         "planner_raw_format": planner_health.get("raw_format") or "",
         "planner_json_attempts": int(planner_health.get("json_attempts") or 0),
         "plan_critique_statuses": " | ".join(str(item) for item in trace.get("plan_critique_statuses", []) or []),
+        "plan_critique_score_source": trace.get("plan_critique_score_source") or "",
+        "plan_critique_stall_reason": trace.get("plan_critique_stall_reason") or "",
         "answer_moderation_final_decision": trace.get("answer_moderation_final_decision") or "",
         "answer_moderation_best_effort": bool(trace.get("answer_moderation_best_effort")),
+        "answer_generation_source": trace.get("answer_generation_source") or "",
+        "best_effort_trigger_reason": trace.get("best_effort_trigger_reason") or "",
         "roles_used_unique": json.dumps(trace.get("roles_used_unique") or [], ensure_ascii=False),
         "estimated_call_count": int(trace.get("estimated_call_count") or 0),
         "estimated_stage_count": int(trace.get("estimated_stage_count") or 0),
@@ -533,6 +583,11 @@ def build_judge_prompt(case: dict, answer_a: str, answer_b: str) -> str:
         "Reward accurate rubric coverage, perspective coverage, risk handling, actionability, and clarity.\n"
         "Penalize hallucinated specifics, ignored constraints, generic advice, and missing risks.\n"
         "The answer sources are intentionally hidden. Do not infer or mention the source of either answer.\n"
+        "\n"
+        "IMPORTANT: Be decisive in your evaluation. Only mark as TIE if answers are truly equivalent.\n"
+        "If one answer is more specific, actionable, or comprehensive, mark it as the winner.\n"
+        "A difference of 1+ points in overall score should result in a clear winner, not a tie.\n"
+        "\n"
         "Return STRICT JSON only with this schema:\n"
         "{\n"
         '  "answer_a_scores": {\n'
@@ -624,12 +679,25 @@ def normalize_judge_payload(payload: dict | None, mapping: dict, raw: str = "", 
     baseline_overall = baseline_scores.get("overall", 0.0)
     cmm_overall = cmm_scores.get("overall", 0.0)
     delta = cmm_overall - baseline_overall
-    if abs(delta) < _TIE_DELTA:
-        winner = "TIE"
-    elif delta > 0:
-        winner = "CMM"
+
+    # Use judge's winner decision from JSON if provided
+    judge_winner = payload.get("winner", "").strip().upper()
+    if judge_winner in {"A", "B", "TIE"}:
+        # Map A/B to BASELINE/CMM based on blind mapping
+        if judge_winner == "TIE":
+            winner = "TIE"
+        elif judge_winner == "A":
+            winner = mapping["answer_a_source"]
+        else:  # B
+            winner = mapping["answer_b_source"]
     else:
-        winner = "BASELINE"
+        # Fallback: calculate winner from delta if judge didn't provide valid winner
+        if abs(delta) < _TIE_DELTA:
+            winner = "TIE"
+        elif delta > 0:
+            winner = "CMM"
+        else:
+            winner = "BASELINE"
 
     reason = payload.get("reason")
     if not isinstance(reason, str) or not reason.strip():
@@ -648,33 +716,39 @@ def normalize_judge_payload(payload: dict | None, mapping: dict, raw: str = "", 
     }
 
 
-def judge_case_with_llm(case: dict, baseline: dict, cmm: dict, model: str = "deepseek-chat") -> dict:
-    from Lib.AI_request import send_to_AI
+def judge_case_with_llm(case: dict, baseline: dict, cmm: dict, model: str | None = None) -> dict:
     from Lib.eval_logger import get_logger
 
     logger = get_logger()
     logger.stage_start("judge")
+    stage = get_stage_settings("judge", {"tokens": 900, "temp": 0.2})
+    judge_settings = get_judge_settings()
 
     mapping = assign_blind_answers(case.get("case_id") or case.get("id") or "", baseline, cmm)
     prompt = build_judge_prompt(case, mapping["answer_a"], mapping["answer_b"])
-    raw = send_to_AI(
+    result = call_json_model(
         user_prompt=prompt,
         system_prompt="You are a careful blind evaluation judge. Return strict JSON only.",
-        temp=0.2,
-        tokens=900,
-        model=model,
+        temp=float(stage.get("temp") or 0.2),
+        tokens=int(stage.get("tokens") or 900),
+        model=get_judge_model(model),
+        max_retries=int(judge_settings.get("max_retries") or 1),
+        log_purpose="judge",
     )
-    raw_text = raw if isinstance(raw, str) else ""
-    payload = safe_json_loads(raw_text)
-    result = normalize_judge_payload(payload, mapping, raw=raw_text)
-    result["judge_prompt"] = prompt
-    result["blind_mapping"] = {
+    raw_text = result.get("raw") if isinstance(result, dict) and isinstance(result.get("raw"), str) else ""
+    payload = result.get("payload") if isinstance(result, dict) else None
+    normalized = normalize_judge_payload(payload, mapping, raw=raw_text)
+    if isinstance(result, dict) and isinstance(result.get("warnings"), list):
+        normalized["parse_warnings"] = list(normalized.get("parse_warnings", [])) + list(result.get("warnings") or [])
+    normalized["json_attempts"] = int(result.get("attempts") or 0) if isinstance(result, dict) else 0
+    normalized["judge_prompt"] = prompt
+    normalized["blind_mapping"] = {
         "answer_a_source": mapping["answer_a_source"],
         "answer_b_source": mapping["answer_b_source"],
     }
 
     logger.stage_end("judge")
-    return result
+    return normalized
 
 
 def build_human_review_packet(case: dict, baseline: dict, cmm: dict) -> dict:
@@ -741,7 +815,7 @@ def score_case_judged(
     cmm: dict,
     *,
     judge_mode: str = "none",
-    judge_model: str = "deepseek-chat",
+    judge_model: str | None = None,
 ) -> dict:
     if judge_mode not in {"none", "llm"}:
         raise ValueError("judge_mode must be 'none' or 'llm'")
@@ -749,7 +823,7 @@ def score_case_judged(
     mapping = assign_blind_answers(case.get("case_id") or case.get("id") or "", baseline, cmm)
     human_packet = None
     if judge_mode == "llm":
-        judge_result = judge_case_with_llm(case, baseline, cmm, model=judge_model)
+        judge_result = judge_case_with_llm(case, baseline, cmm, model=get_judge_model(judge_model))
         judge_prompt = judge_result.get("judge_prompt", "")
         blind_mapping = judge_result.get("blind_mapping", {})
     else:
@@ -833,11 +907,17 @@ def _print_case_diagnostics(case: dict, cmm_output: dict, judge_mode: str) -> No
     )
     print(f"Planner: {diag.get('planner_raw_format') or 'unknown'}")
     print(f"Plan critique: {diag.get('plan_critique_statuses') or 'none'}")
+    if diag.get("plan_critique_score_source"):
+        print(f"Plan critique scores: {diag.get('plan_critique_score_source')}")
+    if diag.get("plan_critique_stall_reason"):
+        print(f"Plan critique stall: {diag.get('plan_critique_stall_reason')}")
     print(
         "Moderation: "
         f"{diag.get('answer_moderation_final_decision') or 'unknown'}"
         + (" best-effort" if diag.get("answer_moderation_best_effort") else "")
     )
+    if diag.get("answer_generation_source"):
+        print(f"Answer generation: {diag.get('answer_generation_source')}")
     print(f"Judge: {judge_mode}")
 
 
@@ -1006,6 +1086,45 @@ def _summary_from_judged_results(results: list[dict], judge_mode: str, output_pa
     return summary
 
 
+def _write_judged_results_incremental(
+    results: list[dict],
+    artifacts: list[dict],
+    schema_report: dict,
+    output_dir: str,
+    *,
+    judge_mode: str,
+    human_packets: list[dict] | None = None,
+    case_count: int = 0,
+    total_cases: int = 0,
+) -> None:
+    """Write results incrementally after each case."""
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Write CSV with current results
+    csv_path = out_dir / "results_incremental.csv"
+    with csv_path.open("w", encoding="utf-8", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=JUDGED_RESULT_FIELDS)
+        writer.writeheader()
+        writer.writerows(results)
+
+    # Write JSONL with cases processed so far
+    cases_path = out_dir / "cases_incremental.jsonl"
+    with cases_path.open("w", encoding="utf-8") as file:
+        for artifact in artifacts:
+            file.write(json.dumps(artifact, ensure_ascii=False) + "\n")
+
+    # Write progress summary
+    summary_path = out_dir / "progress.json"
+    progress = {
+        "cases_completed": case_count,
+        "total_cases": total_cases,
+        "progress_percent": round(100 * case_count / total_cases, 2) if total_cases > 0 else 0,
+        "last_updated": str(datetime.now()),
+    }
+    summary_path.write_text(json.dumps(progress, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
 def _write_judged_results(
     results: list[dict],
     artifacts: list[dict],
@@ -1068,18 +1187,38 @@ def _run_real_judged_eval(
     *,
     output_dir: str,
     judge_mode: str,
-    judge_model: str,
-    model: str = "deepseek-chat",
+    judge_model: str | None,
+    model: str | None = None,
 ) -> dict:
     from Lib.eval_logger import get_logger, reset_logger
+    from Lib.eval_logger_enhanced import get_enhanced_logger, reset_enhanced_logger
+    import time
+    import sys
 
-    # Reset and initialize logger for this eval run
+    # Configure UTF-8 output for Windows console
+    if sys.platform == 'win32':
+        try:
+            import os
+            os.system('chcp 65001 >nul 2>&1')
+            if hasattr(sys.stdout, 'reconfigure'):
+                sys.stdout.reconfigure(encoding='utf-8')
+            if hasattr(sys.stderr, 'reconfigure'):
+                sys.stderr.reconfigure(encoding='utf-8')
+        except:
+            pass  # If fails, continue without UTF-8
+
+    # Reset and initialize loggers for this eval run
     reset_logger()
+    reset_enhanced_logger()
     logger = get_logger()
-    logger.enabled = True  # Enable logging for eval
+    logger.enabled = True  # Enable old logger for detailed AI call logging
+    enhanced_logger = get_enhanced_logger()
+    enhanced_logger.enabled = True
 
     logger.info(f"Starting evaluation: {len(rows)} cases")
     logger.info(f"Judge mode: {judge_mode}")
+    model = get_default_model(model)
+    judge_model = get_judge_model(judge_model)
     logger.info(f"Model: {model}")
     logger.info("")
 
@@ -1087,18 +1226,27 @@ def _run_real_judged_eval(
     artifacts: list[dict] = []
     human_packets: list[dict] = []
 
-    for case in rows:
+    # Create output directory early for incremental writes
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Set log file for incremental logging
+    log_file_path = out_dir / "console_incremental.log"
+    logger.set_log_file(str(log_file_path))
+    enhanced_logger.set_log_file(str(log_file_path))
+
+    for case_index, case in enumerate(rows, 1):
+        case_start_time = time.time()
+
         # Start case logging
         case_id = case.get("case_id") or case.get("id") or ""
         query = case.get("query", "")
 
-        # Encode query safely for Windows console
-        try:
-            query_display = query.encode('ascii', 'replace').decode('ascii')
-        except:
-            query_display = query
+        # Use original query for display (UTF-8)
+        query_display = query
 
         logger.case_start(case_id=case_id, query=query_display)
+        enhanced_logger.case_start(case_id=case_id, query=query_display)
 
         baseline_output = _real_baseline(case, model=model)
         cmm_output = _real_cmm(case, model=model)
@@ -1110,17 +1258,45 @@ def _run_real_judged_eval(
             judge_model=judge_model,
         )
         _print_case_diagnostics(case, cmm_output, judge_mode)
+
+        # Log judge results with enhanced logger
+        judge_result = scored.get("artifact", {}).get("normalized_judge_result", {})
+        if judge_result:
+            baseline_overall = judge_result.get("baseline_scores", {}).get("overall", 0.0)
+            cmm_overall = judge_result.get("cmm_scores", {}).get("overall", 0.0)
+            winner = judge_result.get("winner", "TIE")
+            reason = judge_result.get("reason", "")
+            enhanced_logger.judge_evaluation(winner, baseline_overall, cmm_overall, reason)
+
         results.append(scored["row"])
         artifacts.append(scored["artifact"])
         if scored.get("human_packet"):
             human_packets.append(scored["human_packet"])
 
         # End case logging
+        case_elapsed = time.time() - case_start_time
         winner = scored["row"].get("winner", "TIE")
-        logger.case_end(
-            case_id=case_id,
-            winner=winner,
-        )
+        logger.case_end(case_id=case_id, winner=winner)
+        enhanced_logger.case_end(case_id=case_id, winner=winner, time_seconds=case_elapsed)
+
+        # Flush case logs to file
+        logger.flush_case_logs()
+        enhanced_logger.flush_case_logs()
+
+        # INCREMENTAL WRITE: Write results after each case
+        try:
+            _write_judged_results_incremental(
+                results,
+                artifacts,
+                schema_report,
+                output_dir,
+                judge_mode=judge_mode,
+                human_packets=human_packets,
+                case_count=case_index,
+                total_cases=len(rows),
+            )
+        except Exception as exc:
+            enhanced_logger.warning(f"Incremental write failed: {exc}")
 
     output_paths, summary = _write_judged_results(
         results,
@@ -1135,6 +1311,7 @@ def _run_real_judged_eval(
     # Print final summary
     logger.summary()
     logger.enabled = False
+    enhanced_logger.enabled = False
 
     return {
         "summary": summary,
@@ -1151,8 +1328,8 @@ def run_eval(
     mode: str = "mock",
     output_dir: str = "eval_results",
     judge_mode: str = "none",
-    judge_model: str = "deepseek-chat",
-    model: str = "deepseek-chat",
+    judge_model: str | None = None,
+    model: str | None = None,
 ) -> dict:
     if mode not in {"mock", "real"}:
         raise ValueError("mode must be 'mock' or 'real'")
@@ -1164,13 +1341,14 @@ def run_eval(
         rows = rows[: max(0, limit)]
 
     if mode == "real":
+        resolved_model = get_default_model(model)
         return _run_real_judged_eval(
             rows,
             schema_report,
             output_dir=output_dir,
             judge_mode=judge_mode,
-            judge_model=judge_model,
-            model=model,
+            judge_model=get_judge_model(judge_model, fallback_model=resolved_model),
+            model=resolved_model,
         )
 
     baseline_runner = _mock_baseline
@@ -1206,10 +1384,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--limit", type=int, default=None, help="Optional case limit")
     parser.add_argument("--mode", choices=["mock", "real"], default="mock", help="Evaluation mode")
     parser.add_argument("--judge-mode", choices=["none", "llm"], default="none", help="Judge mode for real eval")
-    parser.add_argument("--judge-model", default="deepseek-chat", help="Model for --judge-mode llm")
-    parser.add_argument("--model", default="deepseek-chat", help="Model for CMM and baseline")
+    parser.add_argument("--judge-model", default=None, help="Model for --judge-mode llm. If not specified, uses --model value.")
+    parser.add_argument("--model", default=None, help="Model for CMM and baseline. Defaults to config.")
     parser.add_argument("--output-dir", default="eval_results", help="Directory for CSV/JSON outputs")
     args = parser.parse_args(argv)
+
+    # If --model is specified but --judge-model is not, use the same model for judge
+    judge_model = args.judge_model if args.judge_model else args.model
 
     result = run_eval(
         dataset_path=args.dataset,
@@ -1217,7 +1398,7 @@ def main(argv: list[str] | None = None) -> int:
         mode=args.mode,
         output_dir=args.output_dir,
         judge_mode=args.judge_mode,
-        judge_model=args.judge_model,
+        judge_model=judge_model,
         model=args.model,
     )
     summary = result["summary"]

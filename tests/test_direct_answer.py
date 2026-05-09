@@ -116,6 +116,19 @@ class DirectAnswerTests(unittest.TestCase):
         self.assertIn("Cost vs quality", result["final_answer"])
         self.assertFalse(result["final_answer"].strip().endswith("vs."))
 
+    def test_direct_answer_clarifies_collective_metamoderation(self):
+        from Lib.direct_answer import run_direct_answer
+
+        answer = "Коллективная метамодерация — это когда несколько людей вместе смотрят на контент."
+        with patch("Lib.direct_answer.send_to_AI", return_value=answer):
+            result = run_direct_answer(
+                "Что такое коллективная метамодерация?",
+                query_intake={"constraints": ["Ответ кратко до 5 предложений."], "task_goal": "Объяснить термин."},
+            )
+
+        self.assertIn("Ключевое отличие от обычной модерации", result["final_answer"])
+        self.assertIn("разнообразие перспектив", result["final_answer"])
+
     def test_direct_answer_keeps_compact_tradeoff_examples(self):
         from Lib.direct_answer import run_direct_answer
 

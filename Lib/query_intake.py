@@ -10,6 +10,7 @@ import json
 import re
 from typing import Any
 
+from Lib.config import get_stage_settings
 from Lib.json_retry import call_json_model
 from Lib.json_utils import to_string_list
 
@@ -296,6 +297,7 @@ def _normalize_intake_payload(
 
 
 def _model_intake(original_query: str, cleaned_query: str, *, model: str, max_ai_tokens: int) -> dict:
+    stage = get_stage_settings("query_intake", {"tokens": max_ai_tokens, "temp": 0.2})
     system_prompt = (
         "You are a safe query intake extractor for a Collective Meta-Moderation pipeline.\n"
         f"{_AUTHORITATIVE_RULE}\n"
@@ -340,10 +342,11 @@ def _model_intake(original_query: str, cleaned_query: str, *, model: str, max_ai
     return call_json_model(
         user_prompt="Extract safe query intake structure:\n" + json.dumps(state, ensure_ascii=False),
         system_prompt=system_prompt,
-        temp=0.2,
-        tokens=max_ai_tokens,
+        temp=float(stage.get("temp") or 0.2),
+        tokens=int(stage.get("tokens") or max_ai_tokens),
         model=model,
         max_retries=1,
+        log_purpose="query_intake",
     )
 
 

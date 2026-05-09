@@ -11,16 +11,16 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run Collective Meta-Moderation.")
     parser.add_argument("query", nargs="*", help="User query. If omitted, stdin prompt is used.")
     parser.add_argument("--trace-summary", action="store_true", help="Print a human-readable trace summary.")
-    parser.add_argument("--route-mode", default="AUTO", help="AUTO, DIRECT, LIGHT_CMM, or FULL_CMM.")
-    parser.add_argument("--parallel-mode", default="SEQUENTIAL", help="SEQUENTIAL or THREADS.")
+    parser.add_argument("--route-mode", default=None, help="AUTO, DIRECT, LIGHT_CMM, or FULL_CMM. Defaults to config.")
+    parser.add_argument("--parallel-mode", default=None, help="SEQUENTIAL or THREADS. Defaults to config.")
     parser.add_argument("--max-workers", type=int, default=None, help="Max worker threads for optional parallel experts.")
-    parser.add_argument("--max-iters", type=int, default=2, help="Max plan/answer revision iterations.")
-    parser.add_argument("--model", default="deepseek-chat", help="Model name for provider calls.")
+    parser.add_argument("--max-iters", type=int, default=None, help="Max plan/answer revision iterations. Defaults to config.")
+    parser.add_argument("--model", default=None, help="Model name for provider calls. Defaults to config.")
     parser.add_argument(
         "--max-deliberation-rounds",
         type=int,
-        default=1,
-        help="Bounded deliberation rounds: 1 by default, max 2.",
+        default=None,
+        help="Bounded deliberation rounds, capped to max 2. Defaults to config.",
     )
     return parser
 
@@ -32,15 +32,19 @@ def main(argv: list[str] | None = None):
     user_query = " ".join(args.query).strip()
     if not user_query:
         user_query = input("Пожалуйста, введите ваш запрос: ")
-    result = run_cmm(
-        user_query,
-        max_iters=args.max_iters,
-        model=args.model,
-        route_mode=args.route_mode,
-        parallel_mode=args.parallel_mode,
-        max_workers=args.max_workers,
-        max_deliberation_rounds=args.max_deliberation_rounds,
-    )
+    run_kwargs = {}
+    for key in (
+        "max_iters",
+        "model",
+        "route_mode",
+        "parallel_mode",
+        "max_workers",
+        "max_deliberation_rounds",
+    ):
+        value = getattr(args, key)
+        if value is not None:
+            run_kwargs[key] = value
+    result = run_cmm(user_query, **run_kwargs)
 
     print(f"\n✅ Финальный ответ: {result['final_answer']}")
 

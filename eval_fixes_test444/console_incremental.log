@@ -1,0 +1,165 @@
+[R] Router: DIRECT (complexity: low)
+
+[J] Judge evaluation:
+      Baseline overall: 8.00/10
+      CMM overall: 9.00/10
+      Delta: +1.00
+      Winner: CMM
+      Reason: Both answers meet the constraint of 5 sentences and cover the required rubric elements. Answer B edges ahead with a more concrete example (Stack Overflow with specific mechanics of high-reputation use
+
+[+] Winner: CMM
+Time: 25.16s
+================================================================================
+
+
+[R] Router: DIRECT (complexity: low)
+
+[J] Judge evaluation:
+      Baseline overall: 9.00/10
+      CMM overall: 9.00/10
+      Delta: +0.00
+      Winner: CMM
+      Reason: Both answers cover the rubric requirements excellently: they explain the difference between metric and KPI, provide clear examples, and use simple language. Both correctly state that all KPIs are metr
+
+[+] Winner: CMM
+Time: 24.66s
+================================================================================
+
+
+[R] Router: DIRECT (complexity: low)
+
+[J] Judge evaluation:
+      Baseline overall: 9.00/10
+      CMM overall: 8.00/10
+      Delta: -1.00
+      Winner: BASELINE
+      Reason: Both answers provide a clear definition and product design examples with competing goals. Answer A edges ahead with slightly better structure and actionability. It uses 'choose what matters most' whic
+
+[+] Winner: BASELINE
+Time: 21.03s
+================================================================================
+
+
+[R] Router: LIGHT_CMM (complexity: medium)
+[E] Expert: strategist (strategy) - valid
+[E] Expert: engineer (engineering) - valid
+[E] Expert: risk_manager (risk) - valid
+[E] Expert: user_advocate (user) - valid
+[P] Plan generated:
+      Main idea: Разработать структурированный формат 30-минутной встречи с асинхронной подготовкой, строгим таймбоксингом и ротацией модератора для эффективной синхро
+      Steps (5):
+        1. Определить критерии синхронизации и границы синхронного/асинхронного взаимодействия
+        2. Внедрить систему письменных статусов за 24 часа до встречи
+        3. Спроектировать структуру 30-минутной встречи с жёстким таймбоксингом и чёткой повесткой
+        4. Внедрить систему ротации модератора с чёткими полномочиями и инструментами
+        5. Запустить 4-недельный пилот с еженедельной микро-ретроспективой и метриками
+      Source: model, Format: json
+[P] Plan critique: needs_revision
+      Overall score: 9.50/10
+      Scores:
+          query_alignment: 9.5
+          constraint_coverage: 10.0
+          success_criteria_coverage: 8.5
+          expert_input_coverage: 9.0
+          risk_coverage: 9.5
+          conflict_resolution: 10.0
+      CRITICAL BLOCKERS (1):
+          - Назначить rotating facilitator с правом останавливать офтопик и переносить детали в async.
+      Ignored must_address: 4
+      Ignored risks: 7
+      Ignored tradeoffs: 1
+      Feedback (7):
+          - Step 4 addresses synchronization definition but could be more prominent given it's a core constraint
+          - Team size branching logic in step 2 could be clearer - currently split between substeps and nuances
+          - Timezone considerations mentioned in nuances but not integrated into main steps for distributed team
+[P] Plan critique: ready
+      Overall score: 9.65/10
+      Scores:
+          query_alignment: 9.5
+          constraint_coverage: 10.0
+          success_criteria_coverage: 9.0
+          expert_input_coverage: 9.5
+          risk_coverage: 9.5
+          conflict_resolution: 10.0
+      Ignored must_address: 1
+      Ignored risks: 1
+      Feedback (2):
+          - Cover deliberation_brief.must_address items.
+          - Add mitigation for ignored expert risks.
+[B] Balance analysis:
+      Blind spots (1):
+          - Constraint not covered by expert contributions: нужно сохранить синхронизацию.
+      Recommended action: DEEPEN
+[M] Moderation: ACCEPT
+
+[J] Judge evaluation:
+      Baseline overall: 6.00/10
+      CMM overall: 9.00/10
+      Delta: +3.00
+      Winner: CMM
+      Reason: Answer A provides one deeply actionable format with comprehensive implementation steps, metrics, and risk mitigation. Answer B offers 4 formats with clear criteria but lacks implementation depth. Whil
+
+[+] Winner: CMM
+Time: 245.17s
+================================================================================
+
+
+[R] Router: LIGHT_CMM (complexity: medium)
+[E] Expert: strategist (strategy) - valid
+[E] Expert: engineer (engineering) - valid
+[E] Expert: risk_manager (risk) - valid
+[E] Expert: user_advocate (user) - valid
+[P] Plan generated:
+      Main idea: Создать структурированное сравнение интервью и опросов с гибридной стратегией, адаптированной под размер команды и бизнес-цели, с детальным timeline п
+      Steps (5):
+        1. Создать структурированное сравнение подходов в формате таблицы решений
+        2. Разработать гибридную стратегию с детальным timeline по дням
+        3. Определить минимальные требования к команде и распределить роли
+        4. Адресовать ключевые риски с конкретными mitigation actions
+        5. Сформулировать итоговую рекомендацию с decision rules и метриками успеха
+      Source: model, Format: json
+[P] Plan critique: needs_revision
+      Overall score: 9.20/10
+      Scores:
+          query_alignment: 9.5
+          constraint_coverage: 10.0
+          success_criteria_coverage: 8.5
+          expert_input_coverage: 9.5
+          risk_coverage: 9.5
+          conflict_resolution: 9.0
+      Ignored risks: 2
+      Ignored tradeoffs: 2
+      Feedback (7):
+          - Шаг 1 содержит сравнение подходов, но могло бы быть более структурированным в виде таблицы критериев
+          - Preparation этап упоминает проверку бизнес-целей, но план не показывает, как разные цели (снижение о
+          - Шаг 3 предлагает распределение ролей, но не указывает минимальный размер команды для выполнения гибр
+[P] Plan critique: ready
+      Overall score: 9.90/10
+      Scores:
+          query_alignment: 10.0
+          constraint_coverage: 10.0
+          success_criteria_coverage: 9.0
+          expert_input_coverage: 10.0
+          risk_coverage: 10.0
+          conflict_resolution: 10.0
+      Ignored must_address: 2
+      Ignored risks: 1
+      Feedback (2):
+          - Cover deliberation_brief.must_address items.
+          - Add mitigation for ignored expert risks.
+[B] Balance analysis:
+      Recommended action: DEEPEN
+[M] Moderation: ACCEPT
+
+[J] Judge evaluation:
+      Baseline overall: 7.00/10
+      CMM overall: 9.00/10
+      Delta: +2.00
+      Winner: CMM
+      Reason: Answer B provides significantly more comprehensive coverage of all required rubric elements with superior actionability. While Answer A offers a clear, concise comparison and basic plan, Answer B deli
+
+[+] Winner: CMM
+Time: 246.91s
+================================================================================
+
+

@@ -9,33 +9,27 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from Lib.config import (
+    get_api_key_env_names,
+    get_base_url,
+    get_default_model,
+    load_local_env_files as _load_runtime_env_files,
+)
 
-DEFAULT_BASE_URL = "https://api.deepseek.com"
-DEFAULT_MODEL = "deepseek-chat"
+# Note: DEFAULT_BASE_URL and DEFAULT_MODEL are removed to avoid caching stale config values.
+# Use get_base_url() and get_default_model() directly instead.
 DEFAULT_TOKEN_LIMIT = 850
 
 _ENV_FILENAMES = (".env",)
-_API_KEY_ENV_NAMES = ("OMNIROUTE_API_KEY", "CLAUDE_API_KEY", "DEEPSEEK_API_KEY", "OPENAI_API_KEY", "apy_key")
+
+def _get_api_key_env_names():
+    """Get API key env names dynamically to avoid caching."""
+    return get_api_key_env_names()
 
 
 def _load_local_env_files() -> None:
     """Load local env files if available, without printing any values."""
-    candidate_dirs = (Path.cwd(), Path(__file__).resolve().parent)
-    seen: set[Path] = set()
-
-    for directory in candidate_dirs:
-        for filename in _ENV_FILENAMES:
-            path = (directory / filename).resolve()
-            if path in seen or not path.exists() or not path.is_file():
-                continue
-            seen.add(path)
-
-            try:
-                from dotenv import load_dotenv
-            except Exception:
-                _load_env_file_fallback(path)
-            else:
-                load_dotenv(path, override=False)
+    _load_runtime_env_files()
 
 
 def _load_env_file_fallback(path: Path) -> None:
@@ -65,26 +59,21 @@ def _get_api_key(explicit_api_key: str | None = None) -> str:
 
     _load_local_env_files()
 
-    for name in _API_KEY_ENV_NAMES:
+    for name in _get_api_key_env_names():
         value = os.getenv(name)
         if value:
             return value
 
     raise RuntimeError(
-        "API key is not configured. Set OMNIROUTE_API_KEY, CLAUDE_API_KEY, or DEEPSEEK_API_KEY "
-        "in the environment or in a local .env file before calling send_to_AI."
+        "API key is not configured. Set the configured API key environment variable "
+        f"({', '.join(_get_api_key_env_names())}) in the environment or in a local .env file before calling send_to_AI."
     )
 
 
 def _get_base_url() -> str:
-    """Return base URL from env or default."""
+    """Return base URL from central config/env or default."""
     _load_local_env_files()
-    return (
-        os.getenv("OMNIROUTE_BASE_URL")
-        or os.getenv("CLAUDE_BASE_URL")
-        or os.getenv("OPENAI_BASE_URL")
-        or DEFAULT_BASE_URL
-    )
+    return get_base_url()
 
 
 def _count_words(value) -> int:
@@ -152,9 +141,10 @@ def send_to_AI(
     temp: float = 0.65,
     top_p: float = 0.9,
     tokens: int | None = None,
-    model: str = DEFAULT_MODEL,
+    model: str | None = None,
     stream: bool = False,
     api_key: str | None = None,
+    log_purpose: str = "",
 ) -> str:
     """
     Send a request to a DeepSeek/OpenAI-compatible chat completions API.
@@ -165,6 +155,7 @@ def send_to_AI(
     """
     try:
         resolved_api_key = _get_api_key(api_key)
+        resolved_model = get_default_model(model)
 
         try:
             from openai import OpenAI
@@ -183,26 +174,8 @@ def send_to_AI(
         if tokens is None:
             tokens = _auto_token_count(_count_words(messages))
 
-        # Log before call
-        logger = None
-        purpose = ""
-        estimated_prompt_tokens = 0
-        try:
-            from Lib.eval_logger import get_logger
-            logger = get_logger()
-            if logger and logger.enabled:
-                purpose = _infer_purpose(system_prompt, user_prompt)
-                prompt_text = f"{system_prompt}\n{user_prompt}"
-                if history:
-                    for msg in history:
-                        if isinstance(msg, dict) and "content" in msg:
-                            prompt_text += f"\n{msg['content']}"
-                estimated_prompt_tokens = _estimate_tokens(prompt_text)
-        except Exception:
-            pass
-
         response = client.chat.completions.create(
-            model=model,
+            model=resolved_model,
             messages=messages,
             max_tokens=tokens,
             temperature=temp,
@@ -211,22 +184,6 @@ def send_to_AI(
         )
 
         result = response.choices[0].message.content
-
-        # Log after call
-        try:
-            if logger and logger.enabled:
-                estimated_completion_tokens = _estimate_tokens(result)
-                total_tokens = estimated_prompt_tokens + estimated_completion_tokens
-                logger.ai_call(
-                    model=model,
-                    prompt_tokens=estimated_prompt_tokens,
-                    completion_tokens=estimated_completion_tokens,
-                    total_tokens=total_tokens,
-                    purpose=purpose,
-                )
-        except Exception:
-            pass
-
         return result
 
     except Exception as exc:

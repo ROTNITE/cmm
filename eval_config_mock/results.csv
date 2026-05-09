@@ -1,0 +1,5 @@
+case_id,expected_mode,actual_mode,router_mode_match,baseline_score,cmm_score,rubric_coverage_delta,perspective_coverage_delta,risk_coverage_delta,cmm_mode,router_complexity,estimated_cost_class,cmm_final_state,cmm_warning_count,cmm_error_count,cmm_warnings,cmm_errors,cmm_json_warnings,cmm_json_fallback_count,expert_valid_contributions,expert_invalid_json_contributions,planner_raw_format,planner_json_attempts,plan_critique_statuses,answer_moderation_final_decision,answer_moderation_best_effort,roles_used_unique,estimated_call_count,estimated_stage_count,answer_chars,warnings_count,errors_count,winner,notes
+V2-001,DIRECT,DIRECT,True,0.0,1.0,1.0,0.0,1.0,DIRECT,low,S,,0,0,,,,0,0,0,,0,,,False,[],0,0,244,0,0,CMM,ok
+V2-002,DIRECT,DIRECT,True,0.0,1.0,1.0,0.0,1.0,DIRECT,low,S,,0,0,,,,0,0,0,,0,,,False,[],0,0,194,0,0,CMM,ok
+V2-003,DIRECT,DIRECT,True,0.0,1.0,1.0,0.0,1.0,DIRECT,low,S,,0,0,,,,0,0,0,,0,,,False,[],0,0,176,0,0,CMM,ok
+V2-004,LIGHT_CMM,LIGHT_CMM,True,0.0,1.0,1.0,1.0,1.0,LIGHT_CMM,medium,M,,0,0,,,,0,0,0,,0,,,False,[],0,0,276,0,0,CMM,ok

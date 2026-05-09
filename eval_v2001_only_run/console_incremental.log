@@ -1,0 +1,62 @@
+================================================================================
+[*] CASE: V2-001
+Query: Что такое коллективная метамодерация?
+
+[>] Stage: BASELINE
+  [AI] AI Call #1 [baseline]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 16 prompt + 52 completion = 68 total
+    Cost: $0.000048 input + $0.000780 output = $0.000828 total
+    Running total: 68 tokens, $0.0008 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  Starting CMM state machine (route_mode=AUTO)
+  [AI] AI Call #2 [query_intake]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 216 prompt + 23 completion = 239 total
+    Cost: $0.000648 input + $0.000345 output = $0.000993 total
+    Running total: 307 tokens, $0.0018 cost
+  [AI] AI Call #3 [direct_answer]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 92 prompt + 31 completion = 123 total
+    Cost: $0.000276 input + $0.000465 output = $0.000741 total
+    Running total: 430 tokens, $0.0026 cost
+  CMM completed with state: FINALIZE
+  [R] Router: DIRECT (complexity: low)
+    Reasoning: Simple low-risk explanation request has only formatting constraints.
+[OK] CMM complete
+
+[>] Stage: JUDGE
+  [AI] AI Call #4 [judge]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 258 prompt + 106 completion = 364 total
+    Cost: $0.000774 input + $0.001590 output = $0.002364 total
+    Running total: 794 tokens, $0.0049 cost
+[OK] JUDGE complete
+
+
+[+] Winner: BASELINE
+Time: 26.67s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-001
+Query: Что такое коллективная метамодерация?
+--------------------------------------------------------------------------------
+[R] Router: DIRECT (complexity: low)
+    Reasoning: Simple low-risk explanation request has only formatting constraints.
+
+[J] Judge evaluation:
+      Baseline overall: 9.00/10
+      CMM overall: 7.00/10
+      Delta: -2.00
+      Winner: BASELINE
+      Reason: Answer A provides a clear and concise definition of collective metamoderation, distinguishes it from regular moderation, and effectively touches on its benefits like reducing bias and increasing trans
+
+[+] Winner: BASELINE
+Time: 26.67s
+================================================================================
+
+

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from Lib.AI_request import send_to_AI as _original_send_to_AI
+from Lib.config import get_default_model
 from Lib.eval_logger import get_logger
 
 
@@ -58,7 +59,7 @@ def send_to_AI(
     temp: float = 0.65,
     top_p: float = 0.9,
     tokens: int | None = None,
-    model: str = "deepseek-chat",
+    model: str | None = None,
     stream: bool = False,
     api_key: str | None = None,
     log_purpose: str = "",
@@ -70,6 +71,7 @@ def send_to_AI(
         log_purpose: Optional description of what this call is for (e.g., "router", "expert_agent", "judge")
     """
     logger = get_logger()
+    resolved_model = get_default_model(model)
 
     # Infer purpose if not provided
     if not log_purpose:
@@ -92,9 +94,10 @@ def send_to_AI(
         temp=temp,
         top_p=top_p,
         tokens=tokens,
-        model=model,
+        model=resolved_model,
         stream=stream,
         api_key=api_key,
+        log_purpose=log_purpose,
     )
 
     # Estimate completion tokens
@@ -103,7 +106,7 @@ def send_to_AI(
 
     # Log the call
     logger.ai_call(
-        model=model,
+        model=resolved_model,
         prompt_tokens=estimated_prompt_tokens,
         completion_tokens=estimated_completion_tokens,
         total_tokens=total_tokens,

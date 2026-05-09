@@ -397,27 +397,38 @@ def _brief_summary_for_planner(state: dict) -> dict:
     """Ultra-compact brief for planner to avoid context overload.
 
     Planner needs: must_address, key risks, key recommendations, constraints.
-    Reduced from 26 fields to 14 essential fields with tighter limits.
+    CRITICAL FIX: Added stakeholder_coverage, blind_spots, disagreements, agreements
+    to give planner the full context it needs to create linked plans.
     """
     brief = _as_dict(state.get("deliberation_brief"))
     intake = _intake_summary(state)
 
     return {
-        "summary": _clip_string(brief.get("summary"), 400),
-        "expert_recommendations": _string_list(brief.get("expert_recommendations"), max_items=5),
-        "expert_risks": _string_list(brief.get("expert_risks"), max_items=5),
-        "expert_questions": _string_list(brief.get("expert_questions"), max_items=4),
-        "must_address": _string_list(brief.get("must_address"), max_items=8),
-        "revised_recommendations": _string_list(brief.get("revised_recommendations"), max_items=4),
-        "new_risks": _string_list(brief.get("new_risks"), max_items=4),
-        "questions_for_group": _string_list(brief.get("questions_for_group"), max_items=4),
-        "unresolved_tradeoffs": _dict_list(brief.get("unresolved_tradeoffs"), max_items=3),
-        "constraints": intake.get("constraints", [])[:5],
-        "success_criteria": intake.get("success_criteria", [])[:5],
-        "task_goal": _clip_string(intake.get("task_goal"), 300),
+        "summary": _clip_string(brief.get("summary"), 600),
+        "expert_recommendations": _string_list(brief.get("expert_recommendations"), max_items=10),
+        "expert_risks": _string_list(brief.get("expert_risks"), max_items=10),
+        "expert_questions": _string_list(brief.get("expert_questions"), max_items=6),
+        "must_address": _string_list(brief.get("must_address"), max_items=14),
+        "revised_recommendations": _string_list(brief.get("revised_recommendations"), max_items=6),
+        "new_risks": _string_list(brief.get("new_risks"), max_items=6),
+        "questions_for_group": _string_list(brief.get("questions_for_group"), max_items=6),
+        "balance_notes": _string_list(brief.get("balance_notes"), max_items=6),
+        "unresolved_tradeoffs": _dict_list(brief.get("unresolved_tradeoffs"), max_items=5),
+        "stakeholder_coverage": _dict_list(brief.get("stakeholder_coverage"), max_items=10),
+        "constraint_coverage": _dict_list(brief.get("constraint_coverage"), max_items=8),
+        "balance_blind_spots": _string_list(brief.get("balance_blind_spots") or brief.get("blind_spots"), max_items=8),
+        "blind_spots": _string_list(brief.get("blind_spots"), max_items=8),
+        "agreements": _dict_list(brief.get("agreements"), max_items=5),
+        "disagreements": _dict_list(brief.get("disagreements"), max_items=5),
+        "deliberation_agreements": _string_list(brief.get("deliberation_agreements"), max_items=5),
+        "deliberation_disagreements": _string_list(brief.get("deliberation_disagreements"), max_items=5),
+        "constraints": intake.get("constraints", [])[:10],
+        "success_criteria": intake.get("success_criteria", [])[:8],
+        "task_goal": _clip_string(intake.get("task_goal"), 500),
         "complexity": intake.get("complexity"),
         "risk_level": intake.get("risk_level"),
-        "missing_perspectives": _string_list(brief.get("missing_perspectives"), max_items=4),
+        "missing_perspectives": _string_list(brief.get("missing_perspectives"), max_items=6),
+        "perspective_counts": _as_dict(brief.get("perspective_counts")),
     }
 
 
@@ -440,6 +451,10 @@ def _compact_previous_plan_for_replan(plan: Any) -> dict:
     return {
         "main_idea": _clip_string(plan.get("main_idea"), 500),
         "steps": steps,
+        "constraints_covered": _string_list(plan.get("constraints_covered"), max_items=6, max_chars=180),
+        "success_criteria_covered": _string_list(plan.get("success_criteria_covered"), max_items=6, max_chars=180),
+        "risks_mitigated": _string_list(plan.get("risks_mitigated"), max_items=6, max_chars=180),
+        "tradeoffs_handled": _string_list(plan.get("tradeoffs_handled"), max_items=5, max_chars=180),
         "potential_problems": _string_list(plan.get("potential_problems"), max_items=6, max_chars=180),
         "result": _clip_string(plan.get("result"), 300),
         "raw_format": _clip_string(plan.get("raw_format"), 80),
@@ -448,21 +463,31 @@ def _compact_previous_plan_for_replan(plan: Any) -> dict:
 
 
 def _compact_replan_context_for_planner(replan_context: Any) -> dict:
-    """Ultra-compact replan context for planner to avoid context overload."""
+    """Ultra-compact replan context for planner to avoid context overload.
+
+    CRITICAL FIX: Expanded limits to give planner full critique feedback.
+    """
     replan = _as_dict(replan_context)
     critique = _as_dict(replan.get("plan_critique"))
 
     return {
         "previous_plan": _compact_previous_plan_for_replan(replan.get("previous_plan")),
-        "reason": _clip_string(replan.get("reason"), 300),
-        "feedback": _string_list(replan.get("feedback"), max_items=6, max_chars=220),
-        "instruction": "Revise previous_plan. Keep useful concrete steps. Add only missing constraints, risks, trade-offs, and metrics.",
+        "reason": _clip_string(replan.get("reason"), 500),
+        "feedback": _string_list(replan.get("feedback"), max_items=10, max_chars=400),
+        "instruction": "Revise previous_plan. Keep useful concrete steps. Add only missing constraints, risks, trade-offs, and metrics. CRITICAL: Ensure every step explicitly addresses items from ignored_must_address, ignored_risks, and ignored_tradeoffs lists.",
+        "missing_constraints": _string_list(replan.get("missing_constraints"), max_items=10, max_chars=400),
+        "ignored_success_criteria": _string_list(replan.get("ignored_success_criteria"), max_items=10, max_chars=400),
+        "ignored_dynamic_roles": _string_list(replan.get("ignored_dynamic_roles"), max_items=8, max_chars=400),
+        "score_source": _clip_string(replan.get("score_source"), 80),
+        "replan_delta": _as_dict(replan.get("replan_delta")),
         "plan_critique": {
-            "critical_blockers": _string_list(critique.get("critical_blockers"), max_items=4, max_chars=220),
-            "ignored_must_address": _string_list(critique.get("ignored_must_address"), max_items=6, max_chars=220),
-            "ignored_risks": _string_list(critique.get("ignored_risks"), max_items=5, max_chars=220),
-            "ignored_tradeoffs": _string_list(critique.get("ignored_tradeoffs"), max_items=4, max_chars=220),
-            "recommendations": _string_list(critique.get("recommendations"), max_items=5, max_chars=220),
+            "critical_blockers": _string_list(critique.get("critical_blockers"), max_items=8, max_chars=400),
+            "ignored_must_address": _string_list(critique.get("ignored_must_address"), max_items=14, max_chars=400),
+            "ignored_risks": _string_list(critique.get("ignored_risks"), max_items=10, max_chars=400),
+            "ignored_tradeoffs": _string_list(critique.get("ignored_tradeoffs"), max_items=8, max_chars=400),
+            "missing_constraints": _string_list(critique.get("missing_constraints"), max_items=10, max_chars=400),
+            "ignored_success_criteria": _string_list(critique.get("ignored_success_criteria"), max_items=10, max_chars=400),
+            "recommendations": _string_list(critique.get("recommendations"), max_items=10, max_chars=400),
         },
     }
 
@@ -492,6 +517,8 @@ def build_compact_planner_context(state: dict) -> dict:
         },
         "balance_report": {
             "missing_perspectives": _string_list(_as_dict(state.get("balance_report")).get("missing_perspectives"), max_items=4),
+            "blind_spots": _string_list(_as_dict(state.get("balance_report")).get("blind_spots"), max_items=5),
+            "stakeholder_coverage": _dict_list(_as_dict(state.get("balance_report")).get("stakeholder_coverage"), max_items=8),
             "recommended_action": _as_dict(state.get("balance_report")).get("recommended_action", "SYNTHESIZE"),
             "dominant_perspective_found": _as_dict(state.get("balance_report")).get("dominant_perspective_found", False),
         },

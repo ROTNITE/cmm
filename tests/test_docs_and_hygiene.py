@@ -9,17 +9,6 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 class DocsAndHygieneTests(unittest.TestCase):
-    def test_formalization_empty_ai_fallback_is_silent(self):
-        from Lib.Start_formalization import formalization
-
-        buffer = io.StringIO()
-        with patch("Lib.Start_formalization.send_to_AI", return_value=""):
-            with redirect_stdout(buffer):
-                result = formalization("Привет!!!     Что делать????")
-
-        self.assertEqual(buffer.getvalue(), "")
-        self.assertEqual(result, "Привет! Что делать?")
-
     def test_docs_do_not_claim_second_round_is_deferred(self):
         docs = [
             REPO_ROOT / "README.md",
@@ -53,13 +42,10 @@ class DocsAndHygieneTests(unittest.TestCase):
         combined = "\n".join(path.read_text(encoding="utf-8") for path in docs)
 
         self.assertIn("Legacy compatibility", combined)
-        self.assertIn("Start_formalization.py", combined)
-        self.assertIn("Finish_agent.py", combined)
         self.assertIn("agent_critic.py", combined)
         self.assertIn("plan_critic.py", combined)
         self.assertIn("state_machine.py", combined)
         self.assertNotIn("agent_critic.py`: builds", combined)
-        self.assertNotIn("Finish_agent.py`: builds", combined)
 
     def test_legacy_agent_critic_is_silent_by_default(self):
         from Lib.agent_critic import criticize_plan
@@ -98,14 +84,6 @@ class DocsAndHygieneTests(unittest.TestCase):
         self.assertIsInstance(result, dict)
         self.assertEqual(result["source"], "plan_critic_compat")
         self.assertEqual(result["legacy_depth"], "standard")
-
-    def test_finish_agent_accepts_none_critique(self):
-        from Lib.Finish_agent import finish_answer
-
-        with patch("Lib.Finish_agent.send_to_AI", return_value=" polished answer "):
-            result = finish_answer("query", {"steps": []}, critique=None, previous_answer="draft")
-
-        self.assertEqual(result, "polished answer")
 
 
 if __name__ == "__main__":

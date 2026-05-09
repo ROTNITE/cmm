@@ -1,0 +1,402 @@
+================================================================================
+[*] CASE: V2-001
+Query: Что такое коллективная метамодерация?
+
+[>] Stage: BASELINE
+  [AI] AI Call #1 [unknown]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 16 prompt + 39 completion = 55 total
+    Cost: $0.000048 input + $0.000585 output = $0.000633 total
+    Running total: 55 tokens, $0.0006 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  Starting CMM state machine (route_mode=AUTO)
+  [AI] AI Call #2 [router]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 216 prompt + 27 completion = 243 total
+    Cost: $0.000648 input + $0.000405 output = $0.001053 total
+    Running total: 298 tokens, $0.0017 cost
+  [AI] AI Call #3 [unknown]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 215 prompt + 49 completion = 264 total
+    Cost: $0.000645 input + $0.000735 output = $0.001380 total
+    Running total: 562 tokens, $0.0031 cost
+  CMM completed with state: FINALIZE
+  [R] Router: DIRECT (complexity: low)
+[OK] CMM complete
+
+[>] Stage: JUDGE
+  [AI] AI Call #4 [judge]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 246 prompt + 102 completion = 348 total
+    Cost: $0.000738 input + $0.001530 output = $0.002268 total
+    Running total: 910 tokens, $0.0053 cost
+[OK] JUDGE complete
+
+
+[+] Winner: BASELINE
+Time: 37.92s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-001
+Query: Что такое коллективная метамодерация?
+--------------------------------------------------------------------------------
+[R] Router: DIRECT (complexity: low)
+
+[J] Judge evaluation:
+      Baseline overall: 8.00/10
+      CMM overall: 8.00/10
+      Delta: +0.00
+      Winner: BASELINE
+      Reason: Answer A provides a concise and clear explanation that fits within the given constraints. It explains the concept of collective metamoderation while covering key aspects such as its purpose (improving
+
+[+] Winner: BASELINE
+Time: 37.92s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-002
+Query: Кратко объясни разницу между метрикой и KPI.
+
+[>] Stage: BASELINE
+  [AI] AI Call #5 [unknown]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 18 prompt + 70 completion = 88 total
+    Cost: $0.000054 input + $0.001050 output = $0.001104 total
+    Running total: 998 tokens, $0.0064 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  Starting CMM state machine (route_mode=AUTO)
+  [AI] AI Call #6 [router]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 219 prompt + 26 completion = 245 total
+    Cost: $0.000657 input + $0.000390 output = $0.001047 total
+    Running total: 1243 tokens, $0.0075 cost
+  [AI] AI Call #7 [unknown]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 215 prompt + 39 completion = 254 total
+    Cost: $0.000645 input + $0.000585 output = $0.001230 total
+    Running total: 1497 tokens, $0.0087 cost
+  CMM completed with state: FINALIZE
+  [R] Router: DIRECT (complexity: low)
+[OK] CMM complete
+
+[>] Stage: JUDGE
+  [AI] AI Call #8 [judge]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 263 prompt + 86 completion = 349 total
+    Cost: $0.000789 input + $0.001290 output = $0.002079 total
+    Running total: 1846 tokens, $0.0108 cost
+[OK] JUDGE complete
+
+
+[+] Winner: CMM
+Time: 31.23s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-002
+Query: Кратко объясни разницу между метрикой и KPI.
+--------------------------------------------------------------------------------
+[R] Router: DIRECT (complexity: low)
+
+[J] Judge evaluation:
+      Baseline overall: 8.00/10
+      CMM overall: 9.00/10
+      Delta: +1.00
+      Winner: CMM
+      Reason: Answer A provides a clearer and more concise explanation of the difference between metrics and KPIs. It directly addresses the distinction and provides a well-suited example, demonstrating a strong un
+
+[+] Winner: CMM
+Time: 31.23s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-003
+Query: What is a trade-off in product design?
+
+[>] Stage: BASELINE
+  [AI] AI Call #9 [unknown]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 15 prompt + 32 completion = 47 total
+    Cost: $0.000045 input + $0.000480 output = $0.000525 total
+    Running total: 1893 tokens, $0.0113 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  Starting CMM state machine (route_mode=AUTO)
+  [AI] AI Call #10 [router]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 214 prompt + 24 completion = 238 total
+    Cost: $0.000642 input + $0.000360 output = $0.001002 total
+    Running total: 2131 tokens, $0.0123 cost
+  [AI] AI Call #11 [unknown]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 213 prompt + 38 completion = 251 total
+    Cost: $0.000639 input + $0.000570 output = $0.001209 total
+    Running total: 2382 tokens, $0.0135 cost
+  CMM completed with state: FINALIZE
+  [R] Router: DIRECT (complexity: low)
+[OK] CMM complete
+
+[>] Stage: JUDGE
+  [AI] AI Call #12 [router]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 225 prompt + 83 completion = 308 total
+    Cost: $0.000675 input + $0.001245 output = $0.001920 total
+    Running total: 2690 tokens, $0.0155 cost
+[OK] JUDGE complete
+
+
+[+] Winner: CMM
+Time: 32.43s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-003
+Query: What is a trade-off in product design?
+--------------------------------------------------------------------------------
+[R] Router: DIRECT (complexity: low)
+
+[J] Judge evaluation:
+      Baseline overall: 8.00/10
+      CMM overall: 8.00/10
+      Delta: +0.00
+      Winner: CMM
+      Reason: Answer B provides a more comprehensive example and balances competing factors better. The trade-off is explained in terms of multiple dimensions (performance, cost, features), and a clear example of t
+
+[+] Winner: CMM
+Time: 32.43s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-004
+Query: Помоги выбрать формат еженедельной встречи команды.
+
+[>] Stage: BASELINE
+  [AI] AI Call #13 [unknown]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 22 prompt + 202 completion = 224 total
+    Cost: $0.000066 input + $0.003030 output = $0.003096 total
+    Running total: 2914 tokens, $0.0185 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  Starting CMM state machine (route_mode=AUTO)
+  [AI] AI Call #14 [router]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 228 prompt + 28 completion = 256 total
+    Cost: $0.000684 input + $0.000420 output = $0.001104 total
+    Running total: 3170 tokens, $0.0197 cost
+  [AI] AI Call #15 [unknown]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 45 prompt + 4 completion = 49 total
+    Cost: $0.000135 input + $0.000060 output = $0.000195 total
+    Running total: 3219 tokens, $0.0198 cost
+  [AI] AI Call #16 [router]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 321 prompt + 125 completion = 446 total
+    Cost: $0.000963 input + $0.001875 output = $0.002838 total
+    Running total: 3665 tokens, $0.0227 cost
+  [AI] AI Call #17 [router]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 321 prompt + 132 completion = 453 total
+    Cost: $0.000963 input + $0.001980 output = $0.002943 total
+    Running total: 4118 tokens, $0.0256 cost
+  [AI] AI Call #18 [router]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 324 prompt + 117 completion = 441 total
+    Cost: $0.000972 input + $0.001755 output = $0.002727 total
+    Running total: 4559 tokens, $0.0284 cost
+  [AI] AI Call #19 [router]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 325 prompt + 108 completion = 433 total
+    Cost: $0.000975 input + $0.001620 output = $0.002595 total
+    Running total: 4992 tokens, $0.0309 cost
+  [AI] AI Call #20 [router]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 652 prompt + 300 completion = 952 total
+    Cost: $0.001956 input + $0.004500 output = $0.006456 total
+    Running total: 5944 tokens, $0.0374 cost
+  [AI] AI Call #21 [router]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 1032 prompt + 129 completion = 1161 total
+    Cost: $0.003096 input + $0.001935 output = $0.005031 total
+    Running total: 7105 tokens, $0.0424 cost
+  [AI] AI Call #22 [router]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 1206 prompt + 251 completion = 1457 total
+    Cost: $0.003618 input + $0.003765 output = $0.007383 total
+    Running total: 8562 tokens, $0.0498 cost
+  [AI] AI Call #23 [router]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 1668 prompt + 211 completion = 1879 total
+    Cost: $0.005004 input + $0.003165 output = $0.008169 total
+    Running total: 10441 tokens, $0.0580 cost
+  [AI] AI Call #24 [router]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 1299 prompt + 262 completion = 1561 total
+    Cost: $0.003897 input + $0.003930 output = $0.007827 total
+    Running total: 12002 tokens, $0.0658 cost
+  [AI] AI Call #25 [router]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 1782 prompt + 357 completion = 2139 total
+    Cost: $0.005346 input + $0.005355 output = $0.010701 total
+    Running total: 14141 tokens, $0.0765 cost
+  [AI] AI Call #26 [balance_analyzer]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 788 prompt + 285 completion = 1073 total
+    Cost: $0.002364 input + $0.004275 output = $0.006639 total
+    Running total: 15214 tokens, $0.0832 cost
+  [AI] AI Call #27 [balance_analyzer]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 837 prompt + 177 completion = 1014 total
+    Cost: $0.002511 input + $0.002655 output = $0.005166 total
+    Running total: 16228 tokens, $0.0883 cost
+  [AI] AI Call #28 [balance_analyzer]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 1137 prompt + 324 completion = 1461 total
+    Cost: $0.003411 input + $0.004860 output = $0.008271 total
+    Running total: 17689 tokens, $0.0966 cost
+  [AI] AI Call #29 [balance_analyzer]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 876 prompt + 167 completion = 1043 total
+    Cost: $0.002628 input + $0.002505 output = $0.005133 total
+    Running total: 18732 tokens, $0.1017 cost
+  [AI] AI Call #30 [balance_analyzer]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 1172 prompt + 337 completion = 1509 total
+    Cost: $0.003516 input + $0.005055 output = $0.008571 total
+    Running total: 20241 tokens, $0.1103 cost
+  [AI] AI Call #31 [balance_analyzer]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 889 prompt + 155 completion = 1044 total
+    Cost: $0.002667 input + $0.002325 output = $0.004992 total
+    Running total: 21285 tokens, $0.1153 cost
+  [AI] AI Call #32 [balance_analyzer]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 1176 prompt + 379 completion = 1555 total
+    Cost: $0.003528 input + $0.005685 output = $0.009213 total
+    Running total: 22840 tokens, $0.1245 cost
+  CMM completed with state: FINALIZE
+  [R] Router: LIGHT_CMM (complexity: medium)
+  [E] Expert: strategist (strategy) - valid
+  [E] Expert: engineer (engineering) - valid
+  [E] Expert: risk_manager (risk) - valid
+  [E] Expert: user_advocate (user) - valid
+  [P] Plan critique: needs_revision
+  [P] Plan critique: needs_revision
+  [P] Plan critique: needs_revision
+  [M] Moderation: REVISE (best-effort)
+  [!] Warning: plan_needs_revision_after_max_iters; proceeding_with_best_effort_plan
+  [!] Warning: answer_moderation_revise_best_effort
+[OK] CMM complete
+
+[>] Stage: JUDGE
+  [AI] AI Call #33 [judge]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 722 prompt + 98 completion = 820 total
+    Cost: $0.002166 input + $0.001470 output = $0.003636 total
+    Running total: 23660 tokens, $0.1281 cost
+[OK] JUDGE complete
+
+
+[+] Winner: CMM
+Time: 244.01s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-004
+Query: Помоги выбрать формат еженедельной встречи команды.
+--------------------------------------------------------------------------------
+[R] Router: LIGHT_CMM (complexity: medium)
+[E] Expert: strategist (strategy) - valid
+[E] Expert: engineer (engineering) - valid
+[E] Expert: risk_manager (risk) - valid
+[E] Expert: user_advocate (user) - valid
+[P] Plan generated:
+      Main idea: Создание формата для еженедельной встречи команды разработки с учетом ограничения по времени и необходимости синхронизации.
+      Steps (4):
+        1. Выбор формата встречи
+        2. Определение временных рамок и структуры встречи
+        3. Интеграция инструментов для асинхронной синхронизации
+        4. Деление задач на категории и приоритеты
+      Source: model, Format: json
+[P] Plan critique: needs_revision
+      Overall score: 7.50/10
+      Scores:
+          query_alignment: 0.0
+          constraint_coverage: 0.0
+          success_criteria_coverage: 0.0
+          expert_input_coverage: 0.0
+          risk_coverage: 0.0
+          conflict_resolution: 0.0
+      CRITICAL BLOCKERS (1):
+          - N/A
+      Ignored must_address: 3
+      Ignored risks: 4
+      Ignored tradeoffs: 1
+      Feedback (5):
+          - The approach to the problem is generally aligned with the constraints of a 30-minute meeting and syn
+          - However, it could benefit from more explicit success criteria, risk mitigation around time managemen
+          - Cover deliberation_brief.must_address items.
+[P] Plan critique: needs_revision
+      Overall score: 7.50/10
+      Scores:
+          query_alignment: 0.0
+          constraint_coverage: 0.0
+          success_criteria_coverage: 0.0
+          expert_input_coverage: 0.0
+          risk_coverage: 0.0
+          conflict_resolution: 0.0
+      Ignored must_address: 4
+      Ignored risks: 7
+      Ignored tradeoffs: 1
+      Feedback (5):
+          - The approach to the problem is generally aligned with the constraints of a 30-minute meeting and syn
+          - However, it could benefit from more explicit success criteria, risk mitigation around time managemen
+          - Cover deliberation_brief.must_address items.
+[P] Plan critique: needs_revision
+      Overall score: 7.50/10
+      Scores:
+          query_alignment: 0.0
+          constraint_coverage: 0.0
+          success_criteria_coverage: 0.0
+          expert_input_coverage: 0.0
+          risk_coverage: 0.0
+          conflict_resolution: 0.0
+      Ignored must_address: 4
+      Ignored risks: 7
+      Ignored tradeoffs: 1
+      Feedback (5):
+          - The approach to the problem is generally aligned with the constraints of a 30-minute meeting and syn
+          - However, it could benefit from more explicit success criteria, risk mitigation around time managemen
+          - Cover deliberation_brief.must_address items.
+[B] Balance analysis:
+      Recommended action: DEEPEN
+[M] Moderation: REVISE (best-effort)
+[!] Warning: plan_needs_revision_after_max_iters; proceeding_with_best_effort_plan
+[!] Warning: answer_moderation_revise_best_effort
+
+[J] Judge evaluation:
+      Baseline overall: 7.00/10
+      CMM overall: 9.00/10
+      Delta: +2.00
+      Winner: CMM
+      Reason: Answer A provides a more comprehensive response with clear formatting options, detailed considerations of risks, time management, and actionable steps. It carefully addresses the 30-minute constraint 
+
+[+] Winner: CMM
+Time: 244.01s
+================================================================================
+
+

@@ -1,0 +1,5 @@
+case_id,expected_mode,actual_mode,router_mode_match,estimated_cost_class,answer_chars,warnings,errors,cmm_final_state
+V2-001,DIRECT,DIRECT,True,S,530,,,FINALIZE
+V2-007,LIGHT_CMM,LIGHT_CMM,True,M,1368,plan_critique_stall_detected | plan_critique_stall_reason:ignored_sets_not_shrinking | plan_needs_revision_after_max_iters; proceeding_with_best_effort_plan | answer_moderation_revise_best_effort | best_effort_answer_from_plan: answer_moderation_revise_best_effort,,FINALIZE
+V2-009,FULL_CMM,FULL_CMM,True,L,2071,meta_recheck_budget_exhausted_after_rebalance | plan_critique_stall_detected | plan_critique_stall_reason:identical_repeat | plan_needs_revision_after_max_iters; proceeding_with_best_effort_plan | answer_moderation_revise_best_effort | best_effort_answer_from_plan: answer_moderation_revise_best_effort,,FINALIZE
+V2-011,FULL_CMM,FULL_CMM,True,L,1656,meta_recheck_budget_exhausted_after_rebalance | plan_critique_stall_detected | plan_critique_stall_reason:ignored_sets_not_shrinking | plan_rejected_after_max_iters; proceeding_with_best_effort_plan | answer_moderation_revise_best_effort | best_effort_answer_from_plan: answer_moderation_revise_best_effort,,FINALIZE

@@ -49,12 +49,14 @@ class JsonContractTests(unittest.TestCase):
                 model="test-model",
                 temp=0.1,
                 tokens=50,
+                log_purpose="judge",
             )
 
         self.assertEqual(result["payload"], {"ok": True})
         self.assertEqual(result["attempts"], 1)
         self.assertEqual(result["warnings"], [])
         mocked_send.assert_called_once()
+        self.assertEqual(mocked_send.call_args.kwargs["log_purpose"], "judge")
 
     def test_call_json_model_retries_invalid_then_valid(self):
         from Lib.json_retry import call_json_model
@@ -122,8 +124,14 @@ class JsonContractTests(unittest.TestCase):
         self.assertEqual(plan["parse_warnings"], [])
         self.assertEqual(plan["json_attempts"], 1)
         self.assertEqual(plan["source"], "model")
+        self.assertIn("constraints_covered", plan)
+        self.assertIn("risks_mitigated", plan)
 
     def test_develop_plan_passes_model_to_send_to_ai(self):
+        """Test that explicit model parameter is passed to send_to_AI.
+
+        NEW BEHAVIOR: Explicit parameter has highest priority.
+        """
         from Lib.plan_development import develop_plan
 
         raw = json.dumps(
@@ -184,6 +192,168 @@ class JsonContractTests(unittest.TestCase):
         self.assertIn("limited budget", str(plan["steps"]))
         self.assertIn("clear metrics", str(plan["steps"]))
         self.assertTrue(plan["steps"])
+        self.assertIn("constraints_covered", plan)
+
+    def test_planner_rich_context_requires_linkage_or_falls_back(self):
+        from Lib.plan_development import develop_plan
+
+        raw = json.dumps(
+            {
+                "main_idea": "Do the project",
+                "preparation": [],
+                "steps": [
+                    {
+                        "number": "1",
+                        "title": "Assess the current state",
+                        "substeps": ["Review", "Discuss"],
+                        "uses_expert_inputs": [],
+                    }
+                ],
+                "nuances": [],
+                "potential_problems": [],
+                "result": "Done",
+            },
+            ensure_ascii=False,
+        )
+
+        context = {
+            "query_intake": {
+                "constraints": ["privacy constraint"],
+                "success_criteria": ["clear measurement"],
+            },
+            "deliberation_brief": {
+                "must_address": ["address user trust"],
+                "expert_risks": ["legal compliance risk"],
+                "stakeholder_coverage": ["users", "legal"],
+            },
+            "conflict_report": {
+                "unresolved_tradeoffs": [{"tradeoff": "speed vs safety"}],
+                "blind_spots": ["missing legal review"],
+            },
+        }
+
+        with patch("Lib.json_retry.send_to_AI", return_value=raw):
+            plan = develop_plan("query", context=context)
+
+        # After repair, plan should be json and have inferred coverage
+        self.assertEqual(plan["raw_format"], "json")
+        # Repair should have added coverage even if model didn't provide it
+        self.assertTrue(plan["must_address_mapping"])
+        self.assertTrue(plan["stakeholder_coverage"])
+        # Check that repair actually worked by verifying coverage was added
+        self.assertGreater(len(plan["must_address_mapping"]), 0)
+
+    def test_planner_rejects_fake_mapping_without_real_coverage(self):
+        from Lib.plan_development import develop_plan
+
+        raw = json.dumps(
+            {
+                "main_idea": "Move the project forward",
+                "preparation": [],
+                "steps": [
+                    {
+                        "number": "1",
+                        "title": "Assess the situation",
+                        "substeps": ["Review status"],
+                        "uses_expert_inputs": ["general note"],
+                    }
+                ],
+                "nuances": [],
+                "potential_problems": [],
+                "result": "Done",
+                "stakeholder_coverage": [{"stakeholder": "users", "covered_in_steps": []}],
+                "must_address_mapping": [{"item": "privacy constraint", "covered_in_steps": [], "coverage_type": "constraint"}],
+            },
+            ensure_ascii=False,
+        )
+
+        context = {
+            "query_intake": {
+                "constraints": ["privacy constraint"],
+                "success_criteria": ["clear measurement"],
+            },
+            "deliberation_brief": {
+                "must_address": ["address user trust", "privacy constraint", "legal review"],
+                "expert_risks": ["legal compliance risk"],
+                "stakeholder_coverage": [{"stakeholder": "users"}],
+            },
+            "conflict_report": {
+                "unresolved_tradeoffs": [{"tradeoff": "speed vs safety"}],
+                "blind_spots": ["missing legal review"],
+            },
+        }
+
+        with patch("Lib.json_retry.send_to_AI", return_value=raw):
+            plan = develop_plan("query", context=context)
+
+        # After repair, plan should be json and have inferred coverage
+        self.assertEqual(plan["raw_format"], "json")
+        # Repair should have added coverage even if model didn't provide it
+        self.assertTrue(plan["must_address_mapping"])
+        self.assertTrue(plan["stakeholder_coverage"])
+        # Check that repair actually worked by verifying coverage was added
+        self.assertGreater(len(plan["must_address_mapping"]), 0)
+
+    def test_planner_rich_context_keeps_mapping_fields(self):
+        from Lib.plan_development import develop_plan
+
+        raw = json.dumps(
+            {
+                "main_idea": "Run a privacy-safe pilot",
+                "preparation": ["Align owners"],
+                "steps": [
+                    {
+                        "number": "1",
+                        "title": "Define a privacy-safe pilot scope",
+                        "substeps": ["Limit personal data", "Set success metrics"],
+                        "uses_expert_inputs": ["legal review", "risk review"],
+                        "covers_constraints": ["privacy constraint"],
+                        "covers_success_criteria": ["clear measurement"],
+                        "mitigates_risks": ["legal compliance risk"],
+                        "handles_tradeoffs": ["speed vs safety"],
+                        "serves_stakeholders": ["users", "legal"],
+                    }
+                ],
+                "nuances": [],
+                "potential_problems": ["legal compliance risk"],
+                "result": "Pilot can launch safely",
+                "constraints_covered": ["privacy constraint"],
+                "success_criteria_covered": ["clear measurement"],
+                "risks_mitigated": ["legal compliance risk"],
+                "tradeoffs_handled": ["speed vs safety"],
+                "stakeholder_coverage": [
+                    {"stakeholder": "users", "covered_in_steps": ["1"]},
+                    {"stakeholder": "legal", "covered_in_steps": ["1"]},
+                ],
+                "must_address_mapping": [
+                    {"item": "address user trust", "covered_in_steps": ["1"], "coverage_type": "stakeholder"}
+                ],
+            },
+            ensure_ascii=False,
+        )
+
+        context = {
+            "query_intake": {
+                "constraints": ["privacy constraint"],
+                "success_criteria": ["clear measurement"],
+            },
+            "deliberation_brief": {
+                "must_address": ["address user trust"],
+                "expert_risks": ["legal compliance risk"],
+            },
+            "conflict_report": {
+                "unresolved_tradeoffs": [{"tradeoff": "speed vs safety"}],
+            },
+        }
+
+        with patch("Lib.json_retry.send_to_AI", return_value=raw):
+            plan = develop_plan("query", context=context)
+
+        self.assertEqual(plan["raw_format"], "json")
+        self.assertTrue(plan["must_address_mapping"])
+        self.assertTrue(plan["stakeholder_coverage"])
+        self.assertEqual(plan["steps"][0]["covers_constraints"], ["privacy constraint"])
+        self.assertEqual(plan["steps"][0]["serves_stakeholders"], ["users", "legal"])
 
     def test_planner_retries_invalid_then_valid_json(self):
         from Lib.plan_development import develop_plan
@@ -227,6 +397,7 @@ class JsonContractTests(unittest.TestCase):
 
     def test_moderator_uses_roomy_token_budget_for_json_schema(self):
         from Lib.agent_moderator import moderate_answer
+        from Lib.config import get_stage_settings
 
         with patch("Lib.json_retry.send_to_AI", return_value=json.dumps(_moderation_payload())) as mocked_send:
             moderate_answer(
@@ -235,7 +406,7 @@ class JsonContractTests(unittest.TestCase):
                 answer="answer",
             )
 
-        self.assertGreaterEqual(mocked_send.call_args.kwargs["tokens"], 1000)
+        self.assertEqual(mocked_send.call_args.kwargs["tokens"], get_stage_settings("moderator")["tokens"])
 
     def test_moderator_invalid_json_fallback_records_warning(self):
         from Lib.agent_moderator import moderate_answer
@@ -274,7 +445,10 @@ class JsonContractTests(unittest.TestCase):
     def test_run_moderated_loop_returns_phase6_contract(self):
         from Lib.agent_moderator import run_moderated_loop
 
-        with patch("Lib.agent_moderator.improve_plan_to_answer", return_value={"answer": "final answer"}), \
+        with patch(
+            "Lib.agent_moderator.improve_plan_to_answer",
+            return_value={"answer": "final answer", "meta": {"source": "model"}},
+        ), \
              patch("Lib.agent_moderator.moderate_answer", return_value=_moderation_payload("ACCEPT")):
             result = run_moderated_loop(
                 original_query="query",
@@ -289,6 +463,7 @@ class JsonContractTests(unittest.TestCase):
         self.assertEqual(result["critical_issues"], [])
         self.assertEqual(result["revision_count"], 0)
         self.assertEqual(result["source"], "moderated_loop")
+        self.assertEqual(result["answer_generation_source"], "model")
         self.assertIn("reports", result)
 
     def test_run_moderated_loop_reject_contract_clears_final_answer(self):

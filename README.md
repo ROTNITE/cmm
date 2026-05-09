@@ -29,8 +29,8 @@ python tools/analyze_eval_routing.py --input eval_real_20/results.csv --output e
 
 ## Environment
 
-1. Create a local `.env` file.
-2. Set API key and base URL for your provider.
+1. Edit `cmm_config.json` for non-secret defaults such as model, base URL, and API-key env var name.
+2. Create a local `.env` file for secrets and optional overrides.
 3. Install dependencies from `requirements.txt`.
 
 ### Option A: Claude via OmniRoute (recommended for agent testing)
@@ -41,8 +41,19 @@ python tools/analyze_eval_routing.py --input eval_real_20/results.csv --output e
 # Copy the key and add to .env:
 
 OMNIROUTE_API_KEY=sk-your-omniroute-key
-OMNIROUTE_BASE_URL=http://localhost:20128/v1
-AI_MODEL=kr/claude-sonnet-4.5
+```
+
+Then set in `cmm_config.json`:
+
+```json
+{
+  "model": "kr/claude-sonnet-4.5",
+  "judge_model": "kr/claude-sonnet-4.5",
+  "api": {
+    "base_url": "http://localhost:20128/v1",
+    "api_key_env": "OMNIROUTE_API_KEY"
+  }
+}
 ```
 
 Verify setup:
@@ -54,10 +65,9 @@ curl http://localhost:20128/v1/models -H "Authorization: Bearer YOUR_KEY"
 
 ```bash
 DEEPSEEK_API_KEY=sk-your-deepseek-key
-AI_MODEL=deepseek-chat
 ```
 
-Do not commit real secrets. `.env` and `Api.env` are ignored. The API client reads secrets only at call time and does not print key values.
+`cmm_config.json` is tracked and should contain only non-secret defaults. `cmm_config.local.json` is ignored and can be used for machine-local non-secret overrides. `.env` and `Api.env` are ignored and should contain real keys. Advanced process-level overrides such as `CMM_MODEL`, `CMM_BASE_URL`, and `CMM_API_KEY_ENV` are also supported, but the normal workflow is: change model/base URL in `cmm_config.json`, keep the real key in `.env`. The API client reads secrets only at call time and does not print key values.
 
 ## Running CMM
 
@@ -77,7 +87,7 @@ print(result["final_answer"])
 print(result["trace_report"])
 ```
 
-`run_cmm(query, *, max_iters=2, model="deepseek-chat", route_mode="AUTO", parallel_mode="SEQUENTIAL", max_workers=None, max_deliberation_rounds=1)` is the central MVP entrypoint. Existing calls without the newer optional keywords still work. Internally it delegates to a bounded CMM state machine with deterministic routing. `max_deliberation_rounds` is capped to `1..2`; the default preserves the original one-round behavior.
+`run_cmm(query, *, max_iters=None, model=None, route_mode=None, parallel_mode=None, max_workers=None, max_deliberation_rounds=None)` is the central MVP entrypoint. Existing calls still work. When optional values are omitted, they come from `cmm_config.json` / `.env`; explicit arguments still override config for that call. Internally it delegates to a bounded CMM state machine with deterministic routing. `max_deliberation_rounds` is capped to `1..2`; the default preserves the original one-round behavior.
 
 For a compact demo/debug view:
 

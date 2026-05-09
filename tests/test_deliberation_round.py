@@ -151,7 +151,7 @@ class DeliberationRoundTests(unittest.TestCase):
 
         captured = {}
 
-        def fake_send(user_prompt, system_prompt, temp, tokens, model):
+        def fake_send(user_prompt, system_prompt, temp, tokens, model, **kwargs):
             captured["user_prompt"] = user_prompt
             captured["system_prompt"] = system_prompt
             return json.dumps(_model_payload())

@@ -1,0 +1,38 @@
+{
+  "cases": 1,
+  "cmm_wins": 0,
+  "baseline_wins": 0,
+  "ties": 1,
+  "unjudged": 0,
+  "mode": "real",
+  "judge_mode": "llm",
+  "mean_cmm_overall": 0.0,
+  "mean_baseline_overall": 0.0,
+  "mean_overall_delta": 0.0,
+  "interpretation": "Limited first evaluation evidence only. This is not proof of universal CMM superiority.",
+  "output_paths": {
+    "csv": "eval_fixes_test_debug\\results.csv",
+    "json": "eval_fixes_test_debug\\results.json",
+    "summary": "eval_fixes_test_debug\\summary.json",
+    "cases_jsonl": "eval_fixes_test_debug\\cases.jsonl",
+    "routing_review_csv": "eval_fixes_test_debug\\routing_review.csv"
+  },
+  "expected_mode_distribution": {
+    "LIGHT_CMM": 1
+  },
+  "actual_mode_distribution": {
+    "FULL_CMM_DEGRADED": 1
+  },
+  "router_expected_cases": 1,
+  "router_mode_matches": 0,
+  "router_mode_accuracy": 0.0,
+  "technical_failures_by_mode": {},
+  "direct_failures": 0,
+  "light_failures": 0,
+  "full_failures": 0,
+  "average_cmm_answer_length": 1139.0,
+  "average_estimated_cost_score": 3.0,
+  "estimated_cost_class_distribution": {
+    "L": 1
+  }
+}

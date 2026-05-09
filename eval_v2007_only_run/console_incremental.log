@@ -1,0 +1,183 @@
+================================================================================
+[*] CASE: V2-007
+Query: Как выбрать пилотный канал продвижения для локального сервиса?
+
+[>] Stage: BASELINE
+  [AI] AI Call #1 [baseline]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 21 prompt + 193 completion = 214 total
+    Cost: $0.000063 input + $0.002895 output = $0.002958 total
+    Running total: 214 tokens, $0.0030 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  Starting CMM state machine (route_mode=AUTO)
+  [AI] AI Call #2 [query_intake]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 225 prompt + 26 completion = 251 total
+    Cost: $0.000675 input + $0.000390 output = $0.001065 total
+    Running total: 465 tokens, $0.0040 cost
+  [AI] AI Call #3 [expert_agent]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 252 prompt + 106 completion = 358 total
+    Cost: $0.000756 input + $0.001590 output = $0.002346 total
+    Running total: 823 tokens, $0.0064 cost
+  [AI] AI Call #4 [expert_agent]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 252 prompt + 102 completion = 354 total
+    Cost: $0.000756 input + $0.001530 output = $0.002286 total
+    Running total: 1177 tokens, $0.0087 cost
+  [AI] AI Call #5 [expert_agent]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 255 prompt + 93 completion = 348 total
+    Cost: $0.000765 input + $0.001395 output = $0.002160 total
+    Running total: 1525 tokens, $0.0108 cost
+  [AI] AI Call #6 [expert_agent]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 256 prompt + 97 completion = 353 total
+    Cost: $0.000768 input + $0.001455 output = $0.002223 total
+    Running total: 1878 tokens, $0.0130 cost
+  [AI] AI Call #7 [expert_agent]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 255 prompt + 107 completion = 362 total
+    Cost: $0.000765 input + $0.001605 output = $0.002370 total
+    Running total: 2240 tokens, $0.0154 cost
+  [AI] AI Call #8 [expert_agent]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 253 prompt + 108 completion = 361 total
+    Cost: $0.000759 input + $0.001620 output = $0.002379 total
+    Running total: 2601 tokens, $0.0178 cost
+  [AI] AI Call #9 [expert_agent]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 252 prompt + 117 completion = 369 total
+    Cost: $0.000756 input + $0.001755 output = $0.002511 total
+    Running total: 2970 tokens, $0.0203 cost
+  [AI] AI Call #10 [planner]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 419 prompt + 655 completion = 1074 total
+    Cost: $0.001257 input + $0.009825 output = $0.011082 total
+    Running total: 4044 tokens, $0.0314 cost
+  [AI] AI Call #11 [plan_critic]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 1326 prompt + 73 completion = 1399 total
+    Cost: $0.003978 input + $0.001095 output = $0.005073 total
+    Running total: 5443 tokens, $0.0365 cost
+  [AI] AI Call #12 [planner]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 1104 prompt + 570 completion = 1674 total
+    Cost: $0.003312 input + $0.008550 output = $0.011862 total
+    Running total: 7117 tokens, $0.0483 cost
+  [AI] AI Call #13 [plan_critic]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 2286 prompt + 128 completion = 2414 total
+    Cost: $0.006858 input + $0.001920 output = $0.008778 total
+    Running total: 9531 tokens, $0.0571 cost
+  [AI] AI Call #14 [answer_generator]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 1317 prompt + 321 completion = 1638 total
+    Cost: $0.003951 input + $0.004815 output = $0.008766 total
+    Running total: 11169 tokens, $0.0659 cost
+  [AI] AI Call #15 [moderator]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 735 prompt + 61 completion = 796 total
+    Cost: $0.002205 input + $0.000915 output = $0.003120 total
+    Running total: 11965 tokens, $0.0690 cost
+  CMM completed with state: FINALIZE
+  [R] Router: LIGHT_CMM (complexity: medium)
+    Reasoning: Operational plan for small team without high-risk or multi-stakeholder governance.
+  [E] Expert: strategist (strategy) - valid
+  [E] Expert: engineer (engineering) - valid
+  [E] Expert: risk_manager (risk) - valid
+  [E] Expert: user_advocate (user) - valid
+  [E] Expert: domain_expert_finance (domain) - valid
+  [E] Expert: cost_optimizer (cost) - valid
+  [E] Expert: implementation_owner (implementation) - valid
+  [P] Plan critique: needs_revision
+  [P] Plan critique: needs_revision
+  [M] Moderation: ACCEPT
+  [!] Warning: plan_critique_stall_detected
+  [!] Warning: plan_critique_stall_reason:identical_repeat
+  [!] Warning: plan_needs_revision_after_max_iters; proceeding_with_best_effort_plan
+[OK] CMM complete
+
+[>] Stage: JUDGE
+  [AI] AI Call #16 [judge]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 653 prompt + 102 completion = 755 total
+    Cost: $0.001959 input + $0.001530 output = $0.003489 total
+    Running total: 12720 tokens, $0.0725 cost
+[OK] JUDGE complete
+
+
+[+] Winner: BASELINE
+Time: 167.45s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-007
+Query: Как выбрать пилотный канал продвижения для локального сервиса?
+--------------------------------------------------------------------------------
+[R] Router: LIGHT_CMM (complexity: medium)
+    Reasoning: Operational plan for small team without high-risk or multi-stakeholder governance.
+[E] Expert: strategist (strategy) - valid
+[E] Expert: engineer (engineering) - valid
+[E] Expert: risk_manager (risk) - valid
+[E] Expert: user_advocate (user) - valid
+[E] Expert: domain_expert_finance (domain) - valid
+[E] Expert: cost_optimizer (cost) - valid
+[E] Expert: implementation_owner (implementation) - valid
+[P] Plan generated:
+      Main idea: Select a low-cost, measurable pilot marketing channel to test local demand, ensuring clear tracking of results and optimization potential.
+      Steps (3):
+        1. Choose a low-cost, measurable marketing channel
+        2. Measure and evaluate the results from the pilot channel
+        3. Evaluate and scale successful channels
+      Source: model, Format: json
+[P] Plan critique: needs_revision
+      Overall score: 0.00/10
+      Scores:
+          query_alignment: 0.0
+          constraint_coverage: 0.0
+          success_criteria_coverage: 0.0
+          expert_input_coverage: 0.0
+          risk_coverage: 0.0
+          conflict_resolution: 0.0
+      Ignored must_address: 4
+      Ignored risks: 7
+      Feedback (2):
+          - Cover deliberation_brief.must_address items.
+          - Add mitigation for ignored expert risks.
+[P] Plan critique: needs_revision
+      Overall score: 0.00/10
+      Scores:
+          query_alignment: 0.0
+          constraint_coverage: 0.0
+          success_criteria_coverage: 0.0
+          expert_input_coverage: 0.0
+          risk_coverage: 0.0
+          conflict_resolution: 0.0
+      Ignored must_address: 4
+      Ignored risks: 7
+      Feedback (2):
+          - Cover deliberation_brief.must_address items.
+          - Add mitigation for ignored expert risks.
+[B] Balance analysis:
+      Recommended action: DEEPEN
+[M] Moderation: ACCEPT
+[!] Warning: plan_critique_stall_detected
+[!] Warning: plan_critique_stall_reason:identical_repeat
+[!] Warning: plan_needs_revision_after_max_iters; proceeding_with_best_effort_plan
+
+[J] Judge evaluation:
+      Baseline overall: 9.00/10
+      CMM overall: 9.00/10
+      Delta: +0.00
+      Winner: BASELINE
+      Reason: Answer A provides a more comprehensive and specific approach to the problem, covering all required elements, including criteria for choosing channels, minimal experiments, and result metrics. It also 
+
+[+] Winner: BASELINE
+Time: 167.45s
+================================================================================
+
+

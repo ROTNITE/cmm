@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from Lib.agent_improver import improve_plan_to_answer
+from Lib.config import get_stage_settings
 from Lib.deliberation import build_deliberation_brief
 from Lib.json_retry import call_json_model
 from Lib.json_utils import safe_json_loads, to_number, to_string_list
@@ -147,6 +148,7 @@ def moderate_answer(
     Делает оценку ответа и возвращает решение + список улучшений.
     """
 
+    stage = get_stage_settings("moderator", {"tokens": 1200, "temp": 0.25})
     critique_recs: List[str] = []
     if isinstance(critique, dict):
         critique_recs = (critique.get("recommendations") or [])[:8]
@@ -201,13 +203,11 @@ def moderate_answer(
     result = call_json_model(
         user_prompt="\n\n".join(user_prompt_parts),
         system_prompt=system_prompt,
-        temp=0.25,
-        # DeepSeek often returns a valid but long moderation object. 650 tokens
-        # truncated real JSON in eval smoke runs, so keep this stage roomy
-        # enough for the declared schema before falling back.
-        tokens=1200,
+        temp=float(stage.get("temp") or 0.25),
+        tokens=int(stage.get("tokens") or 1200),
         model=model,
         max_retries=1,
+        log_purpose="moderator",
     )
 
     parsed = result.get("payload") if isinstance(result, dict) else None
@@ -320,6 +320,10 @@ def run_moderated_loop(
         model=model,
     )
     answer = improver_out["answer"]
+    answer_generation_trace: List[Dict[str, Any]] = []
+    initial_meta = improver_out.get("meta") if isinstance(improver_out.get("meta"), dict) else {}
+    if initial_meta:
+        answer_generation_trace.append(dict(initial_meta))
 
     reports: List[Dict[str, Any]] = []
     revision_count = 0
@@ -361,6 +365,9 @@ def run_moderated_loop(
             model=model,
         )
         answer = improver_out["answer"]
+        revision_meta = improver_out.get("meta") if isinstance(improver_out.get("meta"), dict) else {}
+        if revision_meta:
+            answer_generation_trace.append(dict(revision_meta))
 
     final_report = reports[-1] if reports else {}
     final_decision = str(final_report.get("decision") or "").upper()
@@ -381,11 +388,17 @@ def run_moderated_loop(
         "critical_issues": critical_issues,
         "revision_count": revision_count,
         "source": final_report.get("source") if isinstance(final_report, dict) else "moderated_loop",
+        "answer_generation_source": (
+            answer_generation_trace[-1].get("source")
+            if answer_generation_trace and isinstance(answer_generation_trace[-1], dict)
+            else ""
+        ),
         "reports": reports,
         "trace": {
             "expert_bundle_used": isinstance(expert_bundle, dict),
             "balance_report_used": isinstance(balance_report, dict),
             "deliberation_brief": deliberation_brief,
+            "answer_generation_trace": answer_generation_trace,
         },
         "timestamp": str(datetime.now()),
     }

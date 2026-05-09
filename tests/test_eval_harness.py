@@ -83,6 +83,10 @@ class EvalHarnessTests(unittest.TestCase):
                 "answer_chars": 64,
                 "warnings_count": 1,
                 "errors_count": 0,
+                "plan_critique_score_source": "rule_recomputed",
+                "plan_critique_stall_reason": "ignored_sets_not_shrinking",
+                "answer_generation_source": "model",
+                "best_effort_trigger_reason": "",
             },
         }
 
@@ -106,6 +110,9 @@ class EvalHarnessTests(unittest.TestCase):
         self.assertEqual(result["answer_chars"], 64)
         self.assertEqual(result["warnings_count"], 1)
         self.assertEqual(result["errors_count"], 0)
+        self.assertEqual(result["plan_critique_score_source"], "rule_recomputed")
+        self.assertEqual(result["plan_critique_stall_reason"], "ignored_sets_not_shrinking")
+        self.assertEqual(result["answer_generation_source"], "model")
 
     def test_score_can_tie(self):
         from cmm.eval import score_case
@@ -227,6 +234,53 @@ class EvalHarnessTests(unittest.TestCase):
         self.assertIn("human_review_csv", summary["output_paths"])
         self.assertIn("routing_review_csv", summary["output_paths"])
         self.assertEqual(summary["router_mode_accuracy"], 1.0)
+
+    def test_run_eval_real_honors_explicit_model_and_judge_model(self):
+        from cmm.eval import run_eval
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            dataset = tmp_path / "dataset.csv"
+            _write_fixture(dataset)
+
+            with patch("cmm.eval._run_real_judged_eval", return_value={"summary": {}, "results": []}) as mock_run:
+                run_eval(
+                    str(dataset),
+                    limit=1,
+                    mode="real",
+                    judge_mode="llm",
+                    output_dir=str(tmp_path / "out"),
+                    model="kr/claude-sonnet-4.5",
+                    judge_model="kr/claude-sonnet-4.5",
+                )
+
+        mock_run.assert_called_once()
+        _, kwargs = mock_run.call_args
+        self.assertEqual(kwargs["model"], "kr/claude-sonnet-4.5")
+        self.assertEqual(kwargs["judge_model"], "kr/claude-sonnet-4.5")
+
+    def test_run_eval_real_uses_explicit_model_for_judge_when_judge_model_missing(self):
+        from cmm.eval import run_eval
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            dataset = tmp_path / "dataset.csv"
+            _write_fixture(dataset)
+
+            with patch("cmm.eval._run_real_judged_eval", return_value={"summary": {}, "results": []}) as mock_run:
+                run_eval(
+                    str(dataset),
+                    limit=1,
+                    mode="real",
+                    judge_mode="llm",
+                    output_dir=str(tmp_path / "out"),
+                    model="kr/claude-sonnet-4.5",
+                )
+
+        mock_run.assert_called_once()
+        _, kwargs = mock_run.call_args
+        self.assertEqual(kwargs["model"], "kr/claude-sonnet-4.5")
+        self.assertEqual(kwargs["judge_model"], "kr/claude-sonnet-4.5")
 
 
 if __name__ == "__main__":

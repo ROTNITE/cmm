@@ -4,6 +4,7 @@
 !.env.example
 Api.env
 Lib/Api.env
+cmm_config.local.json
 
 # Python caches
 __pycache__/

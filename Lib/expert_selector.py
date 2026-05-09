@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 
+from Lib.config import get_default_model, get_stage_settings
 from Lib.expert_roles import BASE_EXPERT_ROLES, ExpertRole
 from Lib.json_retry import call_json_model
 from Lib.json_utils import safe_json_loads
@@ -127,6 +128,7 @@ def _detect_domain_need(query: str) -> tuple[bool, str | None]:
     if not _query_is_complex_for_domain_selector(query):
         return False, None
 
+    stage = get_stage_settings("role_generator", {"tokens": 180, "temp": 0.25})
     system_prompt = (
         "Ты классификатор запроса. "
         "Верни строго JSON без markdown и без пояснений. "
@@ -140,10 +142,11 @@ def _detect_domain_need(query: str) -> tuple[bool, str | None]:
     result = call_json_model(
         user_prompt=user_prompt,
         system_prompt=system_prompt,
-        temp=0.25,
-        tokens=180,
-        model="deepseek-chat",
+        temp=float(stage.get("temp") or 0.25),
+        tokens=min(220, int(stage.get("tokens") or 180)),
+        model=get_default_model(),
         max_retries=1,
+        log_purpose="expert_selector",
     )
 
     parsed = result.get("payload") if isinstance(result, dict) else None

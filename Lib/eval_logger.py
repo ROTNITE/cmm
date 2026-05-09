@@ -13,10 +13,17 @@ class EvalLogger:
     def __init__(self, enabled: bool = True):
         self.enabled = enabled
         self.total_tokens = 0
+        self.total_cost = 0.0
         self.total_calls = 0
         self.agent_stack: list[str] = []
         self.case_start_time: float | None = None
         self.indent_level = 0
+        self.log_file = None  # File to write logs to
+        self.case_logs = []  # Store logs for current case
+
+    def set_log_file(self, file_path: str):
+        """Set the file path for incremental log writing."""
+        self.log_file = file_path
 
     def _print(self, message: str, prefix: str = "", color: str = "") -> None:
         """Print with indentation and optional color."""
@@ -35,15 +42,32 @@ class EvalLogger:
         }
         color_code = colors.get(color, "")
         reset = colors["reset"] if color_code else ""
-        print(f"{indent}{color_code}{prefix}{message}{reset}", flush=True)
+        full_message = f"{indent}{prefix}{message}"
+        print(f"{color_code}{full_message}{reset}", flush=True)
+
+        # Store in case logs (without color codes)
+        self.case_logs.append(full_message)
 
     def case_start(self, case_id: str, query: str) -> None:
         """Log start of a case evaluation."""
+        # Clear previous case logs
+        self.case_logs = []
+
         self.case_start_time = time.time()
         self._print("=" * 80, color="bold")
         self._print(f"CASE: {case_id}", prefix="[*] ", color="bold")
         self._print(f"Query: {query[:100]}{'...' if len(query) > 100 else ''}", color="cyan")
         self._print("")
+
+    def flush_case_logs(self):
+        """Write accumulated case logs to file."""
+        if self.log_file and self.case_logs:
+            try:
+                with open(self.log_file, 'a', encoding='utf-8') as f:
+                    f.write('\n'.join(self.case_logs))
+                    f.write('\n\n')
+            except Exception:
+                pass  # Silently fail if can't write
 
     def case_end(self, case_id: str, winner: str) -> None:
         """Log end of a case evaluation."""
@@ -93,6 +117,12 @@ class EvalLogger:
         self.total_tokens += total_tokens
         self.total_calls += 1
 
+        # Calculate cost (Claude Sonnet 4: $3/M input, $15/M output)
+        input_cost = (prompt_tokens / 1_000_000) * 3.0
+        output_cost = (completion_tokens / 1_000_000) * 15.0
+        call_cost = input_cost + output_cost
+        self.total_cost += call_cost
+
         purpose_str = f" [{purpose}]" if purpose else ""
         self._print(
             f"AI Call #{self.total_calls}{purpose_str}",
@@ -105,7 +135,8 @@ class EvalLogger:
             f"Tokens: {prompt_tokens} prompt + {completion_tokens} completion = {total_tokens} total",
             color="cyan",
         )
-        self._print(f"Running total: {self.total_tokens} tokens", color="cyan")
+        self._print(f"Cost: ${input_cost:.6f} input + ${output_cost:.6f} output = ${call_cost:.6f} total", color="cyan")
+        self._print(f"Running total: {self.total_tokens} tokens, ${self.total_cost:.4f} cost", color="cyan")
         self.indent_level -= 1
 
     def router_decision(self, mode: str, complexity: str, reasoning: str = "") -> None:

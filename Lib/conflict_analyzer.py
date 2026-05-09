@@ -6,6 +6,7 @@ import json
 import re
 from typing import Any
 
+from Lib.config import get_stage_settings
 from Lib.json_retry import call_json_model
 from Lib.json_utils import to_number, to_string_list
 
@@ -362,6 +363,7 @@ def _model_conflict_report(
     *,
     model: str,
 ) -> tuple[dict | None, dict]:
+    stage = get_stage_settings("conflict", {"tokens": 800, "temp": 0.2})
     system_prompt = (
         "You are a semantic conflict analyzer for a Collective Meta-Moderation process. "
         "Analyze expert contributions, not the final answer. Identify agreements, disagreements, "
@@ -399,10 +401,11 @@ def _model_conflict_report(
     result = call_json_model(
         user_prompt="Analyze semantic conflicts in this CMM state:\n" + json.dumps(state, ensure_ascii=False),
         system_prompt=system_prompt,
-        temp=0.2,
-        tokens=800,
+        temp=float(stage.get("temp") or 0.2),
+        tokens=int(stage.get("tokens") or 800),
         model=model,
         max_retries=1,
+        log_purpose="conflict_analyzer",
     )
     warnings = result.get("warnings") if isinstance(result, dict) and isinstance(result.get("warnings"), list) else []
     attempts = result.get("attempts") if isinstance(result, dict) and isinstance(result.get("attempts"), int) else 0

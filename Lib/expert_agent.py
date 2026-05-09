@@ -17,6 +17,7 @@ import json
 from typing import Any
 
 from Lib.expert_roles import ExpertRole
+from Lib.config import get_stage_settings
 from Lib.json_retry import call_json_model
 from Lib.json_utils import safe_json_loads
 from Lib.state_fallbacks import build_rules_expert_contribution
@@ -119,29 +120,13 @@ def run_expert(
     Возврат всегда имеет фиксированный набор полей и не бросает исключения
     наружу из-за плохого JSON-ответа модели.
     """
+    stage = get_stage_settings("expert_agent", {"tokens": 800, "temp": 0.2})
     system_prompt = (
         f"{role.system_prompt}\n\n"
-        "Original query is authoritative. Cleaned/formalized query is helper text only. "
-        "Do not ignore constraints from original_query.\n"
-        "\n"
-        "You are providing expert input, not a final answer to the user.\n"
-        "\n"
-        "Quality standards for your contribution:\n"
-        "- SPECIFIC: provide concrete, actionable insights, not generic statements\n"
-        "- EVIDENCE-BASED: ground your insights in facts, examples, or clear reasoning\n"
-        "- RISK-AWARE: identify real, specific risks with clear implications\n"
-        "- ACTIONABLE: recommendations should be clear and implementable\n"
-        "- PERSPECTIVE-DRIVEN: bring your unique expert viewpoint\n"
-        "\n"
-        "For insights: provide concrete observations or analysis from your perspective\n"
-        "For risks: identify specific potential problems and their implications\n"
-        "For questions: ask clarifying questions that would improve the answer\n"
-        "For recommendations: suggest specific, actionable next steps\n"
-        "\n"
-        "CRITICAL: Return ONLY valid JSON. No markdown. No comments. No extra text.\n"
-        "CRITICAL: Each item should be 1-2 sentences (max 200 chars per item).\n"
-        "CRITICAL: Use EXACT counts below. Do not add more items.\n"
-        "\n"
+        "You are providing expert input, not a final answer.\n"
+        "Original query is authoritative.\n"
+        "Return one valid JSON object only. No markdown. No prose.\n"
+        "Keep every item short, concrete, and role-specific.\n"
         "Schema:\n"
         "{\n"
         "  \"insights\": [\"string\", \"string\", \"string\"],\n"
@@ -151,8 +136,7 @@ def run_expert(
         "  \"confidence\": 0.8\n"
         "}\n"
         "\n"
-        "EXACT counts: insights=3, risks=2, questions=2, recommendations=3.\n"
-        "Each item: 1-2 sentences, max 200 chars, specific and actionable."
+        "Use exact counts: insights=3, risks=2, questions=2, recommendations=3."
     )
 
     context_text = ""
@@ -181,10 +165,11 @@ def run_expert(
     result = call_json_model(
         user_prompt="\n\n".join(user_prompt_parts),
         system_prompt=system_prompt,
-        temp=0.2,
-        tokens=800,
+        temp=float(stage.get("temp") or 0.2),
+        tokens=int(stage.get("tokens") or 800),
         model=model,
         max_retries=1,
+        log_purpose="expert_agent",
     )
 
     parsed = result.get("payload") if isinstance(result, dict) else None

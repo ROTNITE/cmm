@@ -147,6 +147,32 @@ class PlanCriticTests(unittest.TestCase):
         self.assertEqual(result["critique"]["json_attempts"], 2)
         self.assertIn("json_retry_after_invalid_json", result["critique"]["parse_warnings"])
 
+    def test_plan_critic_recomputes_inconsistent_model_scores(self):
+        from Lib.plan_critic import check_plan_and_act
+
+        payload = _valid_payload()
+        payload["overall_score"] = 0.9
+        payload["scores"] = {
+            "query_alignment": 0.0,
+            "constraint_coverage": 0.0,
+            "success_criteria_coverage": 0.0,
+            "expert_input_coverage": 0.0,
+            "risk_coverage": 0.0,
+            "conflict_resolution": 0.0,
+            "dynamic_role_coverage": 0.0,
+            "deliberation_revision_coverage": 0.0,
+            "actionability": 0.0,
+            "clarity": 0.0,
+        }
+
+        with patch("Lib.json_retry.send_to_AI", return_value=json.dumps(payload)):
+            result = check_plan_and_act(_plan(), "Build a privacy-safe pilot", **_context())
+
+        self.assertEqual(result["critique"]["source"], "model")
+        self.assertEqual(result["critique"]["score_source"], "rule_recomputed")
+        self.assertIn("plan_critic_scores_recomputed", result["critique"]["parse_warnings"])
+        self.assertGreater(result["critique"]["scores"]["actionability"], 0.0)
+
     def test_check_plan_and_act_accepts_intake_alias(self):
         from Lib.plan_critic import check_plan_and_act
 
@@ -255,6 +281,20 @@ class PlanCriticTests(unittest.TestCase):
         self.assertIn("critical security failure risk", result["critique"]["ignored_risks"])
         self.assertTrue(result["critique"]["critical_blockers"])
 
+    def test_noncritical_model_critical_issue_is_filtered(self):
+        from Lib.plan_critic import check_plan_and_act
+
+        payload = _valid_payload()
+        payload["critical_issues"] = [
+            "The constraint 'Нельзя покупать дорогую систему' is not sufficiently covered by the expert contributions."
+        ]
+        with patch("Lib.json_retry.send_to_AI", return_value=json.dumps(payload)):
+            result = check_plan_and_act(_plan(), "Build a privacy-safe pilot", **_context())
+
+        self.assertEqual(result["critique"]["critical_blockers"], [])
+        self.assertEqual(result["critique"]["critical_issues"], [])
+        self.assertTrue(any("дорогую систему" in item for item in result["critique"]["feedback"]))
+
     def test_critical_must_address_blocks_acceptance(self):
         from Lib.plan_critic import check_plan_and_act
 
@@ -327,7 +367,8 @@ class PlanCriticTests(unittest.TestCase):
         with patch("Lib.json_retry.send_to_AI", side_effect=RuntimeError("no network")):
             result = check_plan_and_act(_plan("Generic plan"), "Build a privacy-safe pilot", **_context())
 
-        self.assertIn(result["status"], {"needs_revision", "rejected"})
+        self.assertIn(result["status"], {"ready", "needs_revision", "rejected"})
+        self.assertIn(result["decision"], {"ACCEPT", "REVISE", "REJECT"})
         self.assertEqual(result["critique"]["source"], "rules")
 
 

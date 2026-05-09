@@ -72,6 +72,7 @@ def _state():
             "notes": ["Balanced"],
             "argument_quality": {"specificity": 0.7},
             "blind_spots": ["Blind spot A"],
+            "stakeholder_coverage": [{"stakeholder": "users", "covered": False}],
             "recommended_action": "SYNTHESIZE",
         },
         "deliberation_brief": {
@@ -87,6 +88,8 @@ def _state():
             "success_criteria": ["Success A"],
             "unresolved_tradeoffs": [{"tradeoff": "speed vs safety"}],
             "blind_spots": ["Blind spot A"],
+            "stakeholder_coverage": [{"stakeholder": "users", "covered": False}],
+            "balance_blind_spots": ["Blind spot A"],
         },
         "conflict_report": {
             "agreements": [],
@@ -121,7 +124,14 @@ def _state():
                 "critique": {"critical_blockers": [], "ignored_risks": ["Risk A"]},
             }
         ],
-        "replan_context": {"reason": "Needs detail", "feedback": ["Fix A"]},
+        "replan_context": {
+            "reason": "Needs detail",
+            "feedback": ["Fix A"],
+            "missing_constraints": ["Constraint B"],
+            "ignored_success_criteria": ["Success B"],
+            "score_source": "rule_recomputed",
+            "replan_delta": {"ignored_must_address": 0},
+        },
         "history": [{"from": "PLAN", "to": "PLAN_CRITIQUE", "reason": "plan generated"}],
         "warnings": ["warning A"],
         "context_compression": {},
@@ -141,6 +151,8 @@ class ContextManagerTests(unittest.TestCase):
         self.assertTrue(context["original_query_is_authoritative"])
         self.assertEqual(context["query_intake"]["constraints"], ["Constraint A"])
         self.assertEqual(context["deliberation_brief"]["must_address"], ["Must A"])
+        self.assertEqual(context["deliberation_brief"]["stakeholder_coverage"][0]["stakeholder"], "users")
+        self.assertEqual(context["balance_report"]["blind_spots"], ["Blind spot A"])
         self.assertEqual(context["conflict_report"]["blind_spots"], ["Blind spot A"])
         self.assertIn("Original query is authoritative", context["instruction"])
 
@@ -153,6 +165,7 @@ class ContextManagerTests(unittest.TestCase):
         self.assertEqual(context["dynamic_roles_used"][0]["key"], "legal_reviewer")
         self.assertEqual(context["deliberation_revisions"][0]["new_risks"], ["New risk A"])
         self.assertEqual(context["replan_context"]["feedback"], ["Fix A"])
+        self.assertEqual(context["replan_context"]["missing_constraints"], ["Constraint B"])
 
     def test_build_compact_answer_context_contains_only_downstream_fields(self):
         from Lib.context_manager import build_compact_answer_context

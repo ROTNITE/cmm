@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 # Импорт функции запроса к LLM (поддержка двух вариантов структуры проекта)
 try:
-    from Lib.AI_request import send_to_AI
+    from Lib.AI_request_instrumented import send_to_AI
     from Lib.deliberation import build_deliberation_brief
 except Exception:
-    from AI_request import send_to_AI
+    from AI_request_instrumented import send_to_AI
     from deliberation import build_deliberation_brief
 
 
@@ -99,6 +100,158 @@ def _fallback_answer_from_plan(original_query: str, plan: Dict[str, Any]) -> str
     return "\n".join(parts).strip()
 
 
+def _string_list(value: Any, max_items: int = 8) -> List[str]:
+    out: List[str] = []
+    seen = set()
+    for item in value if isinstance(value, list) else []:
+        text = str(item or "").strip()
+        marker = text.lower()
+        if not text or marker in seen:
+            continue
+        seen.add(marker)
+        out.append(text)
+        if len(out) >= max_items:
+            break
+    return out
+
+
+def _tradeoff_texts(deliberation_brief: Optional[Dict[str, Any]]) -> List[str]:
+    items: List[str] = []
+    if not isinstance(deliberation_brief, dict):
+        return items
+    for tradeoff in deliberation_brief.get("unresolved_tradeoffs", []) or []:
+        if isinstance(tradeoff, dict):
+            value = tradeoff.get("tradeoff") or tradeoff.get("why_it_matters")
+        else:
+            value = tradeoff
+        text = str(value or "").strip()
+        if text:
+            items.append(text)
+        if len(items) >= 6:
+            break
+    return _string_list(items, 6)
+
+
+def _synthesis_packet(
+    *,
+    original_query: str,
+    plan: Dict[str, Any],
+    critique: Optional[Dict[str, Any]],
+    balance_report: Optional[Dict[str, Any]],
+    deliberation_brief: Optional[Dict[str, Any]],
+    feedback: Optional[List[str]],
+) -> Dict[str, Any]:
+    brief = deliberation_brief if isinstance(deliberation_brief, dict) else {}
+    critique = critique if isinstance(critique, dict) else {}
+    balance = balance_report if isinstance(balance_report, dict) else {}
+
+    main_recommendation = ""
+    if isinstance(plan.get("main_idea"), str) and plan.get("main_idea", "").strip():
+        main_recommendation = plan["main_idea"].strip()
+    elif isinstance(plan.get("result"), str) and plan.get("result", "").strip():
+        main_recommendation = plan["result"].strip()
+    else:
+        main_recommendation = original_query
+
+    return {
+        "original_query": original_query,
+        "main_recommendation": main_recommendation,
+        "plan_steps": [
+            {
+                "number": str(step.get("number") or ""),
+                "title": str(step.get("title") or "").strip(),
+                "substeps": _string_list(step.get("substeps"), 5),
+                "covers_constraints": _string_list(step.get("covers_constraints"), 5),
+                "covers_success_criteria": _string_list(step.get("covers_success_criteria"), 5),
+                "mitigates_risks": _string_list(step.get("mitigates_risks"), 5),
+                "handles_tradeoffs": _string_list(step.get("handles_tradeoffs"), 5),
+                "serves_stakeholders": _string_list(step.get("serves_stakeholders"), 5),
+            }
+            for step in (plan.get("steps") or [])[:8]
+            if isinstance(step, dict)
+        ],
+        "constraints": _string_list(brief.get("constraints"), 8),
+        "success_criteria": _string_list(brief.get("success_criteria"), 8),
+        "expert_recommendations": _string_list(brief.get("expert_recommendations"), 10),
+        "must_address": _string_list(brief.get("must_address"), 12),
+        "risks": _string_list(brief.get("expert_risks"), 10),
+        "tradeoffs": _tradeoff_texts(brief),
+        "balance_blind_spots": _string_list(brief.get("balance_blind_spots") or balance.get("blind_spots"), 8),
+        "moderation_feedback": _string_list(feedback, 10),
+        "plan_critique_feedback": _string_list(critique.get("recommendations") or critique.get("feedback"), 10),
+        "ignored_risks": _string_list(critique.get("ignored_risks") or critique.get("ignored_expert_risks"), 8),
+        "ignored_tradeoffs": _string_list(critique.get("ignored_tradeoffs") or critique.get("unresolved_tradeoffs"), 8),
+        "ignored_must_address": _string_list(critique.get("ignored_must_address"), 8),
+    }
+
+
+def _fallback_answer_from_context(
+    *,
+    original_query: str,
+    plan: Dict[str, Any],
+    critique: Optional[Dict[str, Any]],
+    deliberation_brief: Optional[Dict[str, Any]],
+) -> str:
+    packet = _synthesis_packet(
+        original_query=original_query,
+        plan=plan,
+        critique=critique,
+        balance_report=None,
+        deliberation_brief=deliberation_brief,
+        feedback=[],
+    )
+    lines: List[str] = [
+        "Не удалось получить стабильный ответ от модели. Ниже — fallback / best-effort ответ на основе собранного контекста.",
+        "",
+        f"Короткий вывод: {packet['main_recommendation']}",
+    ]
+    if packet["expert_recommendations"]:
+        lines.append("")
+        lines.append("Рекомендуемый подход:")
+        for item in packet["expert_recommendations"][:4]:
+            lines.append(f"- {item}")
+    if packet["constraints"]:
+        lines.append("")
+        lines.append("Как учтены ограничения:")
+        for item in packet["constraints"][:4]:
+            lines.append(f"- {item}")
+    if packet["must_address"]:
+        lines.append("")
+        lines.append("Что обязательно учесть:")
+        for item in packet["must_address"][:4]:
+            lines.append(f"- {item}")
+    if packet["risks"]:
+        lines.append("")
+        lines.append("Ключевые риски:")
+        for item in packet["risks"][:4]:
+            lines.append(f"- {item}")
+    if packet["tradeoffs"]:
+        lines.append("")
+        lines.append("Trade-offs:")
+        for item in packet["tradeoffs"][:3]:
+            lines.append(f"- {item}")
+    if packet["plan_steps"]:
+        lines.append("")
+        lines.append("Реалистичные следующие шаги:")
+        for index, step in enumerate(packet["plan_steps"][:5], start=1):
+            title = step.get("title", "")
+            if title:
+                lines.append(f"{index}. {title}")
+    if packet["balance_blind_spots"]:
+        lines.append("")
+        lines.append("Что ещё проверить перед запуском:")
+        for item in packet["balance_blind_spots"][:4]:
+            lines.append(f"- {item}")
+    caveats = packet["ignored_must_address"] + packet["ignored_risks"] + packet["ignored_tradeoffs"]
+    caveats = _string_list(caveats, 6)
+    if caveats:
+        lines.append("")
+        lines.append("Что ещё нужно проверить:")
+        for item in caveats[:5]:
+            lines.append(f"- {item}")
+    return "\n".join(lines).strip()
+
+
 def _brief_to_text(deliberation_brief: Optional[Dict[str, Any]]) -> str:
     """Compact expert deliberation context for the answer prompt."""
     if not isinstance(deliberation_brief, dict):
@@ -183,6 +336,14 @@ def improve_plan_to_answer(
             balance_report=balance_report,
         )
     deliberation_text = _brief_to_text(deliberation_brief)
+    synthesis_packet = _synthesis_packet(
+        original_query=original_query,
+        plan=plan,
+        critique=critique,
+        balance_report=balance_report,
+        deliberation_brief=deliberation_brief,
+        feedback=feedback,
+    )
 
     critique_recs: List[str] = []
     if isinstance(critique, dict):
@@ -195,22 +356,30 @@ def improve_plan_to_answer(
     system_prompt = (
         "Ты агент-улучшатор.\n"
         "Твоя задача — написать КОНЕЧНЫЙ ответ пользователю по запросу, "
-        "опираясь на предоставленный план.\n\n"
+        "опираясь на structured synthesis packet и предоставленный план.\n\n"
         "Правила:\n"
         "0) Original query is authoritative. Cleaned/formalized query is helper text only. "
         "Do not ignore constraints from original_query.\n"
         "1) Не упоминай слова 'план', 'критик', 'агент', 'системный промпт'.\n"
-        "2) Пиши в формате, удобном пользователю: краткое резюме → пошагово → нюансы/ошибки → итог.\n"
+        "2) Для сложных и best-effort кейсов пиши в стабильной структуре: "
+        "краткий вывод -> рекомендуемый подход -> как учтены ограничения -> ключевые риски -> "
+        "trade-offs -> реалистичные next steps -> что остается uncertain или needs validation.\n"
         "3) Если есть замечания/фидбек — обязательно исправь их.\n"
         "4) Если есть экспертный контекст, отрази важные риски и рекомендации в ответе.\n"
-        "5) Не выдумывай конкретные факты/цифры, если они не требуются запросом. "
+        "5) Если critique указывает ignored risks, ignored must-address или unresolved trade-offs, "
+        "они должны быть либо закрыты в ответе, либо честно перечислены как caveats.\n"
+        "6) Не выдумывай конкретные факты/цифры, если они не требуются запросом. "
         "Если не уверен — формулируй как варианты.\n"
-        "6) Верни только текст ответа (без служебных комментариев)."
+        "7) Верни только текст ответа (без служебных комментариев).\n"
+        "8) Structured synthesis packet приоритетнее общего outline плана: используй его как источник содержания, "
+        "а план — как scaffold для порядка."
     )
 
     user_prompt_parts = [
         f"ЗАПРОС ПОЛЬЗОВАТЕЛЯ:\n{original_query}".strip(),
-        f"\nПЛАН ДЕЙСТВИЙ (внутренний):\n{plan_text}".strip()
+        "\nSTRUCTURED SYNTHESIS PACKET (внутренний контекст):\n"
+        + json.dumps(synthesis_packet, ensure_ascii=False, indent=2),
+        f"\nПЛАН ДЕЙСТВИЙ (внутренний scaffold):\n{plan_text}".strip(),
     ]
 
     if deliberation_text:
@@ -242,12 +411,18 @@ def improve_plan_to_answer(
         system_prompt=system_prompt,
         temp=cfg["temp"],
         tokens=cfg["tokens"],
-        model=model
+        model=model,
+        log_purpose="answer_generator",
     )
 
     source = "model"
     if not response or isinstance(response, Exception) or _is_model_error(response):
-        response = _fallback_answer_from_plan(original_query, plan)
+        response = _fallback_answer_from_context(
+            original_query=original_query,
+            plan=plan,
+            critique=critique,
+            deliberation_brief=deliberation_brief,
+        )
         source = "fallback"
 
     return {

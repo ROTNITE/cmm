@@ -1,0 +1,632 @@
+================================================================================
+[*] CASE: V2-001
+Query: Что такое коллективная метамодерация?
+
+[>] Stage: BASELINE
+  [AI] AI Call #1 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 16 prompt + 12 completion = 28 total
+    Cost: $0.000048 input + $0.000180 output = $0.000228 total
+    Running total: 28 tokens, $0.0002 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  Starting CMM state machine (route_mode=AUTO)
+  [AI] AI Call #2 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 216 prompt + 12 completion = 228 total
+    Cost: $0.000648 input + $0.000180 output = $0.000828 total
+    Running total: 256 tokens, $0.0011 cost
+  [AI] AI Call #3 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 297 prompt + 12 completion = 309 total
+    Cost: $0.000891 input + $0.000180 output = $0.001071 total
+    Running total: 565 tokens, $0.0021 cost
+  [AI] AI Call #4 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 217 prompt + 12 completion = 229 total
+    Cost: $0.000651 input + $0.000180 output = $0.000831 total
+    Running total: 794 tokens, $0.0030 cost
+  CMM completed with state: FINALIZE
+  [R] Router: DIRECT (complexity: low)
+  [!] Warning: query_intake: model_intake_invalid_json
+  [!] Warning: query_intake: json_model_empty_or_error_attempt_1
+  [!] Warning: query_intake: json_retry_after_invalid_json
+  [!] Warning: query_intake: json_model_empty_or_error_attempt_2
+  [!] Warning: query_intake: json_retry_exhausted
+  [!] Warning: direct_answer: direct_answer_failed
+[OK] CMM complete
+
+[>] Stage: JUDGE
+  [AI] AI Call #5 [judge]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 187 prompt + 43 completion = 230 total
+    Cost: $0.000561 input + $0.000645 output = $0.001206 total
+    Running total: 1024 tokens, $0.0042 cost
+[OK] JUDGE complete
+
+
+[+] Winner: TIE
+Time: 10.18s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-001
+Query: Что такое коллективная метамодерация?
+--------------------------------------------------------------------------------
+[R] Router: DIRECT (complexity: low)
+[!] Warning: query_intake: model_intake_invalid_json
+[!] Warning: query_intake: json_model_empty_or_error_attempt_1
+[!] Warning: query_intake: json_retry_after_invalid_json
+[!] Warning: query_intake: json_model_empty_or_error_attempt_2
+[!] Warning: query_intake: json_retry_exhausted
+[!] Warning: direct_answer: direct_answer_failed
+
+[J] Judge evaluation:
+      Baseline overall: 0.00/10
+      CMM overall: 0.00/10
+      Delta: +0.00
+      Winner: TIE
+      Reason: Both answers are non-functional errors with no content provided.
+
+[+] Winner: TIE
+Time: 10.18s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-002
+Query: Кратко объясни разницу между метрикой и KPI.
+
+[>] Stage: BASELINE
+  [AI] AI Call #6 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 18 prompt + 12 completion = 30 total
+    Cost: $0.000054 input + $0.000180 output = $0.000234 total
+    Running total: 1054 tokens, $0.0044 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  Starting CMM state machine (route_mode=AUTO)
+  [AI] AI Call #7 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 219 prompt + 12 completion = 231 total
+    Cost: $0.000657 input + $0.000180 output = $0.000837 total
+    Running total: 1285 tokens, $0.0052 cost
+  [AI] AI Call #8 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 300 prompt + 12 completion = 312 total
+    Cost: $0.000900 input + $0.000180 output = $0.001080 total
+    Running total: 1597 tokens, $0.0063 cost
+  [AI] AI Call #9 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 229 prompt + 12 completion = 241 total
+    Cost: $0.000687 input + $0.000180 output = $0.000867 total
+    Running total: 1838 tokens, $0.0072 cost
+  CMM completed with state: FINALIZE
+  [R] Router: DIRECT (complexity: low)
+  [!] Warning: query_intake: model_intake_invalid_json
+  [!] Warning: query_intake: json_model_empty_or_error_attempt_1
+  [!] Warning: query_intake: json_retry_after_invalid_json
+  [!] Warning: query_intake: json_model_empty_or_error_attempt_2
+  [!] Warning: query_intake: json_retry_exhausted
+  [!] Warning: direct_answer: direct_answer_failed
+[OK] CMM complete
+
+[>] Stage: JUDGE
+  [AI] AI Call #10 [judge]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 187 prompt + 54 completion = 241 total
+    Cost: $0.000561 input + $0.000810 output = $0.001371 total
+    Running total: 2079 tokens, $0.0086 cost
+[OK] JUDGE complete
+
+
+[+] Winner: TIE
+Time: 9.14s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-002
+Query: Кратко объясни разницу между метрикой и KPI.
+--------------------------------------------------------------------------------
+[R] Router: DIRECT (complexity: low)
+[!] Warning: query_intake: model_intake_invalid_json
+[!] Warning: query_intake: json_model_empty_or_error_attempt_1
+[!] Warning: query_intake: json_retry_after_invalid_json
+[!] Warning: query_intake: json_model_empty_or_error_attempt_2
+[!] Warning: query_intake: json_retry_exhausted
+[!] Warning: direct_answer: direct_answer_failed
+
+[J] Judge evaluation:
+      Baseline overall: 0.00/10
+      CMM overall: 0.00/10
+      Delta: +0.00
+      Winner: TIE
+      Reason: Both answers failed to provide a valid response to the query, as both returned error messages without addressing the requested content.
+
+[+] Winner: TIE
+Time: 9.14s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-003
+Query: What is a trade-off in product design?
+
+[>] Stage: BASELINE
+  [AI] AI Call #11 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 15 prompt + 12 completion = 27 total
+    Cost: $0.000045 input + $0.000180 output = $0.000225 total
+    Running total: 2106 tokens, $0.0088 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  Starting CMM state machine (route_mode=AUTO)
+  [AI] AI Call #12 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 214 prompt + 12 completion = 226 total
+    Cost: $0.000642 input + $0.000180 output = $0.000822 total
+    Running total: 2332 tokens, $0.0096 cost
+  [AI] AI Call #13 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 296 prompt + 12 completion = 308 total
+    Cost: $0.000888 input + $0.000180 output = $0.001068 total
+    Running total: 2640 tokens, $0.0107 cost
+  [AI] AI Call #14 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 216 prompt + 12 completion = 228 total
+    Cost: $0.000648 input + $0.000180 output = $0.000828 total
+    Running total: 2868 tokens, $0.0115 cost
+  CMM completed with state: FINALIZE
+  [R] Router: DIRECT (complexity: low)
+  [!] Warning: query_intake: model_intake_invalid_json
+  [!] Warning: query_intake: json_model_empty_or_error_attempt_1
+  [!] Warning: query_intake: json_retry_after_invalid_json
+  [!] Warning: query_intake: json_model_empty_or_error_attempt_2
+  [!] Warning: query_intake: json_retry_exhausted
+  [!] Warning: direct_answer: direct_answer_failed
+[OK] CMM complete
+
+[>] Stage: JUDGE
+  [AI] AI Call #15 [judge]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 184 prompt + 44 completion = 228 total
+    Cost: $0.000552 input + $0.000660 output = $0.001212 total
+    Running total: 3096 tokens, $0.0127 cost
+[OK] JUDGE complete
+
+
+[+] Winner: TIE
+Time: 8.84s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-003
+Query: What is a trade-off in product design?
+--------------------------------------------------------------------------------
+[R] Router: DIRECT (complexity: low)
+[!] Warning: query_intake: model_intake_invalid_json
+[!] Warning: query_intake: json_model_empty_or_error_attempt_1
+[!] Warning: query_intake: json_retry_after_invalid_json
+[!] Warning: query_intake: json_model_empty_or_error_attempt_2
+[!] Warning: query_intake: json_retry_exhausted
+[!] Warning: direct_answer: direct_answer_failed
+
+[J] Judge evaluation:
+      Baseline overall: 0.00/10
+      CMM overall: 0.00/10
+      Delta: +0.00
+      Winner: TIE
+      Reason: Both answers are system errors, unable to provide any response.
+
+[+] Winner: TIE
+Time: 8.84s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-004
+Query: Помоги выбрать формат еженедельной встречи команды.
+
+[>] Stage: BASELINE
+  [AI] AI Call #16 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 22 prompt + 12 completion = 34 total
+    Cost: $0.000066 input + $0.000180 output = $0.000246 total
+    Running total: 3130 tokens, $0.0130 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  Starting CMM state machine (route_mode=AUTO)
+  [AI] AI Call #17 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 228 prompt + 12 completion = 240 total
+    Cost: $0.000684 input + $0.000180 output = $0.000864 total
+    Running total: 3370 tokens, $0.0138 cost
+  [AI] AI Call #18 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 309 prompt + 12 completion = 321 total
+    Cost: $0.000927 input + $0.000180 output = $0.001107 total
+    Running total: 3691 tokens, $0.0149 cost
+  [AI] AI Call #19 [unknown]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 45 prompt + 4 completion = 49 total
+    Cost: $0.000135 input + $0.000060 output = $0.000195 total
+    Running total: 3740 tokens, $0.0151 cost
+  [AI] AI Call #20 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 328 prompt + 12 completion = 340 total
+    Cost: $0.000984 input + $0.000180 output = $0.001164 total
+    Running total: 4080 tokens, $0.0163 cost
+  [AI] AI Call #21 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 410 prompt + 12 completion = 422 total
+    Cost: $0.001230 input + $0.000180 output = $0.001410 total
+    Running total: 4502 tokens, $0.0177 cost
+  [AI] AI Call #22 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 328 prompt + 12 completion = 340 total
+    Cost: $0.000984 input + $0.000180 output = $0.001164 total
+    Running total: 4842 tokens, $0.0189 cost
+  [AI] AI Call #23 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 410 prompt + 12 completion = 422 total
+    Cost: $0.001230 input + $0.000180 output = $0.001410 total
+    Running total: 5264 tokens, $0.0203 cost
+  [AI] AI Call #24 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 331 prompt + 12 completion = 343 total
+    Cost: $0.000993 input + $0.000180 output = $0.001173 total
+    Running total: 5607 tokens, $0.0214 cost
+  [AI] AI Call #25 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 413 prompt + 12 completion = 425 total
+    Cost: $0.001239 input + $0.000180 output = $0.001419 total
+    Running total: 6032 tokens, $0.0229 cost
+  [AI] AI Call #26 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 332 prompt + 12 completion = 344 total
+    Cost: $0.000996 input + $0.000180 output = $0.001176 total
+    Running total: 6376 tokens, $0.0240 cost
+  [AI] AI Call #27 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 414 prompt + 12 completion = 426 total
+    Cost: $0.001242 input + $0.000180 output = $0.001422 total
+    Running total: 6802 tokens, $0.0255 cost
+  [AI] AI Call #28 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 837 prompt + 12 completion = 849 total
+    Cost: $0.002511 input + $0.000180 output = $0.002691 total
+    Running total: 7651 tokens, $0.0281 cost
+  [AI] AI Call #29 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 919 prompt + 12 completion = 931 total
+    Cost: $0.002757 input + $0.000180 output = $0.002937 total
+    Running total: 8582 tokens, $0.0311 cost
+  [AI] AI Call #30 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1010 prompt + 12 completion = 1022 total
+    Cost: $0.003030 input + $0.000180 output = $0.003210 total
+    Running total: 9604 tokens, $0.0343 cost
+  [AI] AI Call #31 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1092 prompt + 12 completion = 1104 total
+    Cost: $0.003276 input + $0.000180 output = $0.003456 total
+    Running total: 10708 tokens, $0.0378 cost
+  [AI] AI Call #32 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1137 prompt + 12 completion = 1149 total
+    Cost: $0.003411 input + $0.000180 output = $0.003591 total
+    Running total: 11857 tokens, $0.0413 cost
+  [AI] AI Call #33 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1219 prompt + 12 completion = 1231 total
+    Cost: $0.003657 input + $0.000180 output = $0.003837 total
+    Running total: 13088 tokens, $0.0452 cost
+  [AI] AI Call #34 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1187 prompt + 12 completion = 1199 total
+    Cost: $0.003561 input + $0.000180 output = $0.003741 total
+    Running total: 14287 tokens, $0.0489 cost
+  [AI] AI Call #35 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1269 prompt + 12 completion = 1281 total
+    Cost: $0.003807 input + $0.000180 output = $0.003987 total
+    Running total: 15568 tokens, $0.0529 cost
+  [AI] AI Call #36 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1188 prompt + 12 completion = 1200 total
+    Cost: $0.003564 input + $0.000180 output = $0.003744 total
+    Running total: 16768 tokens, $0.0567 cost
+  [AI] AI Call #37 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1270 prompt + 12 completion = 1282 total
+    Cost: $0.003810 input + $0.000180 output = $0.003990 total
+    Running total: 18050 tokens, $0.0606 cost
+  [AI] AI Call #38 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1146 prompt + 12 completion = 1158 total
+    Cost: $0.003438 input + $0.000180 output = $0.003618 total
+    Running total: 19208 tokens, $0.0643 cost
+  [AI] AI Call #39 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1227 prompt + 12 completion = 1239 total
+    Cost: $0.003681 input + $0.000180 output = $0.003861 total
+    Running total: 20447 tokens, $0.0681 cost
+  [AI] AI Call #40 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 946 prompt + 12 completion = 958 total
+    Cost: $0.002838 input + $0.000180 output = $0.003018 total
+    Running total: 21405 tokens, $0.0711 cost
+  [AI] AI Call #41 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1028 prompt + 12 completion = 1040 total
+    Cost: $0.003084 input + $0.000180 output = $0.003264 total
+    Running total: 22445 tokens, $0.0744 cost
+  [AI] AI Call #42 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1096 prompt + 12 completion = 1108 total
+    Cost: $0.003288 input + $0.000180 output = $0.003468 total
+    Running total: 23553 tokens, $0.0779 cost
+  [AI] AI Call #43 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1178 prompt + 12 completion = 1190 total
+    Cost: $0.003534 input + $0.000180 output = $0.003714 total
+    Running total: 24743 tokens, $0.0816 cost
+  [AI] AI Call #44 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 386 prompt + 12 completion = 398 total
+    Cost: $0.001158 input + $0.000180 output = $0.001338 total
+    Running total: 25141 tokens, $0.0829 cost
+  [AI] AI Call #45 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 468 prompt + 12 completion = 480 total
+    Cost: $0.001404 input + $0.000180 output = $0.001584 total
+    Running total: 25621 tokens, $0.0845 cost
+  [AI] AI Call #46 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1218 prompt + 12 completion = 1230 total
+    Cost: $0.003654 input + $0.000180 output = $0.003834 total
+    Running total: 26851 tokens, $0.0883 cost
+  [AI] AI Call #47 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1299 prompt + 12 completion = 1311 total
+    Cost: $0.003897 input + $0.000180 output = $0.004077 total
+    Running total: 28162 tokens, $0.0924 cost
+  [AI] AI Call #48 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1218 prompt + 12 completion = 1230 total
+    Cost: $0.003654 input + $0.000180 output = $0.003834 total
+    Running total: 29392 tokens, $0.0963 cost
+  [AI] AI Call #49 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1300 prompt + 12 completion = 1312 total
+    Cost: $0.003900 input + $0.000180 output = $0.004080 total
+    Running total: 30704 tokens, $0.1003 cost
+  [AI] AI Call #50 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1155 prompt + 12 completion = 1167 total
+    Cost: $0.003465 input + $0.000180 output = $0.003645 total
+    Running total: 31871 tokens, $0.1040 cost
+  [AI] AI Call #51 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1237 prompt + 12 completion = 1249 total
+    Cost: $0.003711 input + $0.000180 output = $0.003891 total
+    Running total: 33120 tokens, $0.1079 cost
+  [AI] AI Call #52 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 666 prompt + 12 completion = 678 total
+    Cost: $0.001998 input + $0.000180 output = $0.002178 total
+    Running total: 33798 tokens, $0.1100 cost
+  [AI] AI Call #53 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 748 prompt + 12 completion = 760 total
+    Cost: $0.002244 input + $0.000180 output = $0.002424 total
+    Running total: 34558 tokens, $0.1125 cost
+  [AI] AI Call #54 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1098 prompt + 12 completion = 1110 total
+    Cost: $0.003294 input + $0.000180 output = $0.003474 total
+    Running total: 35668 tokens, $0.1159 cost
+  [AI] AI Call #55 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1179 prompt + 12 completion = 1191 total
+    Cost: $0.003537 input + $0.000180 output = $0.003717 total
+    Running total: 36859 tokens, $0.1197 cost
+  [AI] AI Call #56 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 992 prompt + 12 completion = 1004 total
+    Cost: $0.002976 input + $0.000180 output = $0.003156 total
+    Running total: 37863 tokens, $0.1228 cost
+  [AI] AI Call #57 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1074 prompt + 12 completion = 1086 total
+    Cost: $0.003222 input + $0.000180 output = $0.003402 total
+    Running total: 38949 tokens, $0.1262 cost
+  [AI] AI Call #58 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1584 prompt + 12 completion = 1596 total
+    Cost: $0.004752 input + $0.000180 output = $0.004932 total
+    Running total: 40545 tokens, $0.1312 cost
+  [AI] AI Call #59 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1666 prompt + 12 completion = 1678 total
+    Cost: $0.004998 input + $0.000180 output = $0.005178 total
+    Running total: 42223 tokens, $0.1363 cost
+  [AI] AI Call #60 [answer_moderator]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 536 prompt + 12 completion = 548 total
+    Cost: $0.001608 input + $0.000180 output = $0.001788 total
+    Running total: 42771 tokens, $0.1381 cost
+  [AI] AI Call #61 [answer_moderator]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 506 prompt + 12 completion = 518 total
+    Cost: $0.001518 input + $0.000180 output = $0.001698 total
+    Running total: 43289 tokens, $0.1398 cost
+  [AI] AI Call #62 [answer_moderator]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 588 prompt + 12 completion = 600 total
+    Cost: $0.001764 input + $0.000180 output = $0.001944 total
+    Running total: 43889 tokens, $0.1418 cost
+  [AI] AI Call #63 [answer_moderator]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 679 prompt + 12 completion = 691 total
+    Cost: $0.002037 input + $0.000180 output = $0.002217 total
+    Running total: 44580 tokens, $0.1440 cost
+  [AI] AI Call #64 [answer_moderator]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 506 prompt + 12 completion = 518 total
+    Cost: $0.001518 input + $0.000180 output = $0.001698 total
+    Running total: 45098 tokens, $0.1457 cost
+  [AI] AI Call #65 [answer_moderator]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 588 prompt + 12 completion = 600 total
+    Cost: $0.001764 input + $0.000180 output = $0.001944 total
+    Running total: 45698 tokens, $0.1476 cost
+  [AI] AI Call #66 [answer_moderator]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 679 prompt + 12 completion = 691 total
+    Cost: $0.002037 input + $0.000180 output = $0.002217 total
+    Running total: 46389 tokens, $0.1498 cost
+  [AI] AI Call #67 [answer_moderator]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 506 prompt + 12 completion = 518 total
+    Cost: $0.001518 input + $0.000180 output = $0.001698 total
+    Running total: 46907 tokens, $0.1515 cost
+  [AI] AI Call #68 [answer_moderator]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 588 prompt + 12 completion = 600 total
+    Cost: $0.001764 input + $0.000180 output = $0.001944 total
+    Running total: 47507 tokens, $0.1535 cost
+  [AI] AI Call #69 [answer_moderator]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 679 prompt + 12 completion = 691 total
+    Cost: $0.002037 input + $0.000180 output = $0.002217 total
+    Running total: 48198 tokens, $0.1557 cost
+  CMM completed with state: FINALIZE
+  [R] Router: LIGHT_CMM (complexity: medium)
+  [E] Expert: strategist (strategy) - valid
+  [E] Expert: engineer (engineering) - valid
+  [E] Expert: risk_manager (risk) - valid
+  [E] Expert: user_advocate (user) - valid
+  [E] Expert: risk_manager (risk) - valid
+  [E] Expert: user_advocate (user) - valid
+  [P] Plan critique: needs_revision
+  [P] Plan critique: ready
+  [M] Moderation: REVISE (best-effort)
+  [!] Warning: query_intake: model_intake_invalid_json
+  [!] Warning: query_intake: json_model_empty_or_error_attempt_1
+  [!] Warning: query_intake: json_retry_after_invalid_json
+  [!] Warning: query_intake: json_model_empty_or_error_attempt_2
+  [!] Warning: query_intake: json_retry_exhausted
+  [!] Warning: expert_panel_degraded: 4/4 experts used fallback contributions
+  [!] Warning: cmm_mode_degraded: LIGHT_CMM -> LIGHT_CMM_DEGRADED
+  [!] Warning: dynamic_roles_extra: json_model_empty_or_error_attempt_1
+  [!] Warning: dynamic_roles_extra: json_retry_after_invalid_json
+  [!] Warning: dynamic_roles_extra: json_model_empty_or_error_attempt_2
+  [!] Warning: dynamic_roles_extra: json_retry_exhausted
+  [!] Warning: dynamic_roles_extra: dynamic_role_json_parse_failed
+  [!] Warning: meta_recheck_budget_exhausted_after_rebalance
+  [!] Warning: answer_moderation_revise_best_effort
+[OK] CMM complete
+
+[>] Stage: JUDGE
+  [AI] AI Call #70 [judge]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 283 prompt + 61 completion = 344 total
+    Cost: $0.000849 input + $0.000915 output = $0.001764 total
+    Running total: 48542 tokens, $0.1575 cost
+[OK] JUDGE complete
+
+
+[+] Winner: CMM
+Time: 38.97s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-004
+Query: Помоги выбрать формат еженедельной встречи команды.
+--------------------------------------------------------------------------------
+[R] Router: LIGHT_CMM (complexity: medium)
+[E] Expert: strategist (strategy) - valid
+[E] Expert: engineer (engineering) - valid
+[E] Expert: risk_manager (risk) - valid
+[E] Expert: user_advocate (user) - valid
+[E] Expert: risk_manager (risk) - valid
+[E] Expert: user_advocate (user) - valid
+[P] Plan generated:
+      Main idea: Ответить на: Помоги выбрать формат еженедельной встречи команды.
+Контекст: Небольшая команда разработки устала от длинных созвонов.
+Ограничения: Встре
+      Steps (4):
+        1. Сформулировать цель и рабочий контекст запроса
+        2. Закрыть обязательные риски, blind spots и trade-offs
+        3. Подготовить итоговый ответ с реалистичными шагами и оговорками
+        4. Закрыть замечания критика перед финальным ответом
+      Source: fallback_repair, Format: fallback_repair
+      Warnings: json_replan_failed_used_previous_plan_repair, json_model_empty_or_error_attempt_1, json_retry_after_invalid_json
+[P] Plan critique: needs_revision
+      Overall score: 5.12/10
+      Scores:
+          query_alignment: 8.0
+          constraint_coverage: 8.0
+          success_criteria_coverage: 8.0
+          expert_input_coverage: 3.0
+          risk_coverage: 7.1
+          conflict_resolution: 8.0
+      Ignored must_address: 8
+      Ignored risks: 2
+      Feedback (3):
+          - Cover deliberation_brief.must_address items.
+          - Add mitigation for ignored expert risks.
+          - Use revised recommendations and risks from deliberation.
+[P] Plan critique: ready
+      Overall score: 7.90/10
+      Scores:
+          query_alignment: 8.0
+          constraint_coverage: 8.0
+          success_criteria_coverage: 8.0
+          expert_input_coverage: 7.0
+          risk_coverage: 8.6
+          conflict_resolution: 8.0
+      Ignored must_address: 2
+      Ignored risks: 1
+      Feedback (2):
+          - Cover deliberation_brief.must_address items.
+          - Add mitigation for ignored expert risks.
+[B] Balance analysis:
+      Recommended action: DEEPEN
+[M] Moderation: REVISE (best-effort)
+[!] Warning: query_intake: model_intake_invalid_json
+[!] Warning: query_intake: json_model_empty_or_error_attempt_1
+[!] Warning: query_intake: json_retry_after_invalid_json
+[!] Warning: query_intake: json_model_empty_or_error_attempt_2
+[!] Warning: query_intake: json_retry_exhausted
+[!] Warning: expert_panel_degraded: 4/4 experts used fallback contributions
+[!] Warning: cmm_mode_degraded: LIGHT_CMM -> LIGHT_CMM_DEGRADED
+[!] Warning: dynamic_roles_extra: json_model_empty_or_error_attempt_1
+[!] Warning: dynamic_roles_extra: json_retry_after_invalid_json
+[!] Warning: dynamic_roles_extra: json_model_empty_or_error_attempt_2
+[!] Warning: dynamic_roles_extra: json_retry_exhausted
+[!] Warning: dynamic_roles_extra: dynamic_role_json_parse_failed
+[!] Warning: meta_recheck_budget_exhausted_after_rebalance
+[!] Warning: answer_moderation_revise_best_effort
+
+[J] Judge evaluation:
+      Baseline overall: 0.00/10
+      CMM overall: 5.00/10
+      Delta: +5.00
+      Winner: CMM
+      Reason: Answer A provides a partial attempt to address the query with a fallback approach, covering some key areas, though lacking full actionability and clarity. Answer B is non-functional and cannot provide
+
+[+] Winner: CMM
+Time: 38.97s
+================================================================================
+
+

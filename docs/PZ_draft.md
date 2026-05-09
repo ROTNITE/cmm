@@ -11,12 +11,13 @@ Collective Meta-Moderation — экспериментальный програм
 ## Технические характеристики
 
 - Язык: Python.
-- Основной API: `Lib.orchestrator.run_cmm(query, max_iters=2, model="deepseek-chat", route_mode="AUTO", parallel_mode="SEQUENTIAL", max_workers=None, max_deliberation_rounds=1)`; старые вызовы без новых optional параметров сохраняются, внутри выполнение делегируется bounded CMM state machine. `max_deliberation_rounds` ограничен диапазоном `1..2`.
+- Основной API: `Lib.orchestrator.run_cmm(query, max_iters=None, model=None, route_mode=None, parallel_mode=None, max_workers=None, max_deliberation_rounds=None)`; старые вызовы сохраняются, а значения по умолчанию берутся из `cmm_config.json` / `.env`. Явные аргументы всё ещё переопределяют конфиг на один запуск. `max_deliberation_rounds` ограничен диапазоном `1..2`.
 - CLI запуска CMM: `python main.py`; компактный trace demo: `python main.py --trace-summary "query"`.
 - CLI оценки: `python -m cmm.eval --dataset cmm_dataset_v1.csv --mode mock` или `python -m cmm.eval --dataset cmm_dataset_v2.csv --limit 20 --mode mock`.
 - CLI real-evaluation: `python -m cmm.eval --dataset cmm_dataset_v2.csv --limit 20 --mode real --judge-mode none|llm`.
 - Зависимости: `openai`, `python-dotenv`.
 - Тесты: стандартный `unittest`.
+- Конфигурация: модель, judge model, base URL и имя env-переменной ключа задаются в `cmm_config.json`; локальные overrides можно хранить в ignored `cmm_config.local.json`.
 - Секреты: API-ключи должны храниться локально в `.env`; реальные ключи не должны попадать в репозиторий.
 
 ## Описание алгоритма
@@ -72,6 +73,7 @@ Collective Meta-Moderation — экспериментальный програм
 
 - `main.py`: CLI-обертка.
 - `Lib/orchestrator.py`: публичная обертка `run_cmm`.
+- `Lib/config.py`: единая точка runtime config для моделей, provider base URL и default execution options.
 - `Lib/state_machine.py`: bounded state-machine orchestration, история переходов и сбор trace/result.
 - `Lib/state_fallbacks.py`: fallback-структуры для state machine.
 - `Lib/state_trace.py`: компактные helpers для сборки result payload.

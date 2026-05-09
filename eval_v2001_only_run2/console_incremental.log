@@ -1,0 +1,62 @@
+================================================================================
+[*] CASE: V2-001
+Query: Что такое коллективная метамодерация?
+
+[>] Stage: BASELINE
+  [AI] AI Call #1 [baseline]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 16 prompt + 38 completion = 54 total
+    Cost: $0.000048 input + $0.000570 output = $0.000618 total
+    Running total: 54 tokens, $0.0006 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  Starting CMM state machine (route_mode=AUTO)
+  [AI] AI Call #2 [query_intake]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 216 prompt + 23 completion = 239 total
+    Cost: $0.000648 input + $0.000345 output = $0.000993 total
+    Running total: 293 tokens, $0.0016 cost
+  [AI] AI Call #3 [direct_answer]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 92 prompt + 33 completion = 125 total
+    Cost: $0.000276 input + $0.000495 output = $0.000771 total
+    Running total: 418 tokens, $0.0024 cost
+  CMM completed with state: FINALIZE
+  [R] Router: DIRECT (complexity: low)
+    Reasoning: Simple low-risk explanation request has only formatting constraints.
+[OK] CMM complete
+
+[>] Stage: JUDGE
+  [AI] AI Call #4 [judge]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 258 prompt + 77 completion = 335 total
+    Cost: $0.000774 input + $0.001155 output = $0.001929 total
+    Running total: 753 tokens, $0.0043 cost
+[OK] JUDGE complete
+
+
+[+] Winner: BASELINE
+Time: 34.95s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-001
+Query: Что такое коллективная метамодерация?
+--------------------------------------------------------------------------------
+[R] Router: DIRECT (complexity: low)
+    Reasoning: Simple low-risk explanation request has only formatting constraints.
+
+[J] Judge evaluation:
+      Baseline overall: 8.00/10
+      CMM overall: 8.00/10
+      Delta: +0.00
+      Winner: BASELINE
+      Reason: Answer A provides a clear, concise, and actionable explanation. It successfully covers the main rubric points with simple language and examples. Answer B, while richer in perspectives and discussing m
+
+[+] Winner: BASELINE
+Time: 34.95s
+================================================================================
+
+

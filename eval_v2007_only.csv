@@ -1,0 +1,2 @@
+﻿id,query,context,constraints,expected_perspectives,rubric_must_cover,rubric_desirable,expected_single_model_failure_modes,expected_mode
+V2-007,Как выбрать пилотный канал продвижения для локального сервиса?,Небольшой сервис доставки хочет проверить спрос.,Бюджет ограничен | нужно измерить результат,strategy | measurement | cost,критерии выбора канала | минимальный эксперимент | метрики результата,порог остановки эксперимента,много каналов сразу | нет метрик,LIGHT_CMM

@@ -1,0 +1,223 @@
+[96mStarting evaluation: 20 cases[0m
+[96mJudge mode: llm[0m
+[96mModel: kr/claude-sonnet-4.5[0m
+[96m[0m
+[1m================================================================================[0m
+[1m[*] CASE: V2-001[0m
+[96mQuery: ??? ????? ???????????? ??????????????[0m
+
+================================================================================
+[*] CASE: V2-001
+Query: ??? ????? ???????????? ??????????????
+--------------------------------------------------------------------------------
+[94m[>] Stage: BASELINE[0m
+  [93m[AI] AI Call #1 [unknown][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 16 prompt + 51 completion = 67 total[0m
+    [96mRunning total: 67 tokens[0m
+[92m[OK] BASELINE complete[0m
+
+[94m[>] Stage: CMM[0m
+  [93m[AI] AI Call #2 [answer_moderator][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 216 prompt + 22 completion = 238 total[0m
+    [96mRunning total: 305 tokens[0m
+  [93m[AI] AI Call #3 [unknown][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 212 prompt + 54 completion = 266 total[0m
+    [96mRunning total: 571 tokens[0m
+  [94m[R] Router: DIRECT (complexity: low)[0m
+[R] Router: DIRECT (complexity: low)
+[92m[OK] CMM complete[0m
+
+[94m[>] Stage: JUDGE[0m
+  [93m[AI] AI Call #4 [judge][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 262 prompt + 138 completion = 400 total[0m
+    [96mRunning total: 971 tokens[0m
+[92m[OK] JUDGE complete[0m
+
+Case V2-001
+Mode: DIRECT
+Expected mode: DIRECT
+Final state: FINALIZE
+Expert contributions: 0/0 valid
+Planner: unknown
+Plan critique: none
+Moderation: unknown
+Judge: llm
+
+[J] Judge evaluation:
+      Baseline overall: 9.00/10
+      CMM overall: 9.00/10
+      Delta: +0.00
+      Winner: TIE
+      Reason: Both answers meet the rubric requirements well: simple definition, distinction from regular moderation, and multiple perspectives. Answer A is exactly 5 sentences and more concise. Answer B exceeds th
+
+[93m[+] Winner: TIE[0m
+[96mTime: 24.47s[0m
+[1m================================================================================[0m
+
+
+[+] Winner: TIE
+Time: 24.47s
+================================================================================
+
+[1m================================================================================[0m
+[1m[*] CASE: V2-002[0m
+[96mQuery: ?????? ??????? ??????? ????? ???????? ? KPI.[0m
+
+================================================================================
+[*] CASE: V2-002
+Query: ?????? ??????? ??????? ????? ???????? ? KPI.
+--------------------------------------------------------------------------------
+[94m[>] Stage: BASELINE[0m
+  [93m[AI] AI Call #5 [unknown][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 18 prompt + 66 completion = 84 total[0m
+    [96mRunning total: 1055 tokens[0m
+[92m[OK] BASELINE complete[0m
+
+[94m[>] Stage: CMM[0m
+  [93m[AI] AI Call #6 [answer_moderator][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 219 prompt + 23 completion = 242 total[0m
+    [96mRunning total: 1297 tokens[0m
+  [93m[AI] AI Call #7 [unknown][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 214 prompt + 76 completion = 290 total[0m
+    [96mRunning total: 1587 tokens[0m
+  [94m[R] Router: DIRECT (complexity: low)[0m
+[R] Router: DIRECT (complexity: low)
+[92m[OK] CMM complete[0m
+
+[94m[>] Stage: JUDGE[0m
+  [93m[AI] AI Call #8 [judge][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 257 prompt + 108 completion = 365 total[0m
+    [96mRunning total: 1952 tokens[0m
+[92m[OK] JUDGE complete[0m
+
+Case V2-002
+Mode: DIRECT
+Expected mode: DIRECT
+Final state: FINALIZE
+Expert contributions: 0/0 valid
+Planner: unknown
+Plan critique: none
+Moderation: unknown
+Judge: llm
+
+[J] Judge evaluation:
+      Baseline overall: 9.00/10
+      CMM overall: 9.00/10
+      Delta: +0.00
+      Winner: TIE
+      Reason: Both answers cover the rubric requirements well with clear definitions, the key difference, and concrete examples. Answer B edges ahead by: (1) explicitly expanding the KPI acronym, which aids underst
+
+[93m[+] Winner: TIE[0m
+[96mTime: 24.58s[0m
+[1m================================================================================[0m
+
+
+[+] Winner: TIE
+Time: 24.58s
+================================================================================
+
+[1m================================================================================[0m
+[1m[*] CASE: V2-003[0m
+[96mQuery: What is a trade-off in product design?[0m
+
+================================================================================
+[*] CASE: V2-003
+Query: What is a trade-off in product design?
+--------------------------------------------------------------------------------
+[94m[>] Stage: BASELINE[0m
+  [93m[AI] AI Call #9 [unknown][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 15 prompt + 51 completion = 66 total[0m
+    [96mRunning total: 2018 tokens[0m
+[92m[OK] BASELINE complete[0m
+
+[94m[>] Stage: CMM[0m
+  [93m[AI] AI Call #10 [answer_moderator][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 214 prompt + 23 completion = 237 total[0m
+    [96mRunning total: 2255 tokens[0m
+  [93m[AI] AI Call #11 [unknown][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 212 prompt + 84 completion = 296 total[0m
+    [96mRunning total: 2551 tokens[0m
+  [94m[R] Router: DIRECT (complexity: low)[0m
+[R] Router: DIRECT (complexity: low)
+[92m[OK] CMM complete[0m
+
+[94m[>] Stage: JUDGE[0m
+  [93m[AI] AI Call #12 [judge][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 241 prompt + 108 completion = 349 total[0m
+    [96mRunning total: 2900 tokens[0m
+[92m[OK] JUDGE complete[0m
+
+Case V2-003
+Mode: DIRECT
+Expected mode: DIRECT
+Final state: FINALIZE
+Expert contributions: 0/0 valid
+Planner: unknown
+Plan critique: none
+Moderation: unknown
+Judge: llm
+
+[J] Judge evaluation:
+      Baseline overall: 9.00/10
+      CMM overall: 9.00/10
+      Delta: +0.00
+      Winner: TIE
+      Reason: Both answers provide a clear definition, product design examples, and mention competing goals, meeting all rubric requirements. Answer A edges ahead with slightly better structure and actionability. I
+
+[93m[+] Winner: TIE[0m
+[96mTime: 19.15s[0m
+[1m================================================================================[0m
+
+
+[+] Winner: TIE
+Time: 19.15s
+================================================================================
+
+[1m================================================================================[0m
+[1m[*] CASE: V2-004[0m
+[96mQuery: ?????? ??????? ?????? ???????????? ??????? ???????.[0m
+
+================================================================================
+[*] CASE: V2-004
+Query: ?????? ??????? ?????? ???????????? ??????? ???????.
+--------------------------------------------------------------------------------
+[94m[>] Stage: BASELINE[0m
+  [93m[AI] AI Call #13 [unknown][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 22 prompt + 147 completion = 169 total[0m
+    [96mRunning total: 3069 tokens[0m
+[92m[OK] BASELINE complete[0m
+
+[94m[>] Stage: CMM[0m
+  [93m[AI] AI Call #14 [answer_moderator][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 228 prompt + 32 completion = 260 total[0m
+    [96mRunning total: 3329 tokens[0m
+  [93m[AI] AI Call #15 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 321 prompt + 110 completion = 431 total[0m
+    [96mRunning total: 3760 tokens[0m
+  [93m[AI] AI Call #16 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 321 prompt + 116 completion = 437 total[0m
+    [96mRunning total: 4197 tokens[0m
+  [93m[AI] AI Call #17 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 324 prompt + 139 completion = 463 total[0m
+    [96mRunning total: 4660 tokens[0m
+  [93m[AI] AI Call #18 [expert_agent][0m
+    [96mModel: kr/claude-sonnet-4.5[0m
+    [96mTokens: 324 prompt + 116 completion = 440 total[0m
+    [96mRunning total: 5100 tokens[0m

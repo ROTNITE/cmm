@@ -1,0 +1,24 @@
+{
+  "profile": "gpt-4.1",
+  "model": "cgpt-web/gpt-5.5-thinking",
+  "judge_model": "cgpt-web/gpt-5.5-thinking",
+  "api": {
+    "base_url": "http://localhost:20128/v1",
+    "api_key_env": "API_KEY",
+    "api_key_env_names": [
+      "API_KEY",
+      "OMNIROUTE_API_KEY",
+      "CLAUDE_API_KEY",
+      "DEEPSEEK_API_KEY",
+      "OPENAI_API_KEY",
+      "apy_key"
+    ]
+  },
+  "defaults": {
+    "max_iters": 2,
+    "route_mode": "AUTO",
+    "parallel_mode": "SEQUENTIAL",
+    "max_workers": null,
+    "max_deliberation_rounds": 1
+  }
+}

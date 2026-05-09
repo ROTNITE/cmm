@@ -11,6 +11,7 @@ import json
 import re
 from typing import Any
 
+from Lib.config import get_stage_settings
 from Lib.expert_roles import ExpertRole
 from Lib.json_retry import call_json_model
 
@@ -438,6 +439,7 @@ def _model_role_suggestions(
     max_roles: int,
     model: str,
 ) -> tuple[list, list[str], int]:
+    stage = get_stage_settings("role_generator", {"tokens": 350, "temp": 0.15})
     system_prompt, user_prompt = _build_model_prompts(
         query_intake=query_intake,
         meta_decision=meta_decision,
@@ -449,10 +451,11 @@ def _model_role_suggestions(
     result = call_json_model(
         user_prompt=user_prompt,
         system_prompt=system_prompt,
-        temp=0.15,
-        tokens=350,
+        temp=float(stage.get("temp") or 0.15),
+        tokens=int(stage.get("tokens") or 350),
         model=model,
         max_retries=1,
+        log_purpose="role_generator",
     )
     warnings = list(result.get("warnings") or [])
     attempts = int(result.get("attempts") or 0)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from Lib.config import get_default_model
 from Lib.state_machine import run_cmm_state_machine as _original_run_cmm_state_machine
 from Lib.eval_logger import get_logger
 
@@ -10,7 +11,7 @@ def run_cmm_state_machine(
     query: str,
     *,
     max_iters: int = 2,
-    model: str = "deepseek-chat",
+    model: str | None = None,
     max_transitions: int = 40,
     route_mode: str = "AUTO",
     parallel_mode: str = "SEQUENTIAL",
@@ -27,7 +28,7 @@ def run_cmm_state_machine(
     result = _original_run_cmm_state_machine(
         query,
         max_iters=max_iters,
-        model=model,
+        model=get_default_model(model),
         max_transitions=max_transitions,
         route_mode=route_mode,
         parallel_mode=parallel_mode,

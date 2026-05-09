@@ -1,0 +1,2 @@
+﻿id,query,context,constraints,expected_perspectives,rubric_must_cover,rubric_desirable,expected_single_model_failure_modes,expected_mode
+V2-001,Что такое коллективная метамодерация?,Пользователь просит короткое объяснение термина.,Ответ кратко до 5 предложений.,,простое определение | отличие от обычной модерации | упоминание нескольких перспектив,пример применения,слишком длинное объяснение | уход в абстракции,DIRECT

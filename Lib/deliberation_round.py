@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from Lib.config import get_stage_settings
 from Lib.expert_roles import BASE_EXPERT_ROLES, ExpertRole
 from Lib.json_retry import call_json_model
 from Lib.json_utils import to_number, to_string_list
@@ -390,6 +391,7 @@ def _run_role_deliberation(
     meta_decision: dict | None,
     model: str,
 ) -> dict:
+    stage = get_stage_settings("deliberation", {"tokens": 750, "temp": 0.25})
     system_prompt = (
         f"{role.system_prompt}\n\n"
         "You are participating in a Collective Meta-Moderation deliberation round.\n"
@@ -431,10 +433,11 @@ def _run_role_deliberation(
         result = call_json_model(
             user_prompt=user_prompt,
             system_prompt=system_prompt,
-            temp=0.25,
-            tokens=750,
+            temp=float(stage.get("temp") or 0.25),
+            tokens=int(stage.get("tokens") or 750),
             model=model,
             max_retries=1,
+            log_purpose="deliberation",
         )
         parsed = result.get("payload") if isinstance(result, dict) else None
         raw_text = result.get("raw") if isinstance(result, dict) and isinstance(result.get("raw"), str) else ""

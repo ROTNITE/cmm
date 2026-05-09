@@ -357,14 +357,14 @@ def route_query(query_intake: dict, *, original_query: str = "") -> dict:
     )
     multi_stakeholder = (len(context) >= 2 or has_multi_stakeholder_markers) and not is_definition_question
 
-    # Check for operational plan: implementation/tool/process for small team
-    # These should go LIGHT_CMM, not FULL_CMM, unless they have true high-risk or multi-stakeholder governance
+    # Check for operational plan BEFORE complexity-based routing
+    # Operational plans should go LIGHT_CMM even if complexity appears "high"
+    # because they're implementation-focused, not strategic decision-making
     is_operational_plan = (
         signals["has_operational_plan_markers"]
         and (signals["has_small_scope_markers"] or len(constraints) >= 1)
         and not high_risk
         and not multi_stakeholder
-        and complexity in {"low", "medium"}
     )
 
     if is_operational_plan:

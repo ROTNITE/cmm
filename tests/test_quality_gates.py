@@ -14,7 +14,9 @@ class QualityGatesTests(unittest.TestCase):
         }
 
         self.assertTrue(has_critical_plan_blockers(critique_result))
-        self.assertEqual(plan_blockers(critique_result), ["critical privacy leak risk"])
+        blockers = plan_blockers(critique_result)
+        self.assertEqual(blockers["no_answer_blockers"], ["critical privacy leak risk"])
+        self.assertEqual(blockers["must_address"], [])
 
     def test_noncritical_plan_revision_can_best_effort(self):
         from Lib.quality_gates import can_best_effort_finalize
@@ -68,7 +70,9 @@ class QualityGatesTests(unittest.TestCase):
         }
 
         self.assertFalse(has_critical_plan_blockers(critique_result))
-        self.assertEqual(plan_blockers(critique_result), [])
+        blockers = plan_blockers(critique_result)
+        self.assertEqual(blockers["no_answer_blockers"], [])
+        self.assertEqual(blockers["must_address"], [])
 
     def test_key_risk_word_is_not_secret_blocker(self):
         from Lib.quality_gates import has_critical_plan_blockers, plan_blockers
@@ -82,7 +86,9 @@ class QualityGatesTests(unittest.TestCase):
         }
 
         self.assertFalse(has_critical_plan_blockers(critique_result))
-        self.assertEqual(plan_blockers(critique_result), [])
+        blockers = plan_blockers(critique_result)
+        self.assertEqual(blockers["no_answer_blockers"], [])
+        self.assertTrue(blockers["must_address"])
 
     def test_ordinary_compliance_question_is_not_no_answer_blocker(self):
         from Lib.quality_gates import has_critical_plan_blockers, plan_blockers
@@ -97,7 +103,9 @@ class QualityGatesTests(unittest.TestCase):
         }
 
         self.assertFalse(has_critical_plan_blockers(critique_result))
-        self.assertEqual(plan_blockers(critique_result), [])
+        blockers = plan_blockers(critique_result)
+        self.assertEqual(blockers["no_answer_blockers"], [])
+        self.assertEqual(blockers["must_address"], [])
 
     def test_secret_key_text_is_still_blocker(self):
         from Lib.quality_gates import has_critical_plan_blockers, plan_blockers
@@ -110,7 +118,25 @@ class QualityGatesTests(unittest.TestCase):
         }
 
         self.assertTrue(has_critical_plan_blockers(critique_result))
-        self.assertEqual(plan_blockers(critique_result), ["План просит вставить секретный ключ API в общий чат"])
+        blockers = plan_blockers(critique_result)
+        self.assertEqual(blockers["no_answer_blockers"], ["План просит вставить секретный ключ API в общий чат"])
+
+    def test_student_privacy_and_harm_text_are_blockers(self):
+        from Lib.quality_gates import has_critical_plan_blockers, plan_blockers
+
+        critique_result = {
+            "status": "rejected",
+            "critique": {
+                "critical_blockers": [
+                    "Increased vulnerability to data breaches, compromising student privacy.",
+                    "Inadequate AI oversight may lead to biased outputs or unintended harm to students.",
+                ],
+            },
+        }
+
+        self.assertTrue(has_critical_plan_blockers(critique_result))
+        blockers = plan_blockers(critique_result)
+        self.assertEqual(len(blockers["no_answer_blockers"]), 2)
 
     def test_answer_reject_blocks(self):
         from Lib.quality_gates import has_critical_answer_blockers

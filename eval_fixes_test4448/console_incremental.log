@@ -1,0 +1,731 @@
+================================================================================
+[*] CASE: V2-001
+Query: Что такое коллективная метамодерация?
+
+[>] Stage: BASELINE
+  [AI] AI Call #1 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 16 prompt + 46 completion = 62 total
+    Cost: $0.000048 input + $0.000690 output = $0.000738 total
+    Running total: 62 tokens, $0.0007 cost
+  [AI] AI Call #2 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 16 prompt + 46 completion = 62 total
+    Cost: $0.000048 input + $0.000690 output = $0.000738 total
+    Running total: 124 tokens, $0.0015 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  [AI] AI Call #3 [answer_moderator]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 216 prompt + 22 completion = 238 total
+    Cost: $0.000648 input + $0.000330 output = $0.000978 total
+    Running total: 362 tokens, $0.0025 cost
+  [AI] AI Call #4 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 216 prompt + 22 completion = 238 total
+    Cost: $0.000648 input + $0.000330 output = $0.000978 total
+    Running total: 600 tokens, $0.0034 cost
+  [AI] AI Call #5 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 212 prompt + 47 completion = 259 total
+    Cost: $0.000636 input + $0.000705 output = $0.001341 total
+    Running total: 859 tokens, $0.0048 cost
+  [AI] AI Call #6 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 212 prompt + 47 completion = 259 total
+    Cost: $0.000636 input + $0.000705 output = $0.001341 total
+    Running total: 1118 tokens, $0.0061 cost
+  [R] Router: DIRECT (complexity: low)
+[OK] CMM complete
+
+[>] Stage: JUDGE
+  [AI] AI Call #7 [judge]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 249 prompt + 108 completion = 357 total
+    Cost: $0.000747 input + $0.001620 output = $0.002367 total
+    Running total: 1475 tokens, $0.0085 cost
+  [AI] AI Call #8 [judge]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 249 prompt + 108 completion = 357 total
+    Cost: $0.000747 input + $0.001620 output = $0.002367 total
+    Running total: 1832 tokens, $0.0108 cost
+[OK] JUDGE complete
+
+
+[+] Winner: BASELINE
+Time: 22.46s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-001
+Query: Что такое коллективная метамодерация?
+--------------------------------------------------------------------------------
+[R] Router: DIRECT (complexity: low)
+
+[J] Judge evaluation:
+      Baseline overall: 9.00/10
+      CMM overall: 8.00/10
+      Delta: -1.00
+      Winner: BASELINE
+      Reason: Answer A better adheres to the 5-sentence constraint (exactly 5 sentences) while covering all rubric requirements: simple definition, distinction from regular moderation (evaluating moderators vs cont
+
+[+] Winner: BASELINE
+Time: 22.46s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-002
+Query: Кратко объясни разницу между метрикой и KPI.
+
+[>] Stage: BASELINE
+  [AI] AI Call #9 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 18 prompt + 54 completion = 72 total
+    Cost: $0.000054 input + $0.000810 output = $0.000864 total
+    Running total: 1904 tokens, $0.0117 cost
+  [AI] AI Call #10 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 18 prompt + 54 completion = 72 total
+    Cost: $0.000054 input + $0.000810 output = $0.000864 total
+    Running total: 1976 tokens, $0.0126 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  [AI] AI Call #11 [answer_moderator]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 219 prompt + 23 completion = 242 total
+    Cost: $0.000657 input + $0.000345 output = $0.001002 total
+    Running total: 2218 tokens, $0.0136 cost
+  [AI] AI Call #12 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 219 prompt + 23 completion = 242 total
+    Cost: $0.000657 input + $0.000345 output = $0.001002 total
+    Running total: 2460 tokens, $0.0146 cost
+  [AI] AI Call #13 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 214 prompt + 76 completion = 290 total
+    Cost: $0.000642 input + $0.001140 output = $0.001782 total
+    Running total: 2750 tokens, $0.0164 cost
+  [AI] AI Call #14 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 214 prompt + 76 completion = 290 total
+    Cost: $0.000642 input + $0.001140 output = $0.001782 total
+    Running total: 3040 tokens, $0.0181 cost
+  [R] Router: DIRECT (complexity: low)
+[OK] CMM complete
+
+[>] Stage: JUDGE
+  [AI] AI Call #15 [judge]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 245 prompt + 120 completion = 365 total
+    Cost: $0.000735 input + $0.001800 output = $0.002535 total
+    Running total: 3405 tokens, $0.0207 cost
+  [AI] AI Call #16 [judge]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 245 prompt + 120 completion = 365 total
+    Cost: $0.000735 input + $0.001800 output = $0.002535 total
+    Running total: 3770 tokens, $0.0232 cost
+[OK] JUDGE complete
+
+
+[+] Winner: BASELINE
+Time: 23.35s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-002
+Query: Кратко объясни разницу между метрикой и KPI.
+--------------------------------------------------------------------------------
+[R] Router: DIRECT (complexity: low)
+
+[J] Judge evaluation:
+      Baseline overall: 10.00/10
+      CMM overall: 9.00/10
+      Delta: -1.00
+      Winner: BASELINE
+      Reason: Both answers cover the rubric requirements excellently: they explain the difference between metric and KPI, provide clear examples, and use simple language. However, Answer B has slightly better struc
+
+[+] Winner: BASELINE
+Time: 23.35s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-003
+Query: What is a trade-off in product design?
+
+[>] Stage: BASELINE
+  [AI] AI Call #17 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 15 prompt + 50 completion = 65 total
+    Cost: $0.000045 input + $0.000750 output = $0.000795 total
+    Running total: 3835 tokens, $0.0240 cost
+  [AI] AI Call #18 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 15 prompt + 50 completion = 65 total
+    Cost: $0.000045 input + $0.000750 output = $0.000795 total
+    Running total: 3900 tokens, $0.0248 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  [AI] AI Call #19 [answer_moderator]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 214 prompt + 23 completion = 237 total
+    Cost: $0.000642 input + $0.000345 output = $0.000987 total
+    Running total: 4137 tokens, $0.0258 cost
+  [AI] AI Call #20 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 214 prompt + 23 completion = 237 total
+    Cost: $0.000642 input + $0.000345 output = $0.000987 total
+    Running total: 4374 tokens, $0.0268 cost
+  [AI] AI Call #21 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 212 prompt + 84 completion = 296 total
+    Cost: $0.000636 input + $0.001260 output = $0.001896 total
+    Running total: 4670 tokens, $0.0287 cost
+  [AI] AI Call #22 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 212 prompt + 84 completion = 296 total
+    Cost: $0.000636 input + $0.001260 output = $0.001896 total
+    Running total: 4966 tokens, $0.0306 cost
+  [R] Router: DIRECT (complexity: low)
+[OK] CMM complete
+
+[>] Stage: JUDGE
+  [AI] AI Call #23 [judge]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 240 prompt + 113 completion = 353 total
+    Cost: $0.000720 input + $0.001695 output = $0.002415 total
+    Running total: 5319 tokens, $0.0330 cost
+  [AI] AI Call #24 [judge]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 240 prompt + 113 completion = 353 total
+    Cost: $0.000720 input + $0.001695 output = $0.002415 total
+    Running total: 5672 tokens, $0.0354 cost
+[OK] JUDGE complete
+
+
+[+] Winner: BASELINE
+Time: 36.36s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-003
+Query: What is a trade-off in product design?
+--------------------------------------------------------------------------------
+[R] Router: DIRECT (complexity: low)
+
+[J] Judge evaluation:
+      Baseline overall: 9.00/10
+      CMM overall: 8.00/10
+      Delta: -1.00
+      Winner: BASELINE
+      Reason: Both answers provide a clear definition, product design examples, and mention competing goals, meeting all rubric requirements. Answer A edges ahead with slightly better structure and actionability. I
+
+[+] Winner: BASELINE
+Time: 36.36s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-004
+Query: Помоги выбрать формат еженедельной встречи команды.
+
+[>] Stage: BASELINE
+  [AI] AI Call #25 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 22 prompt + 150 completion = 172 total
+    Cost: $0.000066 input + $0.002250 output = $0.002316 total
+    Running total: 5844 tokens, $0.0377 cost
+  [AI] AI Call #26 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 22 prompt + 150 completion = 172 total
+    Cost: $0.000066 input + $0.002250 output = $0.002316 total
+    Running total: 6016 tokens, $0.0400 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  [AI] AI Call #27 [answer_moderator]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 228 prompt + 32 completion = 260 total
+    Cost: $0.000684 input + $0.000480 output = $0.001164 total
+    Running total: 6276 tokens, $0.0412 cost
+  [AI] AI Call #28 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 228 prompt + 32 completion = 260 total
+    Cost: $0.000684 input + $0.000480 output = $0.001164 total
+    Running total: 6536 tokens, $0.0424 cost
+  [AI] AI Call #29 [unknown]
+    Model: deepseek-chat
+    Tokens: 45 prompt + 12 completion = 57 total
+    Cost: $0.000135 input + $0.000180 output = $0.000315 total
+    Running total: 6593 tokens, $0.0427 cost
+  [AI] AI Call #30 [unknown]
+    Model: deepseek-chat
+    Tokens: 127 prompt + 12 completion = 139 total
+    Cost: $0.000381 input + $0.000180 output = $0.000561 total
+    Running total: 6732 tokens, $0.0432 cost
+  [AI] AI Call #31 [expert_agent]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 321 prompt + 108 completion = 429 total
+    Cost: $0.000963 input + $0.001620 output = $0.002583 total
+    Running total: 7161 tokens, $0.0458 cost
+  [AI] AI Call #32 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 321 prompt + 108 completion = 429 total
+    Cost: $0.000963 input + $0.001620 output = $0.002583 total
+    Running total: 7590 tokens, $0.0484 cost
+  [AI] AI Call #33 [expert_agent]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 321 prompt + 113 completion = 434 total
+    Cost: $0.000963 input + $0.001695 output = $0.002658 total
+    Running total: 8024 tokens, $0.0511 cost
+  [AI] AI Call #34 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 321 prompt + 113 completion = 434 total
+    Cost: $0.000963 input + $0.001695 output = $0.002658 total
+    Running total: 8458 tokens, $0.0537 cost
+  [AI] AI Call #35 [expert_agent]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 324 prompt + 128 completion = 452 total
+    Cost: $0.000972 input + $0.001920 output = $0.002892 total
+    Running total: 8910 tokens, $0.0566 cost
+  [AI] AI Call #36 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 324 prompt + 128 completion = 452 total
+    Cost: $0.000972 input + $0.001920 output = $0.002892 total
+    Running total: 9362 tokens, $0.0595 cost
+  [AI] AI Call #37 [expert_agent]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 324 prompt + 120 completion = 444 total
+    Cost: $0.000972 input + $0.001800 output = $0.002772 total
+    Running total: 9806 tokens, $0.0623 cost
+  [AI] AI Call #38 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 324 prompt + 120 completion = 444 total
+    Cost: $0.000972 input + $0.001800 output = $0.002772 total
+    Running total: 10250 tokens, $0.0650 cost
+  [AI] AI Call #39 [planner]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 629 prompt + 639 completion = 1268 total
+    Cost: $0.001887 input + $0.009585 output = $0.011472 total
+    Running total: 11518 tokens, $0.0765 cost
+  [AI] AI Call #40 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 629 prompt + 639 completion = 1268 total
+    Cost: $0.001887 input + $0.009585 output = $0.011472 total
+    Running total: 12786 tokens, $0.0880 cost
+  [AI] AI Call #41 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1398 prompt + 417 completion = 1815 total
+    Cost: $0.004194 input + $0.006255 output = $0.010449 total
+    Running total: 14601 tokens, $0.0984 cost
+  [AI] AI Call #42 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1398 prompt + 417 completion = 1815 total
+    Cost: $0.004194 input + $0.006255 output = $0.010449 total
+    Running total: 16416 tokens, $0.1089 cost
+  [AI] AI Call #43 [expert_agent]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1745 prompt + 1023 completion = 2768 total
+    Cost: $0.005235 input + $0.015345 output = $0.020580 total
+    Running total: 19184 tokens, $0.1295 cost
+  [AI] AI Call #44 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1745 prompt + 1023 completion = 2768 total
+    Cost: $0.005235 input + $0.015345 output = $0.020580 total
+    Running total: 21952 tokens, $0.1500 cost
+  [AI] AI Call #45 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 3173 prompt + 239 completion = 3412 total
+    Cost: $0.009519 input + $0.003585 output = $0.013104 total
+    Running total: 25364 tokens, $0.1632 cost
+  [AI] AI Call #46 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 3173 prompt + 239 completion = 3412 total
+    Cost: $0.009519 input + $0.003585 output = $0.013104 total
+    Running total: 28776 tokens, $0.1763 cost
+  [AI] AI Call #47 [expert_agent]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1418 prompt + 1150 completion = 2568 total
+    Cost: $0.004254 input + $0.017250 output = $0.021504 total
+    Running total: 31344 tokens, $0.1978 cost
+  [AI] AI Call #48 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1418 prompt + 1150 completion = 2568 total
+    Cost: $0.004254 input + $0.017250 output = $0.021504 total
+    Running total: 33912 tokens, $0.2193 cost
+  [AI] AI Call #49 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 3281 prompt + 270 completion = 3551 total
+    Cost: $0.009843 input + $0.004050 output = $0.013893 total
+    Running total: 37463 tokens, $0.2332 cost
+  [AI] AI Call #50 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 3281 prompt + 270 completion = 3551 total
+    Cost: $0.009843 input + $0.004050 output = $0.013893 total
+    Running total: 41014 tokens, $0.2470 cost
+  [AI] AI Call #51 [expert_agent]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1506 prompt + 397 completion = 1903 total
+    Cost: $0.004518 input + $0.005955 output = $0.010473 total
+    Running total: 42917 tokens, $0.2575 cost
+  [AI] AI Call #52 [expert_agent]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1506 prompt + 397 completion = 1903 total
+    Cost: $0.004518 input + $0.005955 output = $0.010473 total
+    Running total: 44820 tokens, $0.2680 cost
+  [AI] AI Call #53 [expert_agent]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 879 prompt + 64 completion = 943 total
+    Cost: $0.002637 input + $0.000960 output = $0.003597 total
+    Running total: 45763 tokens, $0.2716 cost
+  [AI] AI Call #54 [expert_agent]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 879 prompt + 64 completion = 943 total
+    Cost: $0.002637 input + $0.000960 output = $0.003597 total
+    Running total: 46706 tokens, $0.2752 cost
+  [R] Router: LIGHT_CMM (complexity: medium)
+  [E] Expert: strategist (strategy) - valid
+  [E] Expert: engineer (engineering) - valid
+  [E] Expert: risk_manager (risk) - valid
+  [E] Expert: user_advocate (user) - valid
+  [P] Plan critique: needs_revision
+  [P] Plan critique: needs_revision
+  [P] Plan critique: ready
+  [M] Moderation: ACCEPT
+[OK] CMM complete
+
+[>] Stage: JUDGE
+  [AI] AI Call #55 [judge]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 653 prompt + 156 completion = 809 total
+    Cost: $0.001959 input + $0.002340 output = $0.004299 total
+    Running total: 47515 tokens, $0.2795 cost
+  [AI] AI Call #56 [judge]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 653 prompt + 156 completion = 809 total
+    Cost: $0.001959 input + $0.002340 output = $0.004299 total
+    Running total: 48324 tokens, $0.2838 cost
+[OK] JUDGE complete
+
+
+[+] Winner: CMM
+Time: 313.29s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-004
+Query: Помоги выбрать формат еженедельной встречи команды.
+--------------------------------------------------------------------------------
+[R] Router: LIGHT_CMM (complexity: medium)
+[E] Expert: strategist (strategy) - valid
+[E] Expert: engineer (engineering) - valid
+[E] Expert: risk_manager (risk) - valid
+[E] Expert: user_advocate (user) - valid
+[P] Plan generated:
+      Main idea: Разработать гибридный формат встречи, сочетающий асинхронную подготовку (письменные статусы) с синхронным обсуждением критических вопросов. Формат обе
+      Steps (5):
+        1. Внедрить асинхронную подготовку с чёткой повесткой для сохранения синхронизации
+        2. Спроектировать структуру встречи с адаптацией под размер команды и встроенной гибкостью
+        3. Назначить ротируемого модератора с согласованными полномочиями и культурой уважения
+        4. Внедрить механизм parking lot с обязательным follow-up для сохранения синхронизации
+        5. Запустить пилот на 4 недели с ретроспективой, метриками и механизмом адаптации
+      Source: model, Format: json
+[P] Plan critique: needs_revision
+      Overall score: 8.80/10
+      Scores:
+          query_alignment: 9.5
+          constraint_coverage: 9.0
+          success_criteria_coverage: 8.5
+          expert_input_coverage: 9.5
+          risk_coverage: 9.0
+          conflict_resolution: 10.0
+      Ignored must_address: 3
+      Ignored risks: 3
+      Ignored tradeoffs: 2
+      Feedback (9):
+          - Preparation хорошо сформулирован, но не показывает, как ответы на вопросы изменят план - добавьте de
+          - Шаг 2 содержит расчёты времени, но они не связаны с preparation - если в preparation выяснится, что 
+          - Nuance о культурном аспекте прерывания модератором важен, но не отражён в шаге 3 - добавьте substep 
+[P] Plan critique: needs_revision
+      Overall score: 9.40/10
+      Scores:
+          query_alignment: 9.5
+          constraint_coverage: 9.5
+          success_criteria_coverage: 9.0
+          expert_input_coverage: 9.5
+          risk_coverage: 9.5
+          conflict_resolution: 10.0
+      Ignored must_address: 3
+      Ignored risks: 3
+      Feedback (2):
+          - Cover deliberation_brief.must_address items.
+          - Add mitigation for ignored expert risks.
+[P] Plan critique: ready
+      Overall score: 9.90/10
+      Scores:
+          query_alignment: 10.0
+          constraint_coverage: 10.0
+          success_criteria_coverage: 9.5
+          expert_input_coverage: 10.0
+          risk_coverage: 10.0
+          conflict_resolution: 10.0
+      Ignored must_address: 1
+      Feedback (1):
+          - Cover deliberation_brief.must_address items.
+[B] Balance analysis:
+      Blind spots (1):
+          - Constraint not covered by expert contributions: Нужно сохранить синхронизацию.
+      Recommended action: DEEPEN
+[M] Moderation: ACCEPT
+
+[J] Judge evaluation:
+      Baseline overall: 7.00/10
+      CMM overall: 9.00/10
+      Delta: +2.00
+      Winner: CMM
+      Reason: Answer A provides deeper actionability with specific implementation steps, moderation guidelines, and comprehensive risk mitigation strategies. While Answer B covers more format options (4 vs 1), Answ
+
+[+] Winner: CMM
+Time: 313.29s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-005
+Query: Сравни два подхода к сбору обратной связи от клиентов.
+
+[>] Stage: BASELINE
+  [AI] AI Call #57 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 25 prompt + 119 completion = 144 total
+    Cost: $0.000075 input + $0.001785 output = $0.001860 total
+    Running total: 48468 tokens, $0.2856 cost
+  [AI] AI Call #58 [unknown]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 25 prompt + 119 completion = 144 total
+    Cost: $0.000075 input + $0.001785 output = $0.001860 total
+    Running total: 48612 tokens, $0.2875 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  [AI] AI Call #59 [answer_moderator]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 234 prompt + 39 completion = 273 total
+    Cost: $0.000702 input + $0.000585 output = $0.001287 total
+    Running total: 48885 tokens, $0.2888 cost
+  [AI] AI Call #60 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 234 prompt + 39 completion = 273 total
+    Cost: $0.000702 input + $0.000585 output = $0.001287 total
+    Running total: 49158 tokens, $0.2901 cost
+  [AI] AI Call #61 [unknown]
+    Model: deepseek-chat
+    Tokens: 48 prompt + 12 completion = 60 total
+    Cost: $0.000144 input + $0.000180 output = $0.000324 total
+    Running total: 49218 tokens, $0.2904 cost
+  [AI] AI Call #62 [unknown]
+    Model: deepseek-chat
+    Tokens: 130 prompt + 12 completion = 142 total
+    Cost: $0.000390 input + $0.000180 output = $0.000570 total
+    Running total: 49360 tokens, $0.2910 cost
+  [AI] AI Call #63 [expert_agent]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 342 prompt + 139 completion = 481 total
+    Cost: $0.001026 input + $0.002085 output = $0.003111 total
+    Running total: 49841 tokens, $0.2941 cost
+  [AI] AI Call #64 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 342 prompt + 139 completion = 481 total
+    Cost: $0.001026 input + $0.002085 output = $0.003111 total
+    Running total: 50322 tokens, $0.2972 cost
+  [AI] AI Call #65 [expert_agent]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 342 prompt + 132 completion = 474 total
+    Cost: $0.001026 input + $0.001980 output = $0.003006 total
+    Running total: 50796 tokens, $0.3002 cost
+  [AI] AI Call #66 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 342 prompt + 132 completion = 474 total
+    Cost: $0.001026 input + $0.001980 output = $0.003006 total
+    Running total: 51270 tokens, $0.3032 cost
+  [AI] AI Call #67 [expert_agent]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 345 prompt + 129 completion = 474 total
+    Cost: $0.001035 input + $0.001935 output = $0.002970 total
+    Running total: 51744 tokens, $0.3062 cost
+  [AI] AI Call #68 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 345 prompt + 129 completion = 474 total
+    Cost: $0.001035 input + $0.001935 output = $0.002970 total
+    Running total: 52218 tokens, $0.3091 cost
+  [AI] AI Call #69 [expert_agent]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 346 prompt + 115 completion = 461 total
+    Cost: $0.001038 input + $0.001725 output = $0.002763 total
+    Running total: 52679 tokens, $0.3119 cost
+  [AI] AI Call #70 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 346 prompt + 115 completion = 461 total
+    Cost: $0.001038 input + $0.001725 output = $0.002763 total
+    Running total: 53140 tokens, $0.3147 cost
+  [AI] AI Call #71 [planner]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 701 prompt + 666 completion = 1367 total
+    Cost: $0.002103 input + $0.009990 output = $0.012093 total
+    Running total: 54507 tokens, $0.3268 cost
+  [AI] AI Call #72 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 701 prompt + 666 completion = 1367 total
+    Cost: $0.002103 input + $0.009990 output = $0.012093 total
+    Running total: 55874 tokens, $0.3389 cost
+  [AI] AI Call #73 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1491 prompt + 263 completion = 1754 total
+    Cost: $0.004473 input + $0.003945 output = $0.008418 total
+    Running total: 57628 tokens, $0.3473 cost
+  [AI] AI Call #74 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1491 prompt + 263 completion = 1754 total
+    Cost: $0.004473 input + $0.003945 output = $0.008418 total
+    Running total: 59382 tokens, $0.3557 cost
+  [AI] AI Call #75 [planner]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1531 prompt + 940 completion = 2471 total
+    Cost: $0.004593 input + $0.014100 output = $0.018693 total
+    Running total: 61853 tokens, $0.3744 cost
+  [AI] AI Call #76 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1531 prompt + 940 completion = 2471 total
+    Cost: $0.004593 input + $0.014100 output = $0.018693 total
+    Running total: 64324 tokens, $0.3931 cost
+  [AI] AI Call #77 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 2965 prompt + 219 completion = 3184 total
+    Cost: $0.008895 input + $0.003285 output = $0.012180 total
+    Running total: 67508 tokens, $0.4053 cost
+  [AI] AI Call #78 [router]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 2965 prompt + 219 completion = 3184 total
+    Cost: $0.008895 input + $0.003285 output = $0.012180 total
+    Running total: 70692 tokens, $0.4174 cost
+  [AI] AI Call #79 [planner]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1365 prompt + 373 completion = 1738 total
+    Cost: $0.004095 input + $0.005595 output = $0.009690 total
+    Running total: 72430 tokens, $0.4271 cost
+  [AI] AI Call #80 [planner]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 1365 prompt + 373 completion = 1738 total
+    Cost: $0.004095 input + $0.005595 output = $0.009690 total
+    Running total: 74168 tokens, $0.4368 cost
+  [AI] AI Call #81 [balance_analyzer]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 891 prompt + 62 completion = 953 total
+    Cost: $0.002673 input + $0.000930 output = $0.003603 total
+    Running total: 75121 tokens, $0.4404 cost
+  [AI] AI Call #82 [balance_analyzer]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 891 prompt + 62 completion = 953 total
+    Cost: $0.002673 input + $0.000930 output = $0.003603 total
+    Running total: 76074 tokens, $0.4440 cost
+  [R] Router: LIGHT_CMM (complexity: medium)
+  [E] Expert: strategist (strategy) - valid
+  [E] Expert: engineer (engineering) - valid
+  [E] Expert: risk_manager (risk) - valid
+  [E] Expert: user_advocate (user) - valid
+  [P] Plan critique: needs_revision
+  [P] Plan critique: ready
+  [M] Moderation: ACCEPT
+[OK] CMM complete
+
+[>] Stage: JUDGE
+  [AI] AI Call #83 [judge]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 616 prompt + 155 completion = 771 total
+    Cost: $0.001848 input + $0.002325 output = $0.004173 total
+    Running total: 76845 tokens, $0.4482 cost
+  [AI] AI Call #84 [judge]
+    Model: kr/claude-sonnet-4.5
+    Tokens: 616 prompt + 155 completion = 771 total
+    Cost: $0.001848 input + $0.002325 output = $0.004173 total
+    Running total: 77616 tokens, $0.4524 cost
+[OK] JUDGE complete
+
+
+[+] Winner: CMM
+Time: 236.81s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-005
+Query: Сравни два подхода к сбору обратной связи от клиентов.
+--------------------------------------------------------------------------------
+[R] Router: LIGHT_CMM (complexity: medium)
+[E] Expert: strategist (strategy) - valid
+[E] Expert: engineer (engineering) - valid
+[E] Expert: risk_manager (risk) - valid
+[E] Expert: user_advocate (user) - valid
+[P] Plan generated:
+      Main idea: Создать структурированное сравнение интервью и опросов с гибридной стратегией, учитывающей ограничения маленькой команды и двухнедельный срок запуска,
+      Steps (7):
+        1. Создать comparison matrix для быстрого сравнения подходов
+        2. Разработать упрощенную гибридную стратегию для маленькой команды
+        3. Распределить роли с учетом реальности маленькой команды
+        4. Создать критерии отбора респондентов с учетом selection bias
+        5. Минимизировать риски срыва дедлайна с конкретными инструментами
+      Source: model, Format: json
+[P] Plan critique: needs_revision
+      Overall score: 9.20/10
+      Scores:
+          query_alignment: 9.5
+          constraint_coverage: 9.0
+          success_criteria_coverage: 8.5
+          expert_input_coverage: 9.5
+          risk_coverage: 9.0
+          conflict_resolution: 10.0
+      Ignored must_address: 1
+      Ignored risks: 3
+      Ignored tradeoffs: 1
+      Feedback (9):
+          - Шаг 1 сравнивает подходы, но мог бы быть более структурирован в виде таблицы для быстрого сканирован
+          - Preparation этап не включает проверку текущих каналов коммуникации с клиентами (email списки, CRM да
+          - План предполагает наличие минимум 50-100 клиентов для статистической значимости, но не проверяет это
+[P] Plan critique: ready
+      Overall score: 9.65/10
+      Scores:
+          query_alignment: 9.8
+          constraint_coverage: 9.5
+          success_criteria_coverage: 9.0
+          expert_input_coverage: 9.8
+          risk_coverage: 9.5
+          conflict_resolution: 10.0
+      Ignored must_address: 1
+      Ignored risks: 2
+      Feedback (2):
+          - Cover deliberation_brief.must_address items.
+          - Add mitigation for ignored expert risks.
+[B] Balance analysis:
+      Recommended action: DEEPEN
+[M] Moderation: ACCEPT
+
+[J] Judge evaluation:
+      Baseline overall: 8.00/10
+      CMM overall: 9.00/10
+      Delta: +1.00
+      Winner: CMM
+      Reason: Answer B provides more comprehensive coverage with specific risk mitigation strategies, role distribution for small teams, and concrete tools. While Answer A is clearer and more concise, Answer B addr
+
+[+] Winner: CMM
+Time: 236.81s
+================================================================================
+
+

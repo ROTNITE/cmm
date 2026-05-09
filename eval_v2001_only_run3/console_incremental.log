@@ -1,0 +1,62 @@
+================================================================================
+[*] CASE: V2-001
+Query: Что такое коллективная метамодерация?
+
+[>] Stage: BASELINE
+  [AI] AI Call #1 [baseline]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 16 prompt + 48 completion = 64 total
+    Cost: $0.000048 input + $0.000720 output = $0.000768 total
+    Running total: 64 tokens, $0.0008 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  Starting CMM state machine (route_mode=AUTO)
+  [AI] AI Call #2 [query_intake]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 216 prompt + 23 completion = 239 total
+    Cost: $0.000648 input + $0.000345 output = $0.000993 total
+    Running total: 303 tokens, $0.0018 cost
+  [AI] AI Call #3 [direct_answer]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 92 prompt + 37 completion = 129 total
+    Cost: $0.000276 input + $0.000555 output = $0.000831 total
+    Running total: 432 tokens, $0.0026 cost
+  CMM completed with state: FINALIZE
+  [R] Router: DIRECT (complexity: low)
+    Reasoning: Simple low-risk explanation request has only formatting constraints.
+[OK] CMM complete
+
+[>] Stage: JUDGE
+  [AI] AI Call #4 [judge]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 267 prompt + 114 completion = 381 total
+    Cost: $0.000801 input + $0.001710 output = $0.002511 total
+    Running total: 813 tokens, $0.0051 cost
+[OK] JUDGE complete
+
+
+[+] Winner: CMM
+Time: 36.40s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-001
+Query: Что такое коллективная метамодерация?
+--------------------------------------------------------------------------------
+[R] Router: DIRECT (complexity: low)
+    Reasoning: Simple low-risk explanation request has only formatting constraints.
+
+[J] Judge evaluation:
+      Baseline overall: 7.00/10
+      CMM overall: 8.00/10
+      Delta: +1.00
+      Winner: CMM
+      Reason: Answer B provides a more comprehensive explanation of collective metamoderation, covering the concept in more depth and providing clearer contrasts with regular moderation. It emphasizes the role of e
+
+[+] Winner: CMM
+Time: 36.40s
+================================================================================
+
+

@@ -1,0 +1,260 @@
+================================================================================
+[*] CASE: V2-011
+Query: Разработай политику использования генеративного ИИ в школе.
+
+[>] Stage: BASELINE
+  [AI] AI Call #1 [baseline]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 26 prompt + 393 completion = 419 total
+    Cost: $0.000078 input + $0.005895 output = $0.005973 total
+    Running total: 419 tokens, $0.0060 cost
+[OK] BASELINE complete
+
+[>] Stage: CMM
+  Starting CMM state machine (route_mode=AUTO)
+  [AI] AI Call #2 [query_intake]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 235 prompt + 31 completion = 266 total
+    Cost: $0.000705 input + $0.000465 output = $0.001170 total
+    Running total: 685 tokens, $0.0071 cost
+  [AI] AI Call #3 [expert_selector]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 49 prompt + 4 completion = 53 total
+    Cost: $0.000147 input + $0.000060 output = $0.000207 total
+    Running total: 738 tokens, $0.0073 cost
+  [AI] AI Call #4 [expert_agent]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 249 prompt + 102 completion = 351 total
+    Cost: $0.000747 input + $0.001530 output = $0.002277 total
+    Running total: 1089 tokens, $0.0096 cost
+  [AI] AI Call #5 [expert_agent]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 249 prompt + 96 completion = 345 total
+    Cost: $0.000747 input + $0.001440 output = $0.002187 total
+    Running total: 1434 tokens, $0.0118 cost
+  [AI] AI Call #6 [expert_agent]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 252 prompt + 104 completion = 356 total
+    Cost: $0.000756 input + $0.001560 output = $0.002316 total
+    Running total: 1790 tokens, $0.0141 cost
+  [AI] AI Call #7 [expert_agent]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 252 prompt + 93 completion = 345 total
+    Cost: $0.000756 input + $0.001395 output = $0.002151 total
+    Running total: 2135 tokens, $0.0163 cost
+  [AI] AI Call #8 [expert_agent]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 252 prompt + 136 completion = 388 total
+    Cost: $0.000756 input + $0.002040 output = $0.002796 total
+    Running total: 2523 tokens, $0.0191 cost
+  [AI] AI Call #9 [conflict_analyzer]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 1689 prompt + 177 completion = 1866 total
+    Cost: $0.005067 input + $0.002655 output = $0.007722 total
+    Running total: 4389 tokens, $0.0268 cost
+  [AI] AI Call #10 [meta_moderator]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 1758 prompt + 123 completion = 1881 total
+    Cost: $0.005274 input + $0.001845 output = $0.007119 total
+    Running total: 6270 tokens, $0.0339 cost
+  [AI] AI Call #11 [deliberation]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 2262 prompt + 228 completion = 2490 total
+    Cost: $0.006786 input + $0.003420 output = $0.010206 total
+    Running total: 8760 tokens, $0.0441 cost
+  [AI] AI Call #12 [deliberation]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 2258 prompt + 205 completion = 2463 total
+    Cost: $0.006774 input + $0.003075 output = $0.009849 total
+    Running total: 11223 tokens, $0.0540 cost
+  [AI] AI Call #13 [deliberation]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 2262 prompt + 234 completion = 2496 total
+    Cost: $0.006786 input + $0.003510 output = $0.010296 total
+    Running total: 13719 tokens, $0.0643 cost
+  [AI] AI Call #14 [deliberation]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 2257 prompt + 204 completion = 2461 total
+    Cost: $0.006771 input + $0.003060 output = $0.009831 total
+    Running total: 16180 tokens, $0.0741 cost
+  [AI] AI Call #15 [conflict_analyzer]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 3852 prompt + 319 completion = 4171 total
+    Cost: $0.011556 input + $0.004785 output = $0.016341 total
+    Running total: 20351 tokens, $0.0904 cost
+  [AI] AI Call #16 [meta_moderator]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 3458 prompt + 207 completion = 3665 total
+    Cost: $0.010374 input + $0.003105 output = $0.013479 total
+    Running total: 24016 tokens, $0.1039 cost
+  [AI] AI Call #17 [expert_agent]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 5718 prompt + 117 completion = 5835 total
+    Cost: $0.017154 input + $0.001755 output = $0.018909 total
+    Running total: 29851 tokens, $0.1228 cost
+  [AI] AI Call #18 [expert_agent]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 5719 prompt + 133 completion = 5852 total
+    Cost: $0.017157 input + $0.001995 output = $0.019152 total
+    Running total: 35703 tokens, $0.1420 cost
+  [AI] AI Call #19 [conflict_analyzer]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 4372 prompt + 272 completion = 4644 total
+    Cost: $0.013116 input + $0.004080 output = $0.017196 total
+    Running total: 40347 tokens, $0.1592 cost
+  [AI] AI Call #20 [planner]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 569 prompt + 574 completion = 1143 total
+    Cost: $0.001707 input + $0.008610 output = $0.010317 total
+    Running total: 41490 tokens, $0.1695 cost
+  [AI] AI Call #21 [plan_critic]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 3556 prompt + 153 completion = 3709 total
+    Cost: $0.010668 input + $0.002295 output = $0.012963 total
+    Running total: 45199 tokens, $0.1825 cost
+  [AI] AI Call #22 [planner]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 1536 prompt + 522 completion = 2058 total
+    Cost: $0.004608 input + $0.007830 output = $0.012438 total
+    Running total: 47257 tokens, $0.1949 cost
+  [AI] AI Call #23 [plan_critic]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 4942 prompt + 251 completion = 5193 total
+    Cost: $0.014826 input + $0.003765 output = $0.018591 total
+    Running total: 52450 tokens, $0.2135 cost
+  [AI] AI Call #24 [planner]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 1608 prompt + 524 completion = 2132 total
+    Cost: $0.004824 input + $0.007860 output = $0.012684 total
+    Running total: 54582 tokens, $0.2262 cost
+  [AI] AI Call #25 [plan_critic]
+    Model: cgpt-web/gpt-5.5-thinking
+    Tokens: 4984 prompt + 117 completion = 5101 total
+    Cost: $0.014952 input + $0.001755 output = $0.016707 total
+    Running total: 59683 tokens, $0.2429 cost
+  CMM completed with state: FAILED
+  [R] Router: FULL_CMM (complexity: medium)
+    Reasoning: Complex, high-risk, or multi-stakeholder signals require full CMM.
+  [E] Expert: strategist (strategy) - valid
+  [E] Expert: engineer (engineering) - valid
+  [E] Expert: risk_manager (risk) - valid
+  [E] Expert: user_advocate (user) - valid
+  [E] Expert: domain_expert_education (domain) - valid
+  [E] Expert: risk_manager (risk) - valid
+  [E] Expert: user_advocate (user) - valid
+  [P] Plan critique: rejected
+  [P] Plan critique: rejected
+  [P] Plan critique: rejected
+  [!] Warning: meta_recheck_budget_exhausted_after_rebalance
+  [!] Warning: plan_rejected_after_max_iters
+  [X] Error: plan_rejected_after_max_iters
+  [X] Error: critical_plan_blockers
+[OK] CMM complete
+
+
+[+] Winner: UNJUDGED
+Time: 330.36s
+================================================================================
+
+
+================================================================================
+[*] CASE: V2-011
+Query: Разработай политику использования генеративного ИИ в школе.
+--------------------------------------------------------------------------------
+[R] Router: FULL_CMM (complexity: medium)
+    Reasoning: Complex, high-risk, or multi-stakeholder signals require full CMM.
+[E] Expert: strategist (strategy) - valid
+[E] Expert: engineer (engineering) - valid
+[E] Expert: risk_manager (risk) - valid
+[E] Expert: user_advocate (user) - valid
+[E] Expert: domain_expert_education (domain) - valid
+[E] Expert: risk_manager (risk) - valid
+[E] Expert: user_advocate (user) - valid
+[P] Plan generated:
+      Main idea: Ответить на: Разработай политику использования генеративного ИИ в школе.
+Контекст: Школа хочет разрешить ИИ, но есть опасения родителей и учителей.
+Ог
+      Steps (6):
+        1. Сформулировать решение вокруг цели запроса и критериев качества
+        2. Встроить ограничения в рабочий план и критерии выбора
+        3. Закрыть обязательные риски, blind spots и trade-offs
+        4. Показать, как решение учитывает заинтересованные стороны
+        5. Подготовить итоговый ответ с реалистичными шагами, caveats и проверкой эффекта
+      Source: fallback_repair, Format: fallback_repair
+      Warnings: json_replan_failed_used_previous_plan_repair
+[P] Plan critique: rejected
+      Overall score: 0.00/10
+      Scores:
+          query_alignment: 0.0
+          constraint_coverage: 0.0
+          success_criteria_coverage: 0.0
+          expert_input_coverage: 0.0
+          risk_coverage: 0.0
+          conflict_resolution: 0.0
+      CRITICAL BLOCKERS (2):
+          - Риски утечки данных учеников, если приватность не будет должным образом защищена.
+          - Использование ИИ может привести к утечке данных учеников, если не соблюдать стандарты безопасности.
+      Ignored must_address: 10
+      Ignored risks: 7
+      Ignored tradeoffs: 1
+      Feedback (3):
+          - Cover deliberation_brief.must_address items.
+          - Add mitigation for ignored expert risks.
+          - Resolve or frame unresolved trade-offs with a decision rule.
+[P] Plan critique: rejected
+      Overall score: 0.00/10
+      Scores:
+          query_alignment: 0.0
+          constraint_coverage: 0.0
+          success_criteria_coverage: 0.0
+          expert_input_coverage: 0.0
+          risk_coverage: 0.0
+          conflict_resolution: 0.0
+      CRITICAL BLOCKERS (2):
+          - Риски утечки данных учеников, если приватность не будет должным образом защищена.
+          - Использование ИИ может привести к утечке данных учеников, если не соблюдать стандарты безопасности.
+      Ignored must_address: 8
+      Ignored risks: 7
+      Ignored tradeoffs: 1
+      Feedback (3):
+          - Cover deliberation_brief.must_address items.
+          - Add mitigation for ignored expert risks.
+          - Resolve or frame unresolved trade-offs with a decision rule.
+[P] Plan critique: rejected
+      Overall score: 0.00/10
+      Scores:
+          query_alignment: 0.0
+          constraint_coverage: 0.0
+          success_criteria_coverage: 0.0
+          expert_input_coverage: 0.0
+          risk_coverage: 0.0
+          conflict_resolution: 0.0
+      CRITICAL BLOCKERS (2):
+          - Риски утечки данных учеников, если приватность не будет должным образом защищена.
+          - Использование ИИ может привести к утечке данных учеников, если не соблюдать стандарты безопасности.
+      Ignored must_address: 8
+      Ignored risks: 3
+      Feedback (2):
+          - Cover deliberation_brief.must_address items.
+          - Add mitigation for ignored expert risks.
+[B] Balance analysis:
+      Blind spots (1):
+          - Constraint not covered by expert contributions: Нужно защитить учеников.
+      Recommended action: DEEPEN
+[!] Warning: meta_recheck_budget_exhausted_after_rebalance
+[!] Warning: plan_rejected_after_max_iters
+[X] Error: plan_rejected_after_max_iters
+[X] Error: critical_plan_blockers
+
+[J] Judge evaluation:
+      Baseline overall: 0.00/10
+      CMM overall: 0.00/10
+      Delta: +0.00
+      Winner: UNJUDGED
+      Reason: judge_mode=none; exported for human review
+
+[+] Winner: UNJUDGED
+Time: 330.36s
+================================================================================
+
+

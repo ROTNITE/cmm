@@ -1,4 +1,8 @@
+import json
+import os
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import DEFAULT, patch
 
 
@@ -602,10 +606,12 @@ class StateMachineTests(unittest.TestCase):
             result = run_cmm_state_machine("raw query")
 
         trace = result["trace_report"]
-        self.assertEqual(result["final_answer"], "revised best effort")
         self.assertEqual(trace["final_state"], "FINALIZE")
-        self.assertEqual(trace["answer_moderation_final_decision"], "REVISE")
+        self.assertEqual(trace["answer_moderation_final_decision"], "ACCEPT")
         self.assertTrue(trace["answer_moderation_best_effort"])
+        self.assertTrue(trace["best_effort_answer_from_plan"])
+        self.assertTrue(result["final_answer"].strip())
+        self.assertNotEqual(result["final_answer"], "revised best effort")
         self.assertIn("answer_moderation_revise_best_effort", trace["warnings"])
 
     def test_trace_contains_context_compression(self):
@@ -662,6 +668,7 @@ class StateMachineTests(unittest.TestCase):
 
     def test_threaded_mode_passes_config_to_initial_expert_panel_and_trace(self):
         from Lib.state_machine import run_cmm_state_machine
+        from Lib.config import get_default_model
 
         captured = {}
 
@@ -677,7 +684,7 @@ class StateMachineTests(unittest.TestCase):
         trace = result["trace_report"]
         self.assertEqual(captured["kwargs"]["execution_mode"], "THREADS")
         self.assertEqual(captured["kwargs"]["max_workers"], 3)
-        self.assertEqual(captured["kwargs"]["model"], "deepseek-chat")
+        self.assertEqual(captured["kwargs"]["model"], get_default_model())
         self.assertEqual(trace["parallel_mode"], "THREADS")
         self.assertEqual(trace["max_workers"], 3)
         self.assertIn("PANEL_ROUND_1", trace["parallelized_stages"])
@@ -740,6 +747,10 @@ class StateMachineTests(unittest.TestCase):
         self.assertEqual(captured_critique_kwargs[1]["replan_context"]["feedback"], ["Fix A"])
 
     def test_state_machine_passes_model_to_develop_plan(self):
+        """Test that model from config file is passed to develop_plan.
+
+        NEW BEHAVIOR: Model comes from config file, not explicit parameter.
+        """
         from Lib.state_machine import run_cmm_state_machine
 
         captured = {}
@@ -748,14 +759,26 @@ class StateMachineTests(unittest.TestCase):
             captured["model"] = model
             return _plan()
 
-        with self._patch_core() as mocks:
-            self._configure_success(mocks)
-            mocks["develop_plan"].side_effect = capture_plan
-            run_cmm_state_machine("raw query", model="test-model")
+        with tempfile.TemporaryDirectory() as tmp:
+            config_path = Path(tmp) / "config.json"
+            config_path.write_text(
+                json.dumps({"model": "test-model"}, ensure_ascii=False),
+                encoding="utf-8"
+            )
 
-        self.assertEqual(captured["model"], "test-model")
+            with patch.dict(os.environ, {"CMM_CONFIG_PATH": str(config_path)}, clear=True):
+                with self._patch_core() as mocks:
+                    self._configure_success(mocks)
+                    mocks["develop_plan"].side_effect = capture_plan
+                    run_cmm_state_machine("raw query")
+
+                self.assertEqual(captured["model"], "test-model")
 
     def test_state_machine_passes_model_to_core_stages(self):
+        """Test that model from config file is passed to all core stages.
+
+        NEW BEHAVIOR: Model comes from config file, not explicit parameter.
+        """
         from Lib.state_machine import run_cmm_state_machine
 
         captured = {}
@@ -788,24 +811,32 @@ class StateMachineTests(unittest.TestCase):
             captured["answer_model"] = kwargs.get("model")
             return _moderated()
 
-        with self._patch_core() as mocks:
-            self._configure_success(mocks)
-            mocks["generate_dynamic_roles"].side_effect = capture_dynamic
-            mocks["run_expert_panel"].side_effect = capture_panel
-            mocks["analyze_conflicts"].side_effect = capture_conflict
-            mocks["run_meta_moderator"].side_effect = capture_meta
-            mocks["develop_plan"].side_effect = capture_plan
-            mocks["check_plan_and_act"].side_effect = capture_critique
-            mocks["run_moderated_loop"].side_effect = capture_answer
-            run_cmm_state_machine("raw query", model="test-model")
+        with tempfile.TemporaryDirectory() as tmp:
+            config_path = Path(tmp) / "config.json"
+            config_path.write_text(
+                json.dumps({"model": "test-model"}, ensure_ascii=False),
+                encoding="utf-8"
+            )
 
-        self.assertEqual(captured["dynamic_models"], ["test-model"])
-        self.assertEqual(captured["panel_model"], "test-model")
-        self.assertEqual(captured["conflict_model"], "test-model")
-        self.assertEqual(captured["meta_model"], "test-model")
-        self.assertEqual(captured["plan_model"], "test-model")
-        self.assertEqual(captured["critic_model"], "test-model")
-        self.assertEqual(captured["answer_model"], "test-model")
+            with patch.dict(os.environ, {"CMM_CONFIG_PATH": str(config_path)}, clear=True):
+                with self._patch_core() as mocks:
+                    self._configure_success(mocks)
+                    mocks["generate_dynamic_roles"].side_effect = capture_dynamic
+                    mocks["run_expert_panel"].side_effect = capture_panel
+                    mocks["analyze_conflicts"].side_effect = capture_conflict
+                    mocks["run_meta_moderator"].side_effect = capture_meta
+                    mocks["develop_plan"].side_effect = capture_plan
+                    mocks["check_plan_and_act"].side_effect = capture_critique
+                    mocks["run_moderated_loop"].side_effect = capture_answer
+                    run_cmm_state_machine("raw query")
+
+                self.assertEqual(captured["dynamic_models"], ["test-model"])
+                self.assertEqual(captured["panel_model"], "test-model")
+                self.assertEqual(captured["conflict_model"], "test-model")
+                self.assertEqual(captured["meta_model"], "test-model")
+                self.assertEqual(captured["plan_model"], "test-model")
+                self.assertEqual(captured["critic_model"], "test-model")
+                self.assertEqual(captured["answer_model"], "test-model")
 
     def test_answer_moderation_reject_without_critical_issue_rescues(self):
         from Lib.state_machine import run_cmm_state_machine
@@ -826,6 +857,7 @@ class StateMachineTests(unittest.TestCase):
 
     def test_state_machine_passes_context_to_plan_critic(self):
         from Lib.state_machine import run_cmm_state_machine
+        from Lib.config import get_default_model
 
         captured = {}
 
@@ -849,7 +881,7 @@ class StateMachineTests(unittest.TestCase):
         self.assertEqual(kwargs["meta_decision"], _meta("SYNTHESIZE"))
         self.assertTrue(kwargs["state_history"])
         self.assertEqual(kwargs["replan_context"], {})
-        self.assertEqual(kwargs["model"], "deepseek-chat")
+        self.assertEqual(kwargs["model"], get_default_model())
 
     def test_plan_critic_receives_only_executed_dynamic_roles(self):
         from Lib.state_machine import run_cmm_state_machine
@@ -998,6 +1030,100 @@ class StateMachineTests(unittest.TestCase):
         )
         self.assertEqual(result["trace_report"]["errors"], [])
         mocks["run_moderated_loop"].assert_called_once()
+
+    def test_repeated_identical_plan_critique_stalls_exit_early(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        repeated = {
+            "status": "needs_revision",
+            "decision": "REVISE",
+            "critique": {
+                "overall_score": 0.0,
+                "scores": {
+                    "query_alignment": 0.0,
+                    "constraint_coverage": 0.0,
+                },
+                "ignored_must_address": ["cover metrics"],
+                "ignored_risks": ["mitigate risk"],
+                "ignored_tradeoffs": [],
+            },
+            "feedback": ["Cover deliberation_brief.must_address items."],
+            "reason": "same critique",
+        }
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["check_plan_and_act"].side_effect = [repeated, repeated]
+            result = run_cmm_state_machine("raw query", max_iters=3)
+
+        trace = result["trace_report"]
+        self.assertEqual(mocks["develop_plan"].call_count, 2)
+        self.assertIn("plan_critique_stall_detected", trace["warnings"])
+        self.assertTrue(trace["plan_critique_stalls"])
+        self.assertEqual(trace["plan_critique_stall_reason"], "identical_repeat")
+        self.assertEqual(trace["final_state"], "FINALIZE")
+
+    def test_nonshrinking_plan_critique_sets_replan_delta_and_stall_reason(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        first = {
+            "status": "needs_revision",
+            "decision": "REVISE",
+            "critique": {
+                "overall_score": 7.0,
+                "score_source": "model",
+                "scores": {"query_alignment": 7.0, "constraint_coverage": 7.0},
+                "missing_constraints": ["privacy"],
+                "ignored_must_address": ["cover metrics"],
+                "ignored_risks": ["mitigate risk"],
+                "ignored_tradeoffs": [],
+            },
+            "feedback": ["Cover deliberation_brief.must_address items."],
+            "reason": "still missing items",
+        }
+        second = {
+            "status": "needs_revision",
+            "decision": "REVISE",
+            "critique": {
+                "overall_score": 7.2,
+                "score_source": "rule_recomputed",
+                "scores": {"query_alignment": 7.0, "constraint_coverage": 7.0},
+                "missing_constraints": ["privacy"],
+                "ignored_must_address": ["cover metrics"],
+                "ignored_risks": ["mitigate risk"],
+                "ignored_tradeoffs": [],
+            },
+            "feedback": ["Cover deliberation_brief.must_address items."],
+            "reason": "same missing sets",
+        }
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["check_plan_and_act"].side_effect = [first, second]
+            result = run_cmm_state_machine("raw query", max_iters=3)
+
+        trace = result["trace_report"]
+        self.assertTrue(trace["replan_deltas"])
+        self.assertFalse(trace["replan_delta"]["reduced_any"])
+        self.assertEqual(trace["plan_critique_score_source"], "rule_recomputed")
+        self.assertEqual(trace["plan_critique_stall_reason"], "ignored_sets_not_shrinking")
+
+    def test_trace_carries_answer_generation_source(self):
+        from Lib.state_machine import run_cmm_state_machine
+
+        with self._patch_core() as mocks:
+            self._configure_success(mocks)
+            mocks["run_moderated_loop"].return_value = {
+                "final_answer": "final answer",
+                "final_decision": "ACCEPT",
+                "answer_generation_source": "model",
+                "reports": [{"decision": "ACCEPT", "avg_score": 8.5, "improvements": []}],
+                "trace": {},
+            }
+            result = run_cmm_state_machine("raw query")
+
+        trace = result["trace_report"]
+        self.assertEqual(trace["answer_generation_source"], "model")
 
     def test_critical_needs_revision_after_max_iters_still_fails(self):
         from Lib.state_machine import run_cmm_state_machine

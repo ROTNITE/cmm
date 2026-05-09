@@ -30,6 +30,7 @@ INTAKE
 
 - `main.py` is a thin CLI wrapper around `Lib.orchestrator.run_cmm`.
 - `Lib/orchestrator.py` exposes the stable public `run_cmm(...)` entrypoint.
+- `Lib/config.py` centralizes non-secret runtime configuration from `cmm_config.json`, optional ignored `cmm_config.local.json`, `.env`, and environment variables.
 - `Lib/state_machine.py` owns the bounded CMM state machine, transition history, and most orchestration handlers.
 - `Lib/state_fallbacks.py` holds fallback report builders used by the state machine.
 - `Lib/state_trace.py` holds small result-payload assembly helpers.
@@ -52,6 +53,8 @@ INTAKE
 Legacy compatibility modules remain importable but are not first-class pipeline components: `Lib/Start_formalization.py` is superseded by `Lib/query_intake.py`, `Lib/agent_critic.py` and `Lib/critic_decision.py` preserve old critique imports around `Lib/plan_critic.py`, and `Lib/Finish_agent.py` is outside the main state-machine answer/moderation path.
 
 ## Data Flow Notes
+
+Runtime defaults are centralized. Model name, judge model, provider base URL, API-key env var name, and safe default execution options live in `cmm_config.json`; local secrets stay in `.env`. Call-level arguments such as `run_cmm(..., model="...")` still override config for a single run.
 
 `original_query` is authoritative and preserved in the trace. `formalized_query` is populated from query intake `cleaned_query` and is helper text only.
 

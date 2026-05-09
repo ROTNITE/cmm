@@ -30,6 +30,7 @@ from Lib.context_manager import (
     build_context_compression_report,
     record_context_size,
 )
+from Lib.config import get_default_model
 from Lib.deliberation_round import (
     merge_deliberation_into_bundle,
     run_deliberation_round,
@@ -162,13 +163,25 @@ def _build_best_effort_answer_from_plan(state: dict, reason: str) -> str:
     budget = derive_answer_budget(query, intake)
     russian = _cyrillic_text(query)
     heading = "Краткий ответ:" if russian else "Short answer:"
+    approach_label = "Рекомендуемый подход:" if russian else "Recommended approach:"
     steps_label = "Что сделать:" if russian else "What to do:"
-    caveat_label = "Учесть:" if russian else "Account for:"
+    constraints_label = "Как учтены ограничения:" if russian else "How constraints are handled:"
+    caveat_label = "Что ещё учесть:" if russian else "What else to account for:"
 
     lines: list[str] = []
     main = plan.get("main_idea") or plan.get("result") or intake.get("task_goal") or query
     if isinstance(main, str) and main.strip():
         lines.append(f"{heading} {main.strip()}")
+
+    recommendations = []
+    for item in _safe_list(brief.get("expert_recommendations"))[:4]:
+        if isinstance(item, str) and item.strip():
+            recommendations.append(item.strip())
+    if recommendations and not budget.get("concise"):
+        lines.append("")
+        lines.append(approach_label)
+        for item in recommendations:
+            lines.append(f"- {item}")
 
     steps = []
     for step in _safe_list(plan.get("steps")):
@@ -193,10 +206,33 @@ def _build_best_effort_answer_from_plan(state: dict, reason: str) -> str:
     for item in _safe_list(brief.get("must_address"))[:3]:
         if isinstance(item, str) and item.strip():
             must_address.append(item.strip())
+    tradeoffs = []
+    for item in _safe_list(_safe_dict(state.get("conflict_report")).get("unresolved_tradeoffs"))[:3]:
+        if isinstance(item, dict):
+            value = item.get("tradeoff") or item.get("why_it_matters")
+        else:
+            value = item
+        if isinstance(value, str) and value.strip():
+            tradeoffs.append(value.strip())
+    risks = []
+    for item in _safe_list(brief.get("expert_risks"))[:4]:
+        if isinstance(item, str) and item.strip():
+            risks.append(item.strip())
+
     if must_address and not budget.get("concise"):
         lines.append("")
-        lines.append(caveat_label)
+        lines.append(constraints_label)
         for item in must_address[:4]:
+            lines.append(f"- {item}")
+    if risks and not budget.get("concise"):
+        lines.append("")
+        lines.append("Ключевые риски:" if russian else "Key risks:")
+        for item in risks[:4]:
+            lines.append(f"- {item}")
+    if tradeoffs and not budget.get("concise"):
+        lines.append("")
+        lines.append("Trade-offs:" if not russian else "Компромиссы:")
+        for item in tradeoffs[:3]:
             lines.append(f"- {item}")
 
     answer = "\n".join(lines).strip()
@@ -228,6 +264,8 @@ def _apply_answer_rescue(state: dict, reason: str) -> bool:
     state["moderation_reports"] = _safe_list(moderated.get("reports"))
     state["answer_moderation_final_decision"] = "ACCEPT"
     state["answer_moderation_critical_issues"] = []
+    state["answer_generation_source"] = "best_effort_answer_from_plan"
+    state["best_effort_trigger_reason"] = reason
     return True
 
 
@@ -309,6 +347,102 @@ def _flatten_plan_critique_decisions(plan_critiques: list | None) -> list[str]:
         if isinstance(decision, str) and decision and decision not in out:
             out.append(decision)
     return out
+
+
+def _critique_signature(item: dict | None) -> dict:
+    critique = item.get("critique") if isinstance(item, dict) and isinstance(item.get("critique"), dict) else {}
+    scores = critique.get("scores") if isinstance(critique.get("scores"), dict) else {}
+    return {
+        "status": str(_safe_dict(item).get("status") or "").lower(),
+        "decision": str(_safe_dict(item).get("decision") or "").upper(),
+        "overall_score": float(_safe_dict(critique).get("overall_score") or 0.0),
+        "score_source": str(_safe_dict(critique).get("score_source") or ""),
+        "ignored_must_address": tuple(sorted(str(v).strip() for v in _safe_list(critique.get("ignored_must_address")) if str(v).strip())),
+        "ignored_risks": tuple(sorted(str(v).strip() for v in _safe_list(critique.get("ignored_risks")) if str(v).strip())),
+        "ignored_tradeoffs": tuple(sorted(str(v).strip() for v in _safe_list(critique.get("ignored_tradeoffs")) if str(v).strip())),
+        "missing_constraints": tuple(sorted(str(v).strip() for v in _safe_list(critique.get("missing_constraints")) if str(v).strip())),
+        "critical_blockers": tuple(sorted(str(v).strip() for v in _safe_list(critique.get("critical_blockers")) if str(v).strip())),
+        "feedback": tuple(sorted(str(v).strip() for v in _safe_list(_safe_dict(item).get("feedback")) if str(v).strip())),
+        "score_keys": tuple(sorted((key, float(value)) for key, value in scores.items() if isinstance(value, (int, float)))),
+    }
+
+
+def _critique_missing_counts(item: dict | None) -> dict:
+    critique = item.get("critique") if isinstance(item, dict) and isinstance(item.get("critique"), dict) else {}
+    return {
+        "missing_constraints": len(_safe_list(critique.get("missing_constraints"))),
+        "ignored_must_address": len(_safe_list(critique.get("ignored_must_address"))),
+        "ignored_risks": len(_safe_list(critique.get("ignored_risks"))),
+        "ignored_tradeoffs": len(_safe_list(critique.get("ignored_tradeoffs"))),
+    }
+
+
+def _replan_delta(previous: dict | None, current: dict | None) -> dict | None:
+    if not isinstance(previous, dict) or not isinstance(current, dict):
+        return None
+    previous_counts = _critique_missing_counts(previous)
+    current_counts = _critique_missing_counts(current)
+    improved = [key for key in previous_counts if current_counts[key] < previous_counts[key]]
+    regressed = [key for key in previous_counts if current_counts[key] > previous_counts[key]]
+    unchanged = [key for key in previous_counts if current_counts[key] == previous_counts[key]]
+    return {
+        "previous": previous_counts,
+        "current": current_counts,
+        "improved": improved,
+        "regressed": regressed,
+        "unchanged": unchanged,
+        "reduced_any": bool(improved),
+    }
+
+
+def _detect_plan_critique_stall(plan_critiques: list | None) -> dict | None:
+    critiques = [item for item in _safe_list(plan_critiques) if isinstance(item, dict)]
+    if len(critiques) < 2:
+        return None
+    current = critiques[-1]
+    previous = critiques[-2]
+    current_sig = _critique_signature(current)
+    previous_sig = _critique_signature(previous)
+    active_statuses = {"needs_revision", "rejected"}
+    if current_sig["status"] not in active_statuses or previous_sig["status"] not in active_statuses:
+        return None
+    if current_sig["status"] != previous_sig["status"]:
+        return None
+    previous_counts = _critique_missing_counts(previous)
+    current_counts = _critique_missing_counts(current)
+    shrinking = any(current_counts[key] < previous_counts[key] for key in previous_counts)
+    if shrinking:
+        return None
+    exact_repeat = all(
+        current_sig[key] == previous_sig[key]
+        for key in (
+            "decision",
+            "overall_score",
+            "score_source",
+            "ignored_must_address",
+            "ignored_risks",
+            "ignored_tradeoffs",
+            "missing_constraints",
+            "critical_blockers",
+            "feedback",
+            "score_keys",
+        )
+    )
+    stall_reason = "identical_repeat" if exact_repeat else "ignored_sets_not_shrinking"
+    return {
+        "status": current_sig["status"],
+        "decision": current_sig["decision"],
+        "overall_score": current_sig["overall_score"],
+        "repeat_count": 2,
+        "reason": stall_reason,
+        "signature": {
+            "status": current_sig["status"],
+            "decision": current_sig["decision"],
+            "score_source": current_sig["score_source"],
+            "current_counts": current_counts,
+            "previous_counts": previous_counts,
+        },
+    }
 
 
 def _flatten_deliberation_revisions(deliberation_rounds: list | None) -> list[dict]:
@@ -891,7 +1025,7 @@ def init_cmm_state(
     query: str,
     *,
     max_iters: int = 2,
-    model: str = "deepseek-chat",
+    model: str | None = None,
     max_transitions: int = 40,
     route_mode: str = "AUTO",
     parallel_mode: str = "SEQUENTIAL",
@@ -902,7 +1036,7 @@ def init_cmm_state(
     normalized_parallel_mode = normalize_parallel_mode(parallel_mode)
     return {
         "original_query": original_query,
-        "model": model,
+        "model": get_default_model(model),
         "max_iters": max(0, int(max_iters)),
         "max_transitions": max(1, int(max_transitions)),
         "current_state": INTAKE,
@@ -942,12 +1076,17 @@ def init_cmm_state(
         "plan": {},
         "plan_critiques": [],
         "plan_critique": {},
+        "plan_critique_stalls": [],
+        "replan_deltas": [],
+        "plan_critique_score_source": "",
         "answers": [],
         "moderated_result": {},
         "moderation_reports": [],
         "answer_moderation_final_decision": "",
         "answer_moderation_critical_issues": [],
         "answer_moderation_revision_count": 0,
+        "answer_generation_source": "",
+        "best_effort_trigger_reason": "",
         "quality_gate_decisions": [],
         "context_compression": {},
         "answer_moderation_best_effort": False,
@@ -1578,10 +1717,23 @@ def handle_plan_critique(state: dict) -> tuple[str, str]:
     state["plan_critique"] = (
         critique_result.get("critique") if isinstance(critique_result.get("critique"), dict) else {}
     )
+    state["plan_critique_score_source"] = str(_safe_dict(state.get("plan_critique")).get("score_source") or "")
+
+    critiques = _safe_list(state.get("plan_critiques"))
+    if len(critiques) >= 2:
+        delta = _replan_delta(critiques[-2], critiques[-1])
+        if delta is not None:
+            state.setdefault("replan_deltas", []).append(delta)
 
     status = str(critique_result.get("status") or "").lower()
     decision = str(critique_result.get("decision") or "").upper()
     critical_blockers = plan_blockers(critique_result)
+    stall_info = _detect_plan_critique_stall(state.get("plan_critiques"))
+    if stall_info is not None:
+        state.setdefault("plan_critique_stalls", []).append(stall_info)
+        state["warnings"].append("plan_critique_stall_detected")
+        if stall_info.get("reason"):
+            state["warnings"].append(f"plan_critique_stall_reason:{stall_info['reason']}")
 
     if status == "ready" and has_critical_plan_blockers(critique_result):
         state.setdefault("quality_gate_decisions", []).append(
@@ -1609,14 +1761,24 @@ def handle_plan_critique(state: dict) -> tuple[str, str]:
         return ANSWER, "plan critique accepted plan"
 
     if status in {"needs_revision", "rejected"} or decision in {"REVISE", "REJECT"}:
-        if int(state.get("iteration_count", 0)) < int(state.get("max_iters", 0)):
+        if stall_info is None and int(state.get("iteration_count", 0)) < int(state.get("max_iters", 0)):
             reason = critique_result.get("reason") or "plan needs revision"
+            critique = _safe_dict(state.get("plan_critique"))
+            latest_delta = _safe_list(state.get("replan_deltas"))[-1] if _safe_list(state.get("replan_deltas")) else {}
             state["replan_context"] = {
                 "previous_plan": state.get("plan", {}),
-                "plan_critique": state.get("plan_critique", {}),
+                "plan_critique": critique,
                 "feedback": _safe_list(critique_result.get("feedback")),
                 "reason": reason,
                 "instruction": "Regenerate the plan and address the critique feedback.",
+                "missing_constraints": _safe_list(critique.get("missing_constraints")),
+                "ignored_must_address": _safe_list(critique.get("ignored_must_address")),
+                "ignored_risks": _safe_list(critique.get("ignored_risks")),
+                "ignored_tradeoffs": _safe_list(critique.get("ignored_tradeoffs")),
+                "ignored_success_criteria": _safe_list(critique.get("ignored_success_criteria")),
+                "ignored_dynamic_roles": _safe_list(critique.get("ignored_dynamic_roles")),
+                "score_source": critique.get("score_source") or "",
+                "replan_delta": latest_delta if isinstance(latest_delta, dict) else {},
             }
             state.setdefault("quality_gate_decisions", []).append(
                 {
@@ -1634,6 +1796,7 @@ def handle_plan_critique(state: dict) -> tuple[str, str]:
         # This applies to both needs_revision and rejected status when there are no critical blockers
         if can_best_effort_finalize(critique_result=critique_result, plan=state.get("plan", {})):
             state["warnings"].append(f"{message}; proceeding_with_best_effort_plan")
+            state["best_effort_trigger_reason"] = message
             state.setdefault("quality_gate_decisions", []).append(
                 {
                     "gate": "plan_critique",
@@ -1705,6 +1868,7 @@ def handle_answer(state: dict) -> tuple[str, str]:
     state["answer_moderation_critical_issues"] = _safe_list(moderated_result.get("critical_issues"))
     state["answer_moderation_revision_count"] = int(moderated_result.get("revision_count") or 0)
     state["answer_moderation_best_effort"] = False
+    state["answer_generation_source"] = str(moderated_result.get("answer_generation_source") or moderated_result.get("source") or "")
 
     final_answer = moderated_result.get("final_answer") if isinstance(moderated_result, dict) else ""
     if (not isinstance(final_answer, str) or not final_answer.strip()) and _apply_answer_rescue(
@@ -1809,6 +1973,17 @@ def handle_answer_moderation(state: dict) -> tuple[str, str]:
         if can_best_effort_finalize(moderated_result=moderated_result):
             state["warnings"].append("answer_moderation_revise_best_effort")
             state["answer_moderation_best_effort"] = True
+            state["best_effort_trigger_reason"] = "answer_moderation_revise_best_effort"
+            if _apply_answer_rescue(state, "answer_moderation_revise_best_effort"):
+                state.setdefault("quality_gate_decisions", []).append(
+                    {
+                        "gate": "answer_moderation",
+                        "decision": "BEST_EFFORT",
+                        "reason": "non-critical answer revision exhausted; finalized structured rescue answer",
+                        "critical_issues": [],
+                    }
+                )
+                return FINALIZE, "answer moderation requested non-critical revision; finalized rescue answer"
             state.setdefault("quality_gate_decisions", []).append(
                 {
                     "gate": "answer_moderation",
@@ -1889,11 +2064,14 @@ def _build_trace_report(state: dict) -> dict:
         "blind_spots": _flatten_conflict_field(conflict_reports, "blind_spots"),
         "plan": state.get("plan", {}),
         "plan_critique": state.get("plan_critique", {}),
+        "plan_critique_score_source": state.get("plan_critique_score_source") or "",
         "moderation_reports": moderation_reports,
         "answer_moderation_final_decision": state.get("answer_moderation_final_decision") or "",
         "answer_moderation_critical_issues": _safe_list(state.get("answer_moderation_critical_issues")),
         "answer_moderation_revision_count": int(state.get("answer_moderation_revision_count") or 0),
         "answer_moderation_best_effort": bool(state.get("answer_moderation_best_effort")),
+        "answer_generation_source": state.get("answer_generation_source") or "",
+        "best_effort_trigger_reason": state.get("best_effort_trigger_reason") or "",
         "best_effort_answer_from_plan": bool(state.get("best_effort_answer_from_plan")),
         "quality_gate_decisions": _safe_list(state.get("quality_gate_decisions")),
         "context_compression": build_context_compression_report(state),
@@ -1911,6 +2089,12 @@ def _build_trace_report(state: dict) -> dict:
         "iteration_count": state.get("iteration_count", 0),
         "plans": _safe_list(state.get("plans")),
         "plan_critiques": plan_critiques,
+        "plan_critique_stalls": _safe_list(state.get("plan_critique_stalls")),
+        "plan_critique_stall_reason": (
+            _safe_list(state.get("plan_critique_stalls"))[-1].get("reason")
+            if _safe_list(state.get("plan_critique_stalls")) and isinstance(_safe_list(state.get("plan_critique_stalls"))[-1], dict)
+            else ""
+        ),
         "plan_critique_statuses": [
             item.get("status") for item in plan_critiques if isinstance(item, dict) and item.get("status")
         ],
@@ -1922,6 +2106,8 @@ def _build_trace_report(state: dict) -> dict:
         "ignored_must_address": _flatten_plan_critique_field(plan_critiques, "ignored_must_address"),
         "ignored_risks": _flatten_plan_critique_field(plan_critiques, "ignored_risks"),
         "ignored_tradeoffs": _flatten_plan_critique_field(plan_critiques, "ignored_tradeoffs"),
+        "replan_deltas": _safe_list(state.get("replan_deltas")),
+        "replan_delta": _safe_list(state.get("replan_deltas"))[-1] if _safe_list(state.get("replan_deltas")) else {},
         "errors": errors,
     }
     trace["json_health"] = _collect_json_health(trace)
@@ -1986,7 +2172,7 @@ def run_cmm_state_machine(
     query: str,
     *,
     max_iters: int = 2,
-    model: str = "deepseek-chat",
+    model: str | None = None,
     max_transitions: int = 40,
     route_mode: str = "AUTO",
     parallel_mode: str = "SEQUENTIAL",

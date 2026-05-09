@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from Lib.config import get_stage_settings
 from Lib.json_retry import call_json_model
 from Lib.json_utils import to_number, to_string_list
 
@@ -312,6 +313,7 @@ def run_meta_moderator(
     model: str = "deepseek-chat",
 ) -> dict:
     """Return a stable process-control decision for the current CMM state."""
+    stage = get_stage_settings("meta", {"tokens": 550, "temp": 0.2})
     fallback = _rule_based_decision(
         balance_report=balance_report,
         deliberation_brief=deliberation_brief,
@@ -348,10 +350,11 @@ def run_meta_moderator(
     result = call_json_model(
         user_prompt="Оцени состояние CMM процесса:\n" + json.dumps(state, ensure_ascii=False),
         system_prompt=system_prompt,
-        temp=0.2,
-        tokens=550,
+        temp=float(stage.get("temp") or 0.2),
+        tokens=int(stage.get("tokens") or 550),
         model=model,
         max_retries=1,
+        log_purpose="meta_moderator",
     )
 
     parsed = result.get("payload") if isinstance(result, dict) else None

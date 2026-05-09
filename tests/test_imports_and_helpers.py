@@ -6,7 +6,6 @@ class ImportAndHelperTests(unittest.TestCase):
     def test_main_modules_import_from_project_root(self):
         modules = [
             "main",
-            "Lib.Start_formalization",
             "Lib.plan_development",
             "Lib.plan_critic",
             "Lib.critic_decision",
@@ -19,6 +18,7 @@ class ImportAndHelperTests(unittest.TestCase):
             "Lib.deliberation_round",
             "Lib.json_utils",
             "Lib.json_retry",
+            "Lib.config",
             "Lib.orchestrator",
             "Lib.state_machine",
             "Lib.state_fallbacks",
@@ -31,7 +31,6 @@ class ImportAndHelperTests(unittest.TestCase):
             "Lib.meta_moderator",
             "Lib.agent_improver",
             "Lib.agent_moderator",
-            "Lib.Finish_agent",
         ]
 
         for module_name in modules:

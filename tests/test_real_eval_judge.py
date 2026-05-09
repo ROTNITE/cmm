@@ -126,7 +126,7 @@ class RealEvalJudgeTests(unittest.TestCase):
 
             with patch("cmm.eval._real_baseline", return_value=_baseline()), patch(
                 "cmm.eval._real_cmm", return_value=_cmm()
-            ), patch("Lib.AI_request.send_to_AI", side_effect=AssertionError("judge should not run")):
+            ), patch("Lib.json_retry.send_to_AI", side_effect=AssertionError("judge should not run")):
                 result = run_eval(
                     str(dataset),
                     limit=1,
@@ -179,7 +179,7 @@ class RealEvalJudgeTests(unittest.TestCase):
 
             with patch("cmm.eval._real_baseline", return_value=_baseline()), patch(
                 "cmm.eval._real_cmm", return_value=_cmm()
-            ), patch("Lib.AI_request.send_to_AI", return_value=json.dumps(judge_payload)):
+            ), patch("Lib.json_retry.send_to_AI", return_value=json.dumps(judge_payload)):
                 result = run_eval(
                     str(dataset),
                     limit=1,
@@ -220,7 +220,7 @@ class RealEvalJudgeTests(unittest.TestCase):
             captured["cmm_query"] = query
             return {"final_answer": "cmm", "trace_report": {}}
 
-        with patch("Lib.AI_request.send_to_AI", side_effect=fake_send_to_ai):
+        with patch("Lib.AI_request_instrumented.send_to_AI", side_effect=fake_send_to_ai):
             _real_baseline(case)
         with patch("Lib.orchestrator.run_cmm", side_effect=fake_run_cmm):
             _real_cmm(case)
@@ -235,6 +235,26 @@ class RealEvalJudgeTests(unittest.TestCase):
         self.assertNotIn("Hidden rubric item", captured["cmm_query"])
         self.assertNotIn("Hidden perspective", captured["cmm_query"])
         self.assertNotIn("Hidden failure mode", captured["cmm_query"])
+
+    def test_llm_judge_uses_retry_hardened_json_path(self):
+        from cmm.eval import judge_case_with_llm
+
+        with patch(
+            "Lib.json_retry.send_to_AI",
+            side_effect=["not json", json.dumps({
+                "answer_a_scores": {"rubric_coverage": 7, "perspective_coverage": 7, "risk_handling": 7, "actionability": 7, "clarity": 7, "overall": 7},
+                "answer_b_scores": {"rubric_coverage": 8, "perspective_coverage": 8, "risk_handling": 8, "actionability": 8, "clarity": 8, "overall": 8},
+                "winner": "B",
+                "reason": "B is stronger.",
+                "answer_a_failure_modes": [],
+                "answer_b_failure_modes": [],
+            })],
+        ):
+            result = judge_case_with_llm({"case_id": "CASE-1", "query": "Q"}, _baseline(), _cmm(), model="judge-model")
+
+        self.assertEqual(result["winner"], "CMM" if result["blind_mapping"]["answer_b_source"] == "CMM" else "BASELINE")
+        self.assertIn("json_retry_after_invalid_json", result["parse_warnings"])
+        self.assertEqual(result["json_attempts"], 2)
 
 
 if __name__ == "__main__":

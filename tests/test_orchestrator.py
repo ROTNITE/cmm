@@ -754,15 +754,7 @@ class OrchestratorTests(unittest.TestCase):
             main.main()
 
         self.assertIn("cli answer", output.getvalue())
-        run_cmm_mock.assert_called_once_with(
-            "query",
-            max_iters=2,
-            model="deepseek-chat",
-            route_mode="AUTO",
-            parallel_mode="SEQUENTIAL",
-            max_workers=None,
-            max_deliberation_rounds=1,
-        )
+        run_cmm_mock.assert_called_once_with("query")
 
     def test_main_trace_summary_forwards_deliberation_rounds(self):
         import main
@@ -783,18 +775,11 @@ class OrchestratorTests(unittest.TestCase):
             main.main(["--trace-summary", "--max-deliberation-rounds", "2", "query"])
 
         self.assertIn("CMM TRACE SUMMARY", output.getvalue())
-        run_cmm_mock.assert_called_once_with(
-            "query",
-            max_iters=2,
-            model="deepseek-chat",
-            route_mode="AUTO",
-            parallel_mode="SEQUENTIAL",
-            max_workers=None,
-            max_deliberation_rounds=2,
-        )
+        run_cmm_mock.assert_called_once_with("query", max_deliberation_rounds=2)
 
     def test_run_cmm_accepts_route_mode_keyword(self):
         from Lib.orchestrator import run_cmm
+        from Lib.config import get_default_model
 
         with patch("Lib.orchestrator.run_cmm_state_machine", return_value={"final_answer": "", "trace_report": {}, "raw": {}}) as mock:
             run_cmm("raw query", route_mode="FULL_CMM")
@@ -802,7 +787,7 @@ class OrchestratorTests(unittest.TestCase):
         mock.assert_called_once_with(
             "raw query",
             max_iters=2,
-            model="deepseek-chat",
+            model=get_default_model(),
             route_mode="FULL_CMM",
             parallel_mode="SEQUENTIAL",
             max_workers=None,
@@ -811,6 +796,7 @@ class OrchestratorTests(unittest.TestCase):
 
     def test_run_cmm_accepts_parallel_options(self):
         from Lib.orchestrator import run_cmm
+        from Lib.config import get_default_model
 
         with patch("Lib.orchestrator.run_cmm_state_machine", return_value={"final_answer": "", "trace_report": {}, "raw": {}}) as mock:
             run_cmm("raw query", route_mode="FULL_CMM", parallel_mode="THREADS", max_workers=3)
@@ -818,7 +804,7 @@ class OrchestratorTests(unittest.TestCase):
         mock.assert_called_once_with(
             "raw query",
             max_iters=2,
-            model="deepseek-chat",
+            model=get_default_model(),
             route_mode="FULL_CMM",
             parallel_mode="THREADS",
             max_workers=3,
@@ -827,6 +813,7 @@ class OrchestratorTests(unittest.TestCase):
 
     def test_run_cmm_accepts_max_deliberation_rounds_keyword(self):
         from Lib.orchestrator import run_cmm
+        from Lib.config import get_default_model
 
         with patch("Lib.orchestrator.run_cmm_state_machine", return_value={"final_answer": "", "trace_report": {}, "raw": {}}) as mock:
             run_cmm("raw query", max_deliberation_rounds=2)
@@ -834,7 +821,7 @@ class OrchestratorTests(unittest.TestCase):
         mock.assert_called_once_with(
             "raw query",
             max_iters=2,
-            model="deepseek-chat",
+            model=get_default_model(),
             route_mode="AUTO",
             parallel_mode="SEQUENTIAL",
             max_workers=None,
